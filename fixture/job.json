@@ -1,0 +1,27 @@
+{
+  "vars": {
+    "foo": "bar"
+  },
+  "tasks": [
+    {
+      "name": "foo",
+      "args": [
+        {
+          "name": "foo",
+          "val": "bar"
+        }
+      ]
+    }
+  ],
+  "assets": [
+    {
+      "name": "/home/ubuntu/Home/git/chief-whip/fixture/assets/sample",
+      "files": [
+        {
+          "path": "/home/ubuntu/Home/git/chief-whip/fixture/assets/sample/etc/nginx/nginx.conf",
+          "data": "aHR0cCB7CiAgICBzZXJ2ZXIgewogICAgICAgIGxpc3RlbiA4MDsKICAgICAgICByb290IC92YXIvd3d3L2h0bWw7CiAgICB9Cn0="
+        }
+      ]
+    }
+  ]
+}
