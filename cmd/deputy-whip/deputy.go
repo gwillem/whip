@@ -7,7 +7,7 @@ import (
 	"io"
 	"os"
 
-	"github.com/gwillem/chief-whip/internal"
+	"github.com/gwillem/chief-whip/pkg/whip"
 )
 
 // apply Job to localhost
@@ -16,7 +16,7 @@ func main() {
 
 	job := getJobFromStdin()
 	for i, task := range job.Tasks {
-		res := internal.JobResult{
+		res := whip.TaskResult{
 			Changed: true,
 			Output:  fmt.Sprintf("Task %d. %s completed", i, task.Name),
 			Status:  0}
@@ -47,14 +47,14 @@ func main() {
 
 }
 
-func getJobFromStdin() *internal.Job {
+func getJobFromStdin() *whip.Job {
 	reader := bufio.NewReader(os.Stdin)
 	blob, err := io.ReadAll(reader)
 	if err != nil {
 		panic(err)
 	}
 	// println("got blob with length", len(blob))
-	job := &internal.Job{}
+	job := &whip.Job{}
 	if e := json.Unmarshal(blob, job); e != nil {
 		panic(e)
 	}

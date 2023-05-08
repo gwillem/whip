@@ -1,0 +1,13 @@
+---
+- hosts: web
+  remote_user: root
+  gather_facts: false
+
+  tasks:
+    - name: install ssh keys
+      command: date creates=bla
+
+    # - name: sync repo to prod
+    #   synchronize:
+    #     src: "x"
+    #     dest: "y"

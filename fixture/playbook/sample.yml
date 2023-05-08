@@ -1,0 +1,208 @@
+---
+- hosts: web
+  remote_user: root
+  gather_facts: false
+
+  tasks:
+    - name: install ssh keys
+      authorized_key: user=root key="{{item}}"
+      with_items:
+        - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCxO+lIcJmtGtFY1sj6jz/W/fEuOF3y+3MFDnXNwIwj2Khm1He6IUqEce4ZEx3q2NId5/RIZ2jIWV3BVnTgiEHMhqfEdMNqPfPtpq4A9K6li+T/FQeTxeDYH7EOFDGwn6rKVFHE3oMNZslbOeUAdzwmt+3Pfcz/Ep/6dcNcFN8qasQIEyYiFn+m6PWi2icOJfPL1joETFj47OX+w/Q87gTIu8v6kxM9jQC1PGU7XZqlUMt+vs2qaAGLpa7dyaMGnJ+DrxlS1hBhuUY1T3iAWurer3FQVZhvJE+9fCsdOiUGGgMRwMq6ynolq9v4AqwKFDZ+tGn6IwdXE3rnIzms6rNaVLVK2WaGO6nJ8xDNHB3d2d5TeWvijn5N4uLXcUnC0z64on1/hsaff6yHSh822jNbI08AhCp2O7p+JBf16HiNZwR+CqTiaGGyf1Fv5aAS95XSbWLYD77cWM1cvO5xIryQ+cdb5IuOzrP/X4Uxr5I8lAh1Tt+wwxwUO2HIv9phqN8= test1
+        - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCxO+lIcJmtGtFY1sj6jz/W/fEuOF3y+3MFDnXNwIwj2Khm1He6IUqEce4ZEx3q2NId5/RIZ2jIWV3BVnTgiEHMhqfEdMNqPfPtpq4A9K6li+T/FQeTxeDYH7EOFDGwn6rKVFHE3oMNZslbOeUAdzwmt+3Pfcz/Ep/6dcNcFN8qasQIEyYiFn+m6PWi2icOJfPL1joETFj47OX+w/Q87gTIu8v6kxM9jQC1PGU7XZqlUMt+vs2qaAGLpa7dyaMGnJ+DrxlS1hBhuUY1T3iAWurer3FQVZhvJE+9fCsdOiUGGgMRwMq6ynolq9v4AqwKFDZ+tGn6IwdXE3rnIzms6rNaVLVK2WaGO6nJ8xDNHB3d2d5TeWvijn5N4uLXcUnC0z64on1/hsaff6yHSh822jNbI08AhCp2O7p+JBf16HiNZwR+CqTiaGGyf1Fv5aAS95XSbWLYD77cWM1cvO5xIryQ+cdb5IuOzrP/X4Uxr5I8lAh1Tt+wwxwUO2HIv9phqN8= test2
+      tags: ssh
+
+    - name: install pki for remote communication
+      template: src=files/ssh/{{item}} dest=/root/.ssh/{{item}} mode=0600
+      with_items:
+        - id_rsa
+        - id_rsa.pub
+      tags: ssh
+
+    - name: update all
+      apt: upgrade=dist update_cache=yes
+
+    - name: install root bashrc
+      copy: src=files/root/bashrc dest=/root/.bashrc
+
+    # - name: update locale to utf8
+    #   command: update-locale LANG=C.UTF-8
+
+    - name: install pkgs
+      apt:
+        state: latest
+        update_cache: no
+        name:
+          - nginx
+          - openssl
+          - unattended-upgrades
+          - gunicorn
+
+    - name: Remove certain pkgs
+      apt:
+        state: absent
+        purge: yes
+        update_cache: no
+        name:
+          - snapd
+          - lxcfs
+          - mlocate # quite heavy when updating db
+          - apparmor
+
+    - name: enforce UTC
+      command: timedatectl set-timezone UTC
+
+    - name: Make necessary app dirs
+      file: state=directory name={{item}}
+      with_items:
+        - /etc/certbot
+
+    - name: Make data dirs
+      file: state=directory name={{item}} owner=www-data group=www-data mode=0700
+      with_items:
+        - /data/workdir
+      tags: debug
+
+    - name: Enable automatic upgrades
+      copy: src=files/apt/20auto-upgrades dest=/etc/apt/apt.conf.d/20auto-upgrades
+
+    - name: Register public IP address
+      shell: curl -s https://api.ipify.org/ > /etc/public_ip
+        creates=/etc/public_ip
+
+    # - name: Install dhparam for better SSL grade
+    #   copy: content="{{dh_param}}" dest=/etc/ssl/certs/dhparam.pem
+
+    - name: Install nginx logrotate config
+      copy: src=files/logrotate.d/ dest=/etc/logrotate.d/
+      tags: logrotate
+
+    - name: install cron
+      copy: src=files/cron/ dest=/etc/cron.d/
+      tags: cron
+
+    - name: sync repo to prod
+      synchronize:
+        src: "{{playbook_dir}}/../"
+        dest: "{{app.root_path}}/app/"
+        delete: yes
+        owner: no
+        rsync_opts:
+          - "--no-motd"
+          # - "--copy-links"
+          - "--delete"
+          - "--omit-dir-times" # otherwise, __pycache__ and friends will trigger resync
+          #      - "--delete-excluded"
+          - "--exclude=/.git"
+          - "--exclude=/deploy"
+          - "--exclude=/fixtures"
+          - "--exclude=/.vscode"
+          - "--exclude=/package-lock.json"
+          - "--exclude=/*.md"
+          - "--exclude=/*.js"
+          - "--exclude=/Pipfile*"
+          - "--exclude-from=../.gitignore"
+      tags:
+        - prod
+      notify:
+        - reload-gunicorn
+
+    - name: Install specified python requirements in indicated (virtualenv)
+      pip:
+        requirements: "{{app.root_path}}/app/requirements.txt"
+        virtualenv: "{{app.root_path}}/.venv"
+      tags: pip
+      notify: reload-gunicorn
+
+    - name: Install app env file which are loaded by systemd
+      template: src=files/env/app.env dest={{app.root_path}}/env
+      notify: restart-gunicorn
+      tags:
+        - prod
+
+    - name: Ensure writable gunicorn log file
+      file: name=/var/log/gunicorn.log mode=0600 owner=www-data state=touch
+
+    - name: Install gunicorn systemd socket and service file
+      template: src=files/systemd/{{item}} dest=/etc/systemd/system/{{item}}
+      with_items:
+        - gunicorn.socket
+        - gunicorn.service
+      tags: 
+      - gunicorn
+      notify:
+      - reload-systemd
+      - restart-gunicorn
+
+    - name: Reload systemd
+      systemd: daemon_reload=yes
+
+    - name: Launch gunicorn socket and service
+      systemd: name={{item}} enabled=yes state=started
+      with_items:
+        - gunicorn.socket
+        - gunicorn.service
+
+    - template: src=files/nginx/{{item}} dest=/etc/nginx/{{item}}
+      with_items:
+        - nginx.conf
+        - conf.d/cloudflare.conf
+      notify: reload-nginx
+      tags:
+        - nginx
+        - debug
+
+    - name: Remove default nginx config
+      file: state=absent path=/etc/nginx/sites-enabled/default
+      tags: nginx
+      notify: reload-nginx
+
+    - name: Install self signed certificates
+      copy: src=files/ssl/{{item}} dest=/etc/ssl/{{item}} mode=0600 owner=root
+      with_items:
+        - certs/self-signed.crt
+        - private/self-signed.key
+      notify: reload-nginx
+      tags: nginx
+
+    - name: Ensure postfix binds to localhost only
+      lineinfile:
+        path: /etc/postfix/main.cf
+        line: "inet_interfaces = 127.0.0.1"
+      tags: postfix
+      notify: restart-postfix
+
+    # - name: install pdns-recursor config
+    #   copy: src=files/pdns-recursor/recursor.conf dest=/etc/powerdns/
+    #   notify: restart-pdns-recursor
+
+    # - name: restart services
+    #   service: name={{item}} state=restarted
+    #   with_items:
+    #     - nginx
+    #     - php7.4-fpm
+    #     - uwsgi
+
+  handlers:
+    - name: restart-pdns-recursor
+      service: name=pdns-recursor state=restarted
+
+    - name: reload-mysql-systemd
+      shell: systemctl daemon-reload; service mysql reload
+
+    - name: reload-mysql
+      service: name=mysql state=restarted
+
+    - name: reload-systemd
+      shell: systemctl daemon-reload
+
+    - name: reload-nginx
+      systemd: name=nginx state=reloaded
+
+    - name: reload-gunicorn
+      systemd: name=gunicorn state=reloaded
+
+    - name: restart-gunicorn
+      systemd: name=gunicorn state=restarted
+
+    - name: restart-postfix
+      systemd: name=postfix state=restarted

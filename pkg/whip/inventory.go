@@ -1,4 +1,4 @@
-package internal
+package whip
 
 type (
 	Target struct {

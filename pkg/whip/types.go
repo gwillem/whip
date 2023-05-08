@@ -1,4 +1,4 @@
-package internal
+package whip
 
 import (
 	"fmt"
@@ -18,14 +18,12 @@ type (
 	Vars map[string]any
 
 	Task struct {
-		Type string    `json:"type,omitempty"`
-		Name string    `json:"name,omitempty"`
-		Args []TaskArg `json:"args,omitempty"`
+		Type string   `json:"type,omitempty"`
+		Name string   `json:"name,omitempty"`
+		Args TaskArgs `json:"args,omitempty"`
 	}
-	TaskArg struct {
-		Name string `json:"name,omitempty"`
-		Val  any    `json:"val,omitempty"`
-	}
+
+	TaskArgs map[string]string
 
 	Asset struct {
 		Name  string `json:"name,omitempty"`
@@ -36,11 +34,25 @@ type (
 		Data []byte `json:"data,omitempty"`
 	}
 
-	JobResult struct {
+	TaskResult struct {
 		Changed  bool          `json:"changed,omitempty"`
 		Output   string        `json:"output,omitempty"`
 		Status   int           `json:"status_code,omitempty"`
 		Duration time.Duration `json:"duration,omitempty"`
+	}
+
+	// to help with parsing yaml
+	RawPlaybook []RawPlay
+	RawPlay     struct {
+		Hosts    string   `yaml:"hosts,omitempty,flow"`
+		RawTasks []AnyMap `yaml:"tasks,omitempty"`
+	}
+	AnyMap map[string]any
+
+	Playbook []Play
+	Play     struct {
+		Hosts string
+		Tasks []Task
 	}
 )
 
@@ -62,7 +74,9 @@ func DirToAsset(root string) Asset {
 			return err
 		}
 
-		asset.Files = append(asset.Files, File{Path: path, Data: data})
+		relPath := path[len(root):]
+
+		asset.Files = append(asset.Files, File{Path: relPath, Data: data})
 		return nil
 	})
 	if err != nil {

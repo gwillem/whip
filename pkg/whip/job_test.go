@@ -1,4 +1,4 @@
-package internal
+package whip
 
 import (
 	"encoding/json"
@@ -16,11 +16,9 @@ func dummyJob() *Job {
 		Tasks: []Task{
 			{
 				Name: "foo",
-				Args: []TaskArg{
-					{
-						Name: "foo",
-						Val:  "bar",
-					},
+				Type: "command",
+				Args: map[string]string{
+					"cmd": "date",
 				},
 			},
 		},
