@@ -1,2 +1,3 @@
 build/*
+cmd/chief-whip/embed/*
 .vscode

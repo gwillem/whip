@@ -17,7 +17,7 @@ func dummyJob() *Job {
 			{
 				Name: "foo",
 				Type: "command",
-				Args: map[string]string{
+				Args: TaskArgs{
 					"cmd": "date",
 				},
 			},

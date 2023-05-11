@@ -5,6 +5,8 @@ import (
 	"os"
 	"path/filepath"
 	"time"
+
+	"github.com/barkimedes/go-deepcopy"
 )
 
 // define Job struct
@@ -18,12 +20,13 @@ type (
 	Vars map[string]any
 
 	Task struct {
-		Type string   `json:"type,omitempty"`
-		Name string   `json:"name,omitempty"`
-		Args TaskArgs `json:"args,omitempty"`
+		Type  string   `json:"type,omitempty"`
+		Name  string   `json:"name,omitempty"`
+		Args  TaskArgs `json:"args,omitempty"`
+		Items any      `json:"items,omitempty"`
 	}
 
-	TaskArgs map[string]string
+	TaskArgs map[string]any
 
 	Asset struct {
 		Name  string `json:"name,omitempty"`
@@ -35,29 +38,48 @@ type (
 	}
 
 	TaskResult struct {
-		Changed  bool          `json:"changed,omitempty"`
-		Output   string        `json:"output,omitempty"`
-		Status   int           `json:"status_code,omitempty"`
-		Duration time.Duration `json:"duration,omitempty"`
+		TaskID    int           `json:"task_id,omitempty"`
+		TaskTotal int           `json:"task_total,omitempty"`
+		Host      Host          `json:"target,omitempty"`
+		Changed   bool          `json:"changed,omitempty"`
+		Output    string        `json:"output,omitempty"`
+		Status    int           `json:"status_code,omitempty"`
+		Duration  time.Duration `json:"duration,omitempty"`
+		Task      Task          `json:"task,omitempty"`
 	}
 
 	// to help with parsing yaml
 	RawPlaybook []RawPlay
 	RawPlay     struct {
-		Hosts    string   `yaml:"hosts,omitempty,flow"`
+		Hosts    any      `yaml:"hosts,omitempty"`
+		Targets  []string `yaml:"targets,omitempty"`
 		RawTasks []AnyMap `yaml:"tasks,omitempty"`
 	}
 	AnyMap map[string]any
 
 	Playbook []Play
 	Play     struct {
-		Hosts string
+		Hosts []Host
+		// Targets []string
 		Tasks []Task
 	}
+	Host string
 )
 
 func (j *Job) String() string {
 	return fmt.Sprintf("Job: %d tasks, %d assets, %d vars", len(j.Tasks), len(j.Assets), len(j.Vars))
+}
+
+func (tr TaskResult) String() string {
+	return fmt.Sprintf("TaskResult %s from %s (%.2f sec)", tr.Task.Type, tr.Host, tr.Duration.Seconds())
+}
+
+func (ta TaskArgs) Key(s string) string {
+	return ta[s].(string)
+}
+
+func (t Task) Clone() Task {
+	return deepcopy.MustAnything(t).(Task)
 }
 
 func DirToAsset(root string) Asset {

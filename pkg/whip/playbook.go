@@ -8,6 +8,7 @@ keys as plugin names
 */
 
 import (
+	"fmt"
 	"os"
 	"strings"
 
@@ -28,21 +29,28 @@ func LoadPlaybook(path string) Playbook {
 
 	for _, rawPlay := range rawPb {
 		play := Play{}
-		play.Hosts = rawPlay.Hosts
+
+		play.Hosts = parseHosts(rawPlay.Hosts)
+		// play.Targets = rawPlay.Targets
 		for _, rawTask := range rawPlay.RawTasks {
-			task := Task{
-				Args: map[string]string{},
-			}
+			task := Task{Args: TaskArgs{}}
 			for k, v := range rawTask {
 
-				if k == "name" {
+				switch k {
+				case "name":
 					task.Name = v.(string)
+					continue
+				case "with_items":
+					task.Items = v.([]any)
 					continue
 				}
 
 				task.Type = k
 				if val, ok := v.(string); ok {
-					task.Args = parseArgString(val)
+					task.Args = TaskArgs{}
+					for k, v := range parseArgString(val) {
+						task.Args[k] = v
+					}
 				}
 
 				if val, ok := v.(AnyMap); ok {
@@ -58,6 +66,25 @@ func LoadPlaybook(path string) Playbook {
 	return pb
 }
 
+func parseHosts(hosts any) []Host {
+	ret := []Host{}
+	switch t := hosts.(type) {
+	case string:
+		for _, t := range strings.Split(hosts.(string), ",") {
+			ret = append(ret, Host(strings.TrimSpace(t)))
+		}
+		return ret
+	case []string:
+		for _, t := range hosts.([]string) {
+			fmt.Println("found string", t)
+			ret = append(ret, Host(t))
+		}
+		return ret
+	default:
+		panic(fmt.Sprintf("unknown hosts field %s", t))
+	}
+}
+
 func parseArgString(arg string) map[string]string {
 	kv := map[string]string{}
 
@@ -71,6 +98,6 @@ func parseArgString(arg string) map[string]string {
 		}
 	}
 
-	kv["args"] = strings.Join(baseArgs, " ")
+	kv["_args"] = strings.Join(baseArgs, " ")
 	return kv
 }

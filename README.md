@@ -4,18 +4,29 @@ Whip your servers into line. Chief Whip is a _fast_ and _simple_ Ansible replace
 
 # Todo
 
-- [ ] deputy can execute simple "command" task
+- [x] deputy can execute simple "command" task
 - [x] chief connects to target
+- [x] chief loads playbook into job
 - [x] deputy loads job from stdin
-- [ ] chief and deputy can exchange job over ssh
-- [ ] build.sh embeds multi-arch linux deputy builds into chief
-- [ ] chief loads inventory from file 
-- [ ] chief tests presence of deputy over target
-- [ ] chief runs deputy over target
-- [ ] chief uploads deputy to target
-- [ ] chief loads playbook into job
+- [x] chief and deputy can exchange job over ssh
+- [x] build.sh embeds multi-arch linux deputy builds into chief
+- [x] chief tests presence of deputy over target
+- [x] chief uploads deputy to target
+- [x] chief supports embedded targets in playbooks
+- [ ] rename Host to Target in code
+- [x] chief runs jobs in parallel
+- [ ] limit parallel jobs to x, cli argument
+- [ ] add license
+- [ ] ensure basic go doc
+- [ ] support for inventory files
+- [ ] support for variables
+- [ ] support for template substitution
+- [ ] support for "with_items"
+- [ ] implement basic runners 
+- [ ] bump ux with https://charm.sh/libs/
+- [ ] publish on github
+- [ ] add taskrunner syntax validation so we can lint the tasks before actual run
 - [ ] chief tests playbook for syntax errors
-- [ ] deputy runs "command" task
 - [ ] chief deputy supports rsync (via this? https://github.com/gokrazy/rsync/)
 
 # Demo
@@ -42,8 +53,9 @@ Fast!
     - systemd
     - apt
 5. No more:
+    - support for plain password authentication (key/agent only)
     - `gather_facts` option but instead lazy loading
-    - `become`, only use the user as specified in the inventory 
+    - `become`, no sudo trickery
 
 # But why?
 

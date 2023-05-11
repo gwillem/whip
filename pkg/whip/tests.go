@@ -31,7 +31,7 @@ func GetProjectRoot() string {
 		return projectRoot
 	}
 	_, filename, _, _ := runtime.Caller(0)
-	projectRoot, _ = filepath.EvalSymlinks(filepath.Join(path.Dir(filename), ".."))
+	projectRoot, _ = filepath.EvalSymlinks(filepath.Join(path.Dir(filename), "../.."))
 	return projectRoot
 }
 

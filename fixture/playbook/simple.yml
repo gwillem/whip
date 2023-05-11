@@ -1,11 +1,30 @@
 ---
-- hosts: web
+- hosts: ubuntu@192.168.64.10, ubuntu@192.168.64.11
   remote_user: root
   gather_facts: false
 
   tasks:
     - name: install ssh keys
-      command: date creates=bla
+      authorized_key: user=root key="{{item}}"
+      with_items:
+      - abc
+      - xyz
+
+    - name: sleep random  
+      shell: sleep $[ $RANDOM % 3 ]
+
+    - name: sleep a bit
+      command: sleep 0.1
+
+    - name: and echo
+      command: echo hiep hoi
+
+    - name: sleep a bit
+      command: sleep 1
+
+    - name: sleep a bit
+      command: sleep 0.2
+
 
     # - name: sync repo to prod
     #   synchronize:
