@@ -9,7 +9,9 @@ require (
 	github.com/charmbracelet/lipgloss v0.7.1
 	github.com/charmbracelet/log v0.2.1
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510
+	github.com/gwillem/go-buildversion v0.0.0-20230402114832-b1addefa8764
 	github.com/k0kubun/pp v3.0.1+incompatible
+	github.com/karrick/gobls v1.3.5
 	github.com/pkg/sftp v1.13.5
 	github.com/spf13/cobra v1.7.0
 	golang.org/x/crypto v0.8.0
@@ -23,7 +25,6 @@ require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/go-logfmt/logfmt v0.6.0 // indirect
 	github.com/google/go-cmp v0.5.9 // indirect
-	github.com/gwillem/go-buildversion v0.0.0-20230402114832-b1addefa8764 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/k0kubun/colorstring v0.0.0-20150214042306-9440f1994b88 // indirect
 	github.com/kr/fs v0.1.0 // indirect
@@ -37,6 +38,7 @@ require (
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/rivo/uniseg v0.2.0 // indirect
+	github.com/spf13/afero v1.9.5 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	golang.org/x/sync v0.1.0 // indirect
 	golang.org/x/term v0.7.0 // indirect

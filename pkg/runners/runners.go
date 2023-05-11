@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/gwillem/chief-whip/pkg/whip"
+	"github.com/spf13/afero"
 )
 
 const (
@@ -16,10 +17,15 @@ const (
 )
 
 var (
+	fs     afero.Fs
+	fsutil *afero.Afero
+
 	runners = map[string]struct {
 		fn   runnerFunc
 		meta runnerMeta
 	}{}
+
+	facts = gatherFacts()
 )
 
 type (
@@ -31,6 +37,23 @@ type (
 	}
 )
 
+func failure(msg ...any) whip.TaskResult {
+	output := ""
+	for _, m := range msg {
+		if _, ok := m.(error); ok {
+			output += ":"
+		}
+		output += " "
+		output += fmt.Sprintf("%v", m)
+	}
+	output = strings.TrimSpace(output)
+
+	return whip.TaskResult{
+		Status:  failed,
+		Changed: false,
+		Output:  output}
+}
+
 func registerRunner(name string, fn runnerFunc, meta runnerMeta) {
 	runners[name] = struct {
 		fn   runnerFunc
@@ -38,7 +61,15 @@ func registerRunner(name string, fn runnerFunc, meta runnerMeta) {
 	}{fn, meta}
 }
 
+// Run is called by the deputy to run a task on localhost.
 func Run(task whip.Task) (tr whip.TaskResult) {
+
+	if fs == nil {
+		// fmt.Println("creating layover FS")
+		fs = afero.NewOsFs()
+		fsutil = &afero.Afero{Fs: fs}
+	}
+
 	// fmt.Println("Running", task.Type)
 	runner, ok := runners[task.Type]
 	if !ok {
@@ -51,16 +82,15 @@ func Run(task whip.Task) (tr whip.TaskResult) {
 
 	// with_items?
 	if task.Items != nil && !runner.meta.wantItems {
-		for _, rawItem := range task.Items.([]any) {
-			// fmt.Println("Running with item", item)
-			// clone task, interpolate all args
-			// todo should use tpl engine
+		items, ok := task.Items.([]string)
+		if !ok {
+			return whip.TaskResult{
+				Status: failed,
+				Output: "with_items must be a list of strings",
+				Task:   task}
+		}
 
-			item, ok := rawItem.(string)
-			if !ok {
-				continue
-			}
-
+		for _, item := range items {
 			subTask := task.Clone()
 			for k, v := range subTask.Args {
 				if val, ok := v.(string); ok {
