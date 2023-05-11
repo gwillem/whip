@@ -1,6 +1,6 @@
 # Chief Whip Devops Automation
 
-![](doc/order-order.webp)
+![order, order!](doc/order-order.webp)
 
 Whip your servers into line. Chief Whip is a _fast_ and _simple_ Ansible replacement optimized for projects with 1 to 20 servers. 
 
@@ -22,11 +22,16 @@ Whip your servers into line. Chief Whip is a _fast_ and _simple_ Ansible replace
 - [x] add license
 - [ ] record gif demo for in readme  https://github.com/charmbracelet/vhs
 - [ ] ensure basic go doc
+- [ ] support handlers
 - [ ] support for inventory files
 - [ ] support for variables
 - [ ] support for template substitution
 - [ ] support for "with_items"
 - [ ] implement basic runners 
+    - [ ] copy
+    - [ ] file
+    - [ ] apt
+    - [ ] systemd
 - [ ] bump ux with https://charm.sh/libs/
 - [ ] publish on github
 - [ ] add taskrunner syntax validation so we can lint the tasks before actual run

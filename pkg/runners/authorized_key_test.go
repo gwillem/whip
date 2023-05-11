@@ -2,6 +2,7 @@ package runners
 
 import (
 	"fmt"
+	"os"
 	"testing"
 
 	"github.com/gwillem/chief-whip/pkg/whip"
@@ -18,16 +19,19 @@ func TestAuthorizedKey(t *testing.T) {
 			"key":  `{{item}}`,
 			"user": "root",
 		},
-		Items: []string{"foo", "bar"},
+		Items: []any{"foo", "bar"},
 		Type:  "authorized_key",
 	}
 
 	tr := Run(task)
+	_ = Run(task)
 
-	// _ = fsutil.Walk("/", func(path string, info os.FileInfo, err error) error {
-	// 	fmt.Println(path)
-	// 	return nil
-	// })
+	_ = fsutil.Walk("/", func(path string, info os.FileInfo, err error) error {
+		fmt.Println(path)
+		return nil
+	})
+
+	fmt.Println(tr.Output)
 
 	// assert that fake fs has now an SSH auth key
 	assert.Equal(t, ok, tr.Status)
@@ -45,6 +49,11 @@ func TestAuthorizedKey(t *testing.T) {
 	if ok, e := fsutil.FileContainsBytes(authFile, []byte("bar")); e != nil || !ok {
 		t.Fatal(e)
 	}
+
+	data, err := fsutil.ReadFile(authFile)
+	assert.NoError(t, err)
+
+	fmt.Print(string(data))
 
 	fmt.Println("task runner output:\n" + tr.Output)
 

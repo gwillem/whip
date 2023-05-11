@@ -86,7 +86,7 @@ func Run(task whip.Task) (tr whip.TaskResult) {
 		if !ok {
 			return whip.TaskResult{
 				Status: failed,
-				Output: "with_items must be a list of strings",
+				Output: fmt.Sprintf("with_items must be a list of any, it is %T", task.Items),
 				Task:   task}
 		}
 

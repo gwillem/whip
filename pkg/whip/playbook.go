@@ -10,6 +10,7 @@ keys as plugin names
 import (
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 
 	"gopkg.in/yaml.v3"
@@ -100,7 +101,8 @@ func parseArgString(arg string) map[string]string {
 	for _, t := range strings.Split(arg, " ") {
 		if strings.Contains(t, "=") {
 			opt := strings.SplitN(t, "=", 2)
-			kv[opt[0]] = opt[1]
+
+			kv[opt[0]] = unquote(opt[1])
 		} else {
 			baseArgs = append(baseArgs, t)
 		}
@@ -108,4 +110,11 @@ func parseArgString(arg string) map[string]string {
 
 	kv["_args"] = strings.Join(baseArgs, " ")
 	return kv
+}
+
+func unquote(s string) string {
+	if n, e := strconv.Unquote(s); e == nil {
+		return n
+	}
+	return s
 }

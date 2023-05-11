@@ -39,7 +39,7 @@ func runPlayAtHost(p whip.Play, h whip.Host, results chan<- whip.TaskResult) {
 		log.Error(err)
 		return
 	}
-	cmd := "PATH=~/.cache/chief-whip:$PATH deputy 2>/tmp/deputy.err"
+	cmd := "PATH=~/.cache/chief-whip:$PATH deputy 2>>~/.cache/chief-whip/deputy.err"
 	err = conn.RunLineStreamer(cmd, blob, func(b []byte) {
 		// fmt.Println("got res frm deputy... ", string(b))
 		var res whip.TaskResult

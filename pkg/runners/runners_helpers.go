@@ -1,26 +1,28 @@
 package runners
 
 import (
+	"fmt"
 	"os"
 	"strings"
 
 	"github.com/karrick/gobls"
+	"github.com/spf13/afero"
 )
 
 func ensureLineInFile(path, line string) (bool, error) {
+	// will add later
+	line = strings.TrimRight(line, "\r\n")
 
-	lastchar := ""
-	if !strings.HasSuffix(line, "\n") {
-		line += "\n"
+	if strings.Contains(line, "\n") {
+		return false, fmt.Errorf("line cannot contain newline")
 	}
 
-	exists, err := fsutil.Exists(path)
+	pathExists, err := fsutil.Exists(path)
 	if err != nil {
 		return false, err
 	}
 
-	if exists {
-
+	if pathExists {
 		fh, err := fs.Open(path)
 		if err != nil {
 			return false, err
@@ -33,18 +35,13 @@ func ensureLineInFile(path, line string) (bool, error) {
 			if found == line {
 				return false, nil
 			}
-			lastchar = found[len(found)-1:]
 		}
 
-		if lastchar != "\n" && lastchar != "" {
-			line = "\n" + line
-		}
-
-		// line not found, append it
 		if err := fh.Close(); err != nil {
 			return false, err
 		}
 	}
+	// line not found, append it
 	if e := appendLineToFile(path, line); e != nil {
 		return false, e
 	}
@@ -53,6 +50,11 @@ func ensureLineInFile(path, line string) (bool, error) {
 }
 
 func appendLineToFile(path, line string) error {
+
+	if !strings.HasSuffix(line, "\n") {
+		line += "\n"
+	}
+
 	f, err := fs.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		return err
@@ -64,4 +66,9 @@ func appendLineToFile(path, line string) error {
 		return err
 	}
 	return nil
+}
+
+func createTestFS() {
+	fs = afero.NewMemMapFs()
+	fsutil = &afero.Afero{Fs: fs}
 }
