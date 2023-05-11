@@ -1,11 +1,13 @@
 ---
-- hosts: ubuntu@192.168.64.10, ubuntu@192.168.64.11
+- hosts:
+  - ubuntu@192.168.64.10
+  # - ubuntu@192.168.64.11
   remote_user: root
   gather_facts: false
 
   tasks:
     - name: install ssh keys
-      authorized_key: user=root key="{{item}}"
+      authorized_key: user=ubuntu key="{{item}}"
       with_items:
       - abc
       - xyz

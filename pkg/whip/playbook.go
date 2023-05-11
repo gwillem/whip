@@ -66,23 +66,31 @@ func LoadPlaybook(path string) Playbook {
 	return pb
 }
 
-func parseHosts(hosts any) []Host {
+func parseHosts(anyHosts any) []Host {
 	ret := []Host{}
-	switch t := hosts.(type) {
+	switch hosts := anyHosts.(type) {
 	case string:
-		for _, t := range strings.Split(hosts.(string), ",") {
+		for _, t := range strings.Split(hosts, ",") {
 			ret = append(ret, Host(strings.TrimSpace(t)))
 		}
-		return ret
 	case []string:
-		for _, t := range hosts.([]string) {
+		for _, t := range hosts {
 			fmt.Println("found string", t)
 			ret = append(ret, Host(t))
 		}
-		return ret
+	case []any:
+		for _, h := range hosts {
+			switch t := h.(type) {
+			case string:
+				ret = append(ret, Host(t))
+			default:
+				panic(fmt.Sprintf("unknown host type %T", t))
+			}
+		}
 	default:
-		panic(fmt.Sprintf("unknown hosts field %s", t))
+		panic(fmt.Sprintf("unknown hosts field %T", hosts))
 	}
+	return ret
 }
 
 func parseArgString(arg string) map[string]string {

@@ -82,7 +82,7 @@ func Run(task whip.Task) (tr whip.TaskResult) {
 
 	// with_items?
 	if task.Items != nil && !runner.meta.wantItems {
-		items, ok := task.Items.([]string)
+		items, ok := task.Items.([]any)
 		if !ok {
 			return whip.TaskResult{
 				Status: failed,
@@ -90,7 +90,14 @@ func Run(task whip.Task) (tr whip.TaskResult) {
 				Task:   task}
 		}
 
-		for _, item := range items {
+		for _, rawItem := range items {
+			item, ok := rawItem.(string)
+			if !ok {
+				return whip.TaskResult{
+					Status: failed,
+					Output: "with_items must be a list of strings",
+					Task:   task}
+			}
 			subTask := task.Clone()
 			for k, v := range subTask.Args {
 				if val, ok := v.(string); ok {

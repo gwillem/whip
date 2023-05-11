@@ -1,5 +1,7 @@
 # Chief Whip Devops Automation
 
+![](doc/order-order.webp)
+
 Whip your servers into line. Chief Whip is a _fast_ and _simple_ Ansible replacement optimized for projects with 1 to 20 servers. 
 
 # Todo
@@ -15,8 +17,10 @@ Whip your servers into line. Chief Whip is a _fast_ and _simple_ Ansible replace
 - [x] chief supports embedded targets in playbooks
 - [ ] rename Host to Target in code
 - [x] chief runs jobs in parallel
+- [ ] chief also reads stderr from deputy to catch panics
 - [ ] limit parallel jobs to x, cli argument
-- [ ] add license
+- [x] add license
+- [ ] record gif demo for in readme  https://github.com/charmbracelet/vhs
 - [ ] ensure basic go doc
 - [ ] support for inventory files
 - [ ] support for variables
