@@ -8,9 +8,7 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
-var (
-	target = "ubuntu@192.168.64.10"
-)
+var target = "ubuntu@192.168.64.10"
 
 func Test_Connect(t *testing.T) {
 	c, err := Connect(target)
@@ -53,9 +51,8 @@ func Test_Upload(t *testing.T) {
 	assert.Contains(t, output, "exists\n")
 	assert.Contains(t, output, "rwx")
 
-	err = c.UploadBytes([]byte("echo hoi"), "/tmp/x/y/z/echo.sh", 0755)
+	err = c.UploadBytes([]byte("echo hoi"), "/tmp/x/y/z/echo.sh", 0o755)
 	assert.Error(t, err)
-
 }
 
 func Test_Stdin(t *testing.T) {

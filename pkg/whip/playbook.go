@@ -21,8 +21,8 @@ func LoadPlaybook(path string) Playbook {
 	if err != nil {
 		panic(err)
 	}
-	var rawPb = RawPlaybook{}
-	var pb = Playbook{}
+	rawPb := RawPlaybook{}
+	pb := Playbook{}
 
 	if e := yaml.Unmarshal(yamlData, &rawPb); e != nil {
 		panic(e)

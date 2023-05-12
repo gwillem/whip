@@ -8,7 +8,6 @@ import (
 )
 
 func dummyJob() *Job {
-
 	return &Job{
 		Vars: Vars{
 			"foo": "bar",
@@ -36,8 +35,7 @@ func Test_JobFixture(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if e := os.WriteFile(FixturePath("job.json"), blob, 0644); e != nil {
+	if e := os.WriteFile(FixturePath("job.json"), blob, 0o644); e != nil {
 		t.Fatal(e)
 	}
-
 }

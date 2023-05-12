@@ -10,7 +10,6 @@ import (
 )
 
 func TestAuthorizedKey(t *testing.T) {
-
 	createTestFS()
 
 	task := whip.Task{
@@ -56,5 +55,4 @@ func TestAuthorizedKey(t *testing.T) {
 	fmt.Print(string(data))
 
 	fmt.Println("task runner output:\n" + tr.Output)
-
 }

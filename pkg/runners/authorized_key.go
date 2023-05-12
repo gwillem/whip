@@ -29,7 +29,7 @@ func AuthorizedKey(args whip.TaskArgs) (tr whip.TaskResult) {
 	}
 	homedir := u.HomeDir
 	sshdir := homedir + "/.ssh"
-	if e := fs.MkdirAll(sshdir, 0700); e != nil {
+	if e := fs.MkdirAll(sshdir, 0o700); e != nil {
 		return failure("failed to create .ssh dir for user", user, e)
 	}
 	authfile := sshdir + "/authorized_keys"

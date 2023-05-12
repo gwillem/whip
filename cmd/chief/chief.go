@@ -39,7 +39,6 @@ func main() {
 	if e := rootCmd.Execute(); e != nil {
 		log.Fatal(e)
 	}
-
 }
 
 func ensureDeputy(c *ssh.Client) error {
@@ -79,7 +78,7 @@ func ensureDeputy(c *ssh.Client) error {
 	}
 
 	// log.Debug("uploading deputy for ", osarg)
-	if err := c.UploadBytes(myDep, deputyPath, 0755); err != nil {
+	if err := c.UploadBytes(myDep, deputyPath, 0o755); err != nil {
 		return fmt.Errorf("Could not upload deputy: %s", err)
 	}
 

@@ -20,7 +20,5 @@ func Test_DeputyIntegration(t *testing.T) {
 			pp.Print(res)
 			assert.Equal(t, 0, res.Status)
 		}
-
 	}
-
 }

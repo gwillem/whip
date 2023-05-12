@@ -14,7 +14,6 @@ import (
 // apply Job to localhost
 
 func main() {
-
 	job := getJobFromStdin()
 	totalTasks := len(job.Tasks)
 	for id, task := range job.Tasks {
@@ -50,7 +49,6 @@ func main() {
 		- substitute vars in task arguments
 
 	*/
-
 }
 
 func getJobFromStdin() *whip.Job {

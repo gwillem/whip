@@ -51,7 +51,8 @@ func failure(msg ...any) whip.TaskResult {
 	return whip.TaskResult{
 		Status:  failed,
 		Changed: false,
-		Output:  output}
+		Output:  output,
+	}
 }
 
 func registerRunner(name string, fn runnerFunc, meta runnerMeta) {
@@ -63,7 +64,6 @@ func registerRunner(name string, fn runnerFunc, meta runnerMeta) {
 
 // Run is called by the deputy to run a task on localhost.
 func Run(task whip.Task) (tr whip.TaskResult) {
-
 	if fs == nil {
 		// fmt.Println("creating layover FS")
 		fs = afero.NewOsFs()
@@ -76,7 +76,8 @@ func Run(task whip.Task) (tr whip.TaskResult) {
 		return whip.TaskResult{
 			Status: failed,
 			Output: fmt.Sprintf("No runner found for task '%s'", task.Type),
-			Task:   task}
+			Task:   task,
+		}
 	}
 	start := time.Now()
 
@@ -87,7 +88,8 @@ func Run(task whip.Task) (tr whip.TaskResult) {
 			return whip.TaskResult{
 				Status: failed,
 				Output: fmt.Sprintf("with_items must be a list of any, it is %T", task.Items),
-				Task:   task}
+				Task:   task,
+			}
 		}
 
 		for _, rawItem := range items {
@@ -96,7 +98,8 @@ func Run(task whip.Task) (tr whip.TaskResult) {
 				return whip.TaskResult{
 					Status: failed,
 					Output: "with_items must be a list of strings",
-					Task:   task}
+					Task:   task,
+				}
 			}
 			subTask := task.Clone()
 			for k, v := range subTask.Args {

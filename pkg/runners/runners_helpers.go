@@ -50,12 +50,11 @@ func ensureLineInFile(path, line string) (bool, error) {
 }
 
 func appendLineToFile(path, line string) error {
-
 	if !strings.HasSuffix(line, "\n") {
 		line += "\n"
 	}
 
-	f, err := fs.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	f, err := fs.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
 	if err != nil {
 		return err
 	}

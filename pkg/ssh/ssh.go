@@ -29,9 +29,7 @@ const (
 	AGENT_SOCK = "SSH_AUTH_SOCK"
 )
 
-var (
-	defaultKeyFile = os.ExpandEnv("$HOME/.ssh/id_rsa")
-)
+var defaultKeyFile = os.ExpandEnv("$HOME/.ssh/id_rsa")
 
 type (
 	Client struct {
@@ -86,7 +84,6 @@ func (c *Client) RunLineStreamer(cmd string, toWrite []byte, readCB func([]byte)
 }
 
 func (c *Client) UploadBytes(data []byte, remote string, perm os.FileMode) error {
-
 	client, err := sftp.NewClient(c.cl)
 	if err != nil {
 		return err
@@ -104,11 +101,9 @@ func (c *Client) UploadBytes(data []byte, remote string, perm os.FileMode) error
 	}
 
 	return remoteFile.Chmod(perm)
-
 }
 
 func (c *Client) UploadFile(local, remote string) error {
-
 	client, err := sftp.NewClient(c.cl)
 	if err != nil {
 		return err
@@ -137,11 +132,9 @@ func (c *Client) UploadFile(local, remote string) error {
 	}
 
 	return remoteFile.Chmod(localStat.Mode())
-
 }
 
 func Connect(target string) (*Client, error) {
-
 	user, host, port := splitTarget(target)
 
 	if port == "" {
@@ -200,5 +193,4 @@ func splitTarget(target string) (user, host, port string) {
 		return user, host, port
 	}
 	return user, target, ""
-
 }

@@ -19,6 +19,8 @@ Whip your servers into line. Chief Whip is a _fast_ and _simple_ Ansible replace
 - [x] chief runs jobs in parallel
 - [ ] chief also reads stderr from deputy to catch panics
 - [ ] limit parallel jobs to x, cli argument
+- [ ] properly fix quoting in yaml parsing
+- [ ] use "whip" command if none given
 - [x] add license
 - [ ] record gif demo for in readme  https://github.com/charmbracelet/vhs
 - [ ] ensure basic go doc

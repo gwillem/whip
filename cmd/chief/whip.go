@@ -15,7 +15,6 @@ import (
 )
 
 func runPlayAtHost(p whip.Play, h whip.Host, results chan<- whip.TaskResult) {
-
 	// log.Infof("Running play at target: %s", h)
 	conn, err := ssh.Connect(string(h))
 	if err != nil {
@@ -50,13 +49,11 @@ func runPlayAtHost(p whip.Play, h whip.Host, results chan<- whip.TaskResult) {
 		res.Host = h
 		results <- res
 		// fmt.Println(res)
-
 	})
 	if err != nil {
 		log.Error(fmt.Errorf("could not run deputy: %s", err))
 		return
 	}
-
 }
 
 func runWhip(cmd *cobra.Command, args []string) {
@@ -98,7 +95,6 @@ func runWhip(cmd *cobra.Command, args []string) {
 
 	parseResults(resultChan)
 	// now unblock resultchan
-
 }
 
 func parseResults(results <-chan whip.TaskResult) {
