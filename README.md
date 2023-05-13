@@ -19,8 +19,7 @@ Whip your servers into line. Chief Whip is a _fast_ and _simple_ Ansible replace
 - [x] chief runs jobs in parallel
 - [ ] chief also reads stderr from deputy to catch panics
 - [ ] limit parallel jobs to x, cli argument
-- [ ] properly fix quoting in yaml parsing
-- [ ] use "whip" command if none given
+- [ ] properly fix quoting in yaml parsing, maybe use this? https://pkg.go.dev/github.com/mitchellh/mapstructure#example-Decode
 - [x] add license
 - [ ] record gif demo for in readme  https://github.com/charmbracelet/vhs
 - [ ] ensure basic go doc
@@ -39,6 +38,7 @@ Whip your servers into line. Chief Whip is a _fast_ and _simple_ Ansible replace
 - [ ] add taskrunner syntax validation so we can lint the tasks before actual run
 - [ ] chief tests playbook for syntax errors
 - [ ] chief deputy supports rsync (via this? https://github.com/gokrazy/rsync/)
+- [ ] struct based cli arg parsing? such as go-arg or go-flags or kong
 
 # Demo
 

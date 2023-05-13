@@ -16,16 +16,16 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-func LoadPlaybook(path string) Playbook {
+func LoadPlaybook(path string) (Playbook, error) {
 	yamlData, err := os.ReadFile(path)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	rawPb := RawPlaybook{}
 	pb := Playbook{}
 
 	if e := yaml.Unmarshal(yamlData, &rawPb); e != nil {
-		panic(e)
+		return nil, err
 	}
 
 	for _, rawPlay := range rawPb {
@@ -64,7 +64,7 @@ func LoadPlaybook(path string) Playbook {
 		}
 		pb = append(pb, play)
 	}
-	return pb
+	return pb, nil
 }
 
 func parseHosts(anyHosts any) []Host {

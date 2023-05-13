@@ -1,6 +1,8 @@
 package main
 
 import (
+	"crypto/sha256"
+	"embed"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -13,6 +15,57 @@ import (
 	"github.com/gwillem/go-buildversion"
 	"github.com/spf13/cobra"
 )
+
+const (
+	deputyPath = ".cache/chief-whip/deputy"
+)
+
+//go:embed deputies
+var deputies embed.FS
+
+func ensureDeputy(c *ssh.Client) error {
+	uname, err := c.Run(`
+			uname -sm; 
+			mkdir -p ~/.cache/chief-whip 2>/dev/null
+			touch ~/.cache/chief-whip/deputy 2>/dev/null;
+			sha256sum ~/.cache/chief-whip/deputy 2>/dev/null | awk '{print $1}';
+			`)
+	if err != nil {
+		return err
+	}
+
+	lines := strings.Split(strings.TrimSpace(uname), "\n")
+	if len(lines) != 2 {
+		return fmt.Errorf("unexpected output from uname: %s", uname)
+	}
+
+	osarg := strings.ToLower(lines[0])
+	osarg = strings.ReplaceAll(osarg, " ", "-")
+	osarg = strings.ReplaceAll(osarg, "aarch64", "arm64")
+
+	remoteSha := strings.TrimSpace(lines[1])
+
+	myDep, err := deputies.ReadFile("deputies/" + osarg)
+	if err != nil {
+		return fmt.Errorf("could not read deputy for %s: %s", osarg, err)
+	}
+
+	localSha := fmt.Sprintf("%x", sha256.Sum256(myDep))
+
+	// log.Debugf("local/remote sha:\n\t%s\n\t%s", localSha, remoteSha)
+
+	if localSha == remoteSha {
+		// log.Debug("remote deputy seems to be fine")
+		return nil
+	}
+
+	// log.Debug("uploading deputy for ", osarg)
+	if err := c.UploadBytes(myDep, deputyPath, 0o755); err != nil {
+		return fmt.Errorf("Could not upload deputy: %s", err)
+	}
+
+	return nil
+}
 
 func runPlayAtHost(p whip.Play, h whip.Host, results chan<- whip.TaskResult) {
 	// log.Infof("Running play at target: %s", h)
@@ -62,7 +115,11 @@ func runWhip(cmd *cobra.Command, args []string) {
 	files, _ := deputies.ReadDir("deputies")
 	log.Infof("Starting chief-whip %s with %d embedded deputies", buildversion.String(), len(files))
 
-	playbook := whip.LoadPlaybook(args[0])
+	playbook, err := whip.LoadPlaybook(args[0])
+	if err != nil {
+		log.Error(err)
+		return
+	}
 
 	// TODO merge inventory with playbook if any
 	// TODO convert playbook to map of targets -> jobs, possibly combining plays (vars?)

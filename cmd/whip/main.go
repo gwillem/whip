@@ -2,23 +2,20 @@ package main
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/spf13/cobra"
 )
 
 var (
 	rootCmd = &cobra.Command{
-		Use:   "chief",
+		Use:   "whip <playbook>",
 		Short: "A fast and simple configuration manager",
 		Long: `Chief Whip is a fast and simple configuration manager.
 It aims to be stand-in replacement for Ansible for 90% of use cases.`,
 		CompletionOptions: cobra.CompletionOptions{HiddenDefaultCmd: true},
-	}
-	whipCmd = &cobra.Command{
-		Use:   "whip <playbook.yml>",
-		Short: "Apply playbook to targets listed in playbook",
-		Args:  cobra.MinimumNArgs(1),
-		Run:   runWhip,
+		Args:              cobra.ExactArgs(1),
+		Run:               runWhip,
 	}
 	vaultCmd = &cobra.Command{
 		Use:   "vault",
@@ -30,6 +27,12 @@ It aims to be stand-in replacement for Ansible for 90% of use cases.`,
 )
 
 func init() {
-	rootCmd.AddCommand(whipCmd, vaultCmd)
+	rootCmd.AddCommand(vaultCmd)
 	rootCmd.CompletionOptions.HiddenDefaultCmd = true
+}
+
+func main() {
+	if e := rootCmd.Execute(); e != nil {
+		os.Exit(1)
+	}
 }
