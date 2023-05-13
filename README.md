@@ -19,7 +19,7 @@ Whip your servers into line. Chief Whip is a _fast_ and _simple_ Ansible replace
 - [x] chief runs jobs in parallel
 - [ ] chief also reads stderr from deputy to catch panics
 - [ ] limit parallel jobs to x, cli argument
-- [ ] properly fix quoting in yaml parsing, maybe use this? https://pkg.go.dev/github.com/mitchellh/mapstructure#example-Decode
+- [x] properly fix quoting in yaml parsing, maybe use this? https://pkg.go.dev/github.com/mitchellh/mapstructure#example-Decode
 - [x] add license
 - [ ] record gif demo for in readme  https://github.com/charmbracelet/vhs
 - [ ] ensure basic go doc
@@ -27,7 +27,7 @@ Whip your servers into line. Chief Whip is a _fast_ and _simple_ Ansible replace
 - [ ] support for inventory files
 - [ ] support for variables
 - [ ] support for template substitution
-- [ ] support for "with_items"
+- [x] support for "with_items"
 - [ ] implement basic runners 
     - [ ] copy
     - [ ] file
@@ -51,7 +51,7 @@ Fast!
 
 # Simple
 
-1. Support for core tasks that cover 98% of use cases 
+1. Support for core tasks that cover 98% of use cases (copy files, restart some processes)
 2. Linux servers only
 3. SSH support only
 4. StrictYaml only
@@ -67,6 +67,8 @@ Fast!
     - support for plain password authentication (key/agent only)
     - `gather_facts` option but instead lazy loading
     - `become`, no sudo trickery
+    - `with_<lookup>`
+    - variables that can be overridden in 10 places
 
 # But why?
 
@@ -74,4 +76,14 @@ I really loved Ansible. Compared to the popular configuration management systems
 
 Until version 2 or so. After the RedHat acquisition, Ansible has quickly grown into commercial bloatware. It's funny how RedHat got rid of the old objectives page (Simple, Fast) and replaced it with a corporate bog of marketing fluff. The task parameter documentation is hidden behind compulsory white paper downloads. Core modules have grown to support 20 extra options to support esoteric use cases. And above all, its once legendary speed is gone. Ansible feels sluggish today.
 
+Ansible has morphed from a declarative model to an imperative model, by supporting loops and control flow. 
+
+> Any sufficiently complicated configuration language contains an ad hoc, informally-specified, bug-ridden, slow implementation of a Turing complete programming language. (jasim @ HN)
+
 Fret no more, let's relive the original Ansible experience!
+
+# Other reading
+
+- [Is Ansible turing complete?](https://stackoverflow.com/questions/40127586/is-ansible-turing-complete)
+- [gossh: declarative config management using Go](https://github.com/krilor/gossh)
+- [Ansible's YAML file is essentially code](https://news.ycombinator.com/item?id=16238005)

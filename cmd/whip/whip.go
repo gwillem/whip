@@ -129,7 +129,7 @@ func runWhip(cmd *cobra.Command, args []string) {
 
 	totalTasks := 0
 
-	for i1, play := range playbook {
+	for i1, play := range *playbook {
 		log.Infof("Running play %d with %d tasks", i1, len(play.Tasks))
 		// fmt.Println(play.Hosts)
 		totalTasks += len(play.Tasks) * len(play.Hosts)

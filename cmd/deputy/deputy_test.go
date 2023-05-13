@@ -14,7 +14,7 @@ func Test_DeputyIntegration(t *testing.T) {
 	assert.NoError(t, err)
 	pp.Println(pb)
 
-	for _, play := range pb {
+	for _, play := range *pb {
 		for _, task := range play.Tasks {
 			res := runners.Run(task)
 

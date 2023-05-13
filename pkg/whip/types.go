@@ -20,10 +20,10 @@ type (
 	Vars map[string]any
 
 	Task struct {
-		Type  string   `json:"type,omitempty"`
-		Name  string   `json:"name,omitempty"`
-		Args  TaskArgs `json:"args,omitempty"`
-		Items any      `json:"items,omitempty"`
+		Runner string   `json:"runner,omitempty"`
+		Name   string   `json:"name,omitempty"`
+		Args   TaskArgs `json:"args,omitempty"`
+		Loop   []any    `json:"loop,omitempty"`
 	}
 
 	TaskArgs map[string]any
@@ -48,15 +48,6 @@ type (
 		Task      Task          `json:"task,omitempty"`
 	}
 
-	// to help with parsing yaml
-	RawPlaybook []RawPlay
-	RawPlay     struct {
-		Hosts    any      `yaml:"hosts,omitempty"`
-		Targets  []string `yaml:"targets,omitempty"`
-		RawTasks []AnyMap `yaml:"tasks,omitempty"`
-	}
-	AnyMap map[string]any
-
 	Playbook []Play
 	Play     struct {
 		Hosts []Host
@@ -71,7 +62,7 @@ func (j *Job) String() string {
 }
 
 func (tr TaskResult) String() string {
-	return fmt.Sprintf("TaskResult %s from %s (%.2f sec)", tr.Task.Type, tr.Host, tr.Duration.Seconds())
+	return fmt.Sprintf("TaskResult %s from %s (%.2f sec)", tr.Task.Runner, tr.Host, tr.Duration.Seconds())
 }
 
 func (ta TaskArgs) Key(s string) string {

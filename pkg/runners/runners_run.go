@@ -2,6 +2,7 @@ package runners
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 	"time"
 
@@ -27,6 +28,15 @@ var (
 
 	facts = gatherFacts()
 )
+
+func All() []string {
+	keys := []string{}
+	for k := range runners {
+		keys = append(keys, k)
+	}
+	sort.StringSlice(keys).Sort()
+	return keys
+}
 
 type (
 	runnerFunc func(whip.TaskArgs) whip.TaskResult
@@ -71,33 +81,24 @@ func Run(task whip.Task) (tr whip.TaskResult) {
 	}
 
 	// fmt.Println("Running", task.Type)
-	runner, ok := runners[task.Type]
+	runner, ok := runners[task.Runner]
 	if !ok {
 		return whip.TaskResult{
 			Status: failed,
-			Output: fmt.Sprintf("No runner found for task '%s'", task.Type),
+			Output: fmt.Sprintf("No runner found for task '%s'", task.Runner),
 			Task:   task,
 		}
 	}
 	start := time.Now()
 
 	// with_items?
-	if task.Items != nil && !runner.meta.wantItems {
-		items, ok := task.Items.([]any)
-		if !ok {
-			return whip.TaskResult{
-				Status: failed,
-				Output: fmt.Sprintf("with_items must be a list of any, it is %T", task.Items),
-				Task:   task,
-			}
-		}
-
-		for _, rawItem := range items {
+	if task.Loop != nil && !runner.meta.wantItems {
+		for _, rawItem := range task.Loop {
 			item, ok := rawItem.(string)
 			if !ok {
 				return whip.TaskResult{
 					Status: failed,
-					Output: "with_items must be a list of strings",
+					Output: "loop only supports strings for now",
 					Task:   task,
 				}
 			}

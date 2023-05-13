@@ -18,8 +18,8 @@ func TestAuthorizedKey(t *testing.T) {
 			"key":  `{{item}}`,
 			"user": "root",
 		},
-		Items: []any{"foo", "bar"},
-		Type:  "authorized_key",
+		Loop:   []any{"foo", "bar"},
+		Runner: "authorized_key",
 	}
 
 	tr := Run(task)

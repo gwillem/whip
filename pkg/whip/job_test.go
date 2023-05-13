@@ -14,8 +14,8 @@ func dummyJob() *Job {
 		},
 		Tasks: []Task{
 			{
-				Name: "foo",
-				Type: "command",
+				Name:   "foo",
+				Runner: "command",
 				Args: TaskArgs{
 					"cmd": "date",
 				},
