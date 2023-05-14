@@ -37,7 +37,6 @@ func TestLoadPlaybookSimple1(t *testing.T) {
 func TestExpandTaskLoops(t *testing.T) {
 	pb, err := LoadPlaybook(FixturePath("playbook/task-loop.yml"))
 	assert.NoError(t, err)
-	assert.NotNil(t, pb)
 	want := &Playbook{
 		Play{
 			Hosts: []Host{
@@ -77,15 +76,3 @@ func TestDuplicateRunner(t *testing.T) {
 	var e *mapstructure.Error
 	assert.ErrorAs(t, err, &e)
 }
-
-// func TestExpandingTaskLoops(t *testing.T) {
-// 	lst := []string{"0", "1", "2", "3", "4"}
-// 	for i := len(lst) - 1; i >= 0; i-- { //reverse range, because we are expanding the slice in place
-// 		// for i := range lst {
-// 		fmt.Println("idx", i, lst[i])
-// 		if lst[i] == "2" || lst[i] == "3" {
-// 			lst = slices.Replace(lst, i, i+1, []string{"x", "y", "z"}...)
-// 		}
-// 	}
-// 	pp.Println(lst)
-// }

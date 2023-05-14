@@ -66,7 +66,6 @@ type (
 	runnerMeta struct {
 		requiredArgs []string
 		optionalArgs []string
-		wantItems    bool
 	}
 )
 
@@ -126,43 +125,41 @@ func Run(task Task) (tr TaskResult) {
 	}
 	start := time.Now()
 
-	// with_items?
-	if task.Loop != nil && !runner.meta.wantItems {
-		for _, rawItem := range task.Loop {
-			item, ok := rawItem.(string)
-			if !ok {
-				return TaskResult{
-					Status: failed,
-					Output: "loop only supports strings for now",
-					Task:   task,
-				}
-			}
-			subTask := task.Clone()
-			for k, v := range subTask.Args {
-				if val, ok := v.(string); ok {
-					new := strings.ReplaceAll(val, "{{item}}", item)
-					subTask.Args[k] = new
-					// fmt.Println("substituting", val, "with", new)
-				}
-			}
-			// run cloned task
-			subtr := runner.fn(subTask.Args)
-
-			if subtr.Changed {
-				tr.Changed = true
-			}
-			// merge tr with parent tr
-			tr.Output += strings.TrimSpace(subtr.Output) + "\n"
-			tr.Status = subtr.Status
-			if subtr.Status == failed {
-				// fmt.Println("failure, stopping")
-				break
+	// loop item? should replace this with generic vars substitution
+	if task.Vars["item"] != nil {
+		item, ok := task.Vars["item"].(string)
+		if !ok {
+			return TaskResult{
+				Status: failed,
+				Output: "loop only supports strings for now",
+				Task:   task,
 			}
 		}
-	} else {
-		tr = runner.fn(task.Args)
-	}
 
+		// subTask := task.Clone()
+		for k, v := range task.Args {
+			if val, ok := v.(string); ok {
+				new := strings.ReplaceAll(val, "{{item}}", item)
+				task.Args[k] = new
+				// fmt.Println("substituting", val, "with", new)
+			}
+		}
+		// // run cloned task
+		// subtr := runner.fn(subTask.Args)
+
+		// if subtr.Changed {
+		// 	tr.Changed = true
+		// }
+		// 	// merge tr with parent tr
+		// 	tr.Output += strings.TrimSpace(subtr.Output) + "\n"
+		// 	tr.Status = subtr.Status
+		// 	if subtr.Status == failed {
+		// 		// fmt.Println("failure, stopping")
+		// 		break
+		// 	}
+		// }
+	}
+	tr = runner.fn(task.Args)
 	tr.Duration = time.Since(start)
 	tr.Task = task
 	return tr

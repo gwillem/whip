@@ -123,8 +123,8 @@ func unquote(s string) string {
 // expandPlaybookLoops takes a playbook and expands any tasks that have a Loop,
 // replacing them with multiple tasks, each loop item copied into task.Vars
 func expandPlaybookLoops(pb *Playbook) {
-	for i1 := range *pb {
-		play := &(*pb)[i1]
+	for playidx := range *pb {
+		play := &(*pb)[playidx]
 		// fmt.Println("len tasks BEFORE", len(play.Tasks))
 		for i := len(play.Tasks) - 1; i >= 0; i-- { //reverse range, because we are expanding the slice in place
 			if loops := play.Tasks[i].Loop; loops != nil {
@@ -134,7 +134,6 @@ func expandPlaybookLoops(pb *Playbook) {
 					newTask.Vars["item"] = l
 					newTask.Loop = nil
 					newTasks = append(newTasks, newTask)
-
 				}
 				// remove this task from the playbook
 				// and insert len(Loop) new tasks in its place
