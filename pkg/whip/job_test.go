@@ -2,7 +2,6 @@ package whip
 
 import (
 	"encoding/json"
-	"fmt"
 	"os"
 	"testing"
 
@@ -31,7 +30,7 @@ func dummyJob() *Job {
 
 func Test_JobFixture(t *testing.T) {
 	job := dummyJob()
-	fmt.Println(job)
+	// fmt.Println(job)
 
 	blob, err := json.MarshalIndent(job, "", "  ")
 	if err != nil {

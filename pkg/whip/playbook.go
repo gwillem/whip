@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/charmbracelet/log"
 	"github.com/gwillem/chief-whip/pkg/runners"
 	"github.com/mitchellh/mapstructure"
 	"golang.org/x/exp/slices"
@@ -24,7 +25,14 @@ func LoadPlaybook(path string) (*Playbook, error) {
 		return nil, e
 	}
 
-	return yamlToPlaybook(anyMap)
+	pb, err := yamlToPlaybook(anyMap)
+	if err != nil {
+		return nil, err
+	}
+
+	expandPlaybookLoops(pb)
+	return pb, nil
+
 }
 
 func yamlToPlaybook(y any) (*Playbook, error) {
@@ -51,10 +59,7 @@ func yamlToPlaybook(y any) (*Playbook, error) {
 		return nil, err
 	}
 
-	// TODO log to debug
-	// fmt.Println("unused:", md.Unused)
-	// pp.Println(pb)
-	// fmt.Println("mapstruct decode succeeded")
+	log.Debug("Unused fields from playbook source:", md.Unused)
 	return &pb, nil
 }
 
@@ -113,4 +118,30 @@ func unquote(s string) string {
 		return n
 	}
 	return s
+}
+
+// expandPlaybookLoops takes a playbook and expands any tasks that have a Loop,
+// replacing them with multiple tasks, each loop item copied into task.Vars
+func expandPlaybookLoops(pb *Playbook) {
+	for i1 := range *pb {
+		play := &(*pb)[i1]
+		// fmt.Println("len tasks BEFORE", len(play.Tasks))
+		for i := len(play.Tasks) - 1; i >= 0; i-- { //reverse range, because we are expanding the slice in place
+			if loops := play.Tasks[i].Loop; loops != nil {
+				newTasks := []runners.Task{}
+				for _, l := range loops {
+					newTask := play.Tasks[i].Clone()
+					newTask.Vars["item"] = l
+					newTask.Loop = nil
+					newTasks = append(newTasks, newTask)
+
+				}
+				// remove this task from the playbook
+				// and insert len(Loop) new tasks in its place
+				play.Tasks = slices.Replace(play.Tasks, i, i+1, newTasks...)
+				// fmt.Println("expanded", len(newTasks), "tasks..")
+			}
+		}
+		// fmt.Println("len tasks AFTER", len(play.Tasks))
+	}
 }

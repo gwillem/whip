@@ -19,10 +19,11 @@ const (
 
 type (
 	Task struct {
-		Runner string   `json:"runner,omitempty"`
-		Name   string   `json:"name,omitempty"`
-		Args   TaskArgs `json:"args,omitempty"`
-		Loop   []any    `json:"loop,omitempty"`
+		Runner string         `json:"runner,omitempty"`
+		Name   string         `json:"name,omitempty"`
+		Args   TaskArgs       `json:"args,omitempty"`
+		Loop   []any          `json:"loop,omitempty"`
+		Vars   map[string]any `json:"vars,omitempty"`
 	}
 
 	TaskArgs map[string]any
