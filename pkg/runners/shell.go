@@ -2,11 +2,9 @@ package runners
 
 import (
 	"os/exec"
-
-	"github.com/gwillem/chief-whip/pkg/whip"
 )
 
-func Shell(args whip.TaskArgs) (tr whip.TaskResult) {
+func Shell(args TaskArgs) (tr TaskResult) {
 	cmd := []string{"/bin/bash", "-c", args.Key(defaultArg)}
 
 	data, err := exec.Command(cmd[0], cmd[1:]...).CombinedOutput()

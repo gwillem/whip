@@ -1,3 +1,4 @@
 build/*
 cmd/whip/deputies/*
 .vscode
+playbook.yml

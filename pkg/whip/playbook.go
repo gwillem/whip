@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/gwillem/chief-whip/pkg/runners"
 	"github.com/mitchellh/mapstructure"
 	"golang.org/x/exp/slices"
 	"gopkg.in/yaml.v3"
@@ -58,30 +59,21 @@ func yamlToPlaybook(y any) (*Playbook, error) {
 }
 
 func parseTasksFunc() mapstructure.DecodeHookFunc {
-	return func(
-		f reflect.Type,
-		t reflect.Type,
-		data interface{}) (interface{}, error) {
-		// return func(t reflect.Value, f reflect.Value, data any) (any, error) {
-		if t != reflect.TypeOf(Task{}) {
+	return func(f, t reflect.Type, data interface{}) (interface{}, error) {
+		if t != reflect.TypeOf(runners.Task{}) {
 			return data, nil
 		}
 		if f != reflect.TypeOf(map[string]any{}) {
 			return nil, fmt.Errorf("expected map[string]any{}, got %v", f)
 		}
-
-		// fmt.Println("parseTasks")
-		// fmt.Println("t:", t)
-		// fmt.Println("f:", f)
-		// pp.Println(data)
-
 		for k, v := range data.(map[string]any) {
-			// fmt.Println("k:", k)
-			// fmt.Println("v:", v)
-
-			// TODO import this from runners pkg
-			if slices.Contains([]string{"authorized_key", "shell", "command"}, k) {
+			if slices.Contains(runners.All(), k) {
 				delete(data.(map[string]any), k)
+
+				if data.(map[string]any)["runner"] != nil {
+					return nil, fmt.Errorf("single task cannot have multiple runners (%s and %s)", data.(map[string]any)["runner"], k)
+				}
+
 				data.(map[string]any)["runner"] = k
 				switch v.(type) {
 				case string:
@@ -94,7 +86,6 @@ func parseTasksFunc() mapstructure.DecodeHookFunc {
 				continue
 			}
 		}
-		// fmt.Println("data:", data)
 		return data, nil
 	}
 }

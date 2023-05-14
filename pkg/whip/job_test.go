@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 	"testing"
+
+	"github.com/gwillem/chief-whip/pkg/runners"
 )
 
 func dummyJob() *Job {
@@ -12,11 +14,11 @@ func dummyJob() *Job {
 		Vars: Vars{
 			"foo": "bar",
 		},
-		Tasks: []Task{
+		Tasks: []runners.Task{
 			{
 				Name:   "foo",
 				Runner: "command",
-				Args: TaskArgs{
+				Args: runners.TaskArgs{
 					"cmd": "date",
 				},
 			},

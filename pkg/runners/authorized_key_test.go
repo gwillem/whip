@@ -5,16 +5,15 @@ import (
 	"os"
 	"testing"
 
-	"github.com/gwillem/chief-whip/pkg/whip"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestAuthorizedKey(t *testing.T) {
 	createTestFS()
 
-	task := whip.Task{
+	task := Task{
 		Name: "blabla",
-		Args: whip.TaskArgs{
+		Args: TaskArgs{
 			"key":  `{{item}}`,
 			"user": "root",
 		},

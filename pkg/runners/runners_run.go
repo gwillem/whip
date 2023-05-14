@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gwillem/chief-whip/pkg/whip"
+	"github.com/barkimedes/go-deepcopy"
 	"github.com/spf13/afero"
 )
 
@@ -15,6 +15,28 @@ const (
 	failed
 
 	defaultArg = "_args"
+)
+
+type (
+	Task struct {
+		Runner string   `json:"runner,omitempty"`
+		Name   string   `json:"name,omitempty"`
+		Args   TaskArgs `json:"args,omitempty"`
+		Loop   []any    `json:"loop,omitempty"`
+	}
+
+	TaskArgs map[string]any
+
+	TaskResult struct {
+		TaskID    int           `json:"task_id,omitempty"`
+		TaskTotal int           `json:"task_total,omitempty"`
+		Host      string        `json:"target,omitempty"`
+		Changed   bool          `json:"changed,omitempty"`
+		Output    string        `json:"output,omitempty"`
+		Status    int           `json:"status_code,omitempty"`
+		Duration  time.Duration `json:"duration,omitempty"`
+		Task      Task          `json:"task,omitempty"`
+	}
 )
 
 var (
@@ -39,7 +61,7 @@ func All() []string {
 }
 
 type (
-	runnerFunc func(whip.TaskArgs) whip.TaskResult
+	runnerFunc func(TaskArgs) TaskResult
 	runnerMeta struct {
 		requiredArgs []string
 		optionalArgs []string
@@ -47,7 +69,19 @@ type (
 	}
 )
 
-func failure(msg ...any) whip.TaskResult {
+func (tr TaskResult) String() string {
+	return fmt.Sprintf("TaskResult %s from %s (%.2f sec)", tr.Task.Runner, tr.Host, tr.Duration.Seconds())
+}
+
+func (ta TaskArgs) Key(s string) string {
+	return ta[s].(string)
+}
+
+func (t Task) Clone() Task {
+	return deepcopy.MustAnything(t).(Task)
+}
+
+func failure(msg ...any) TaskResult {
 	output := ""
 	for _, m := range msg {
 		if _, ok := m.(error); ok {
@@ -58,7 +92,7 @@ func failure(msg ...any) whip.TaskResult {
 	}
 	output = strings.TrimSpace(output)
 
-	return whip.TaskResult{
+	return TaskResult{
 		Status:  failed,
 		Changed: false,
 		Output:  output,
@@ -73,7 +107,7 @@ func registerRunner(name string, fn runnerFunc, meta runnerMeta) {
 }
 
 // Run is called by the deputy to run a task on localhost.
-func Run(task whip.Task) (tr whip.TaskResult) {
+func Run(task Task) (tr TaskResult) {
 	if fs == nil {
 		// fmt.Println("creating layover FS")
 		fs = afero.NewOsFs()
@@ -83,7 +117,7 @@ func Run(task whip.Task) (tr whip.TaskResult) {
 	// fmt.Println("Running", task.Type)
 	runner, ok := runners[task.Runner]
 	if !ok {
-		return whip.TaskResult{
+		return TaskResult{
 			Status: failed,
 			Output: fmt.Sprintf("No runner found for task '%s'", task.Runner),
 			Task:   task,
@@ -96,7 +130,7 @@ func Run(task whip.Task) (tr whip.TaskResult) {
 		for _, rawItem := range task.Loop {
 			item, ok := rawItem.(string)
 			if !ok {
-				return whip.TaskResult{
+				return TaskResult{
 					Status: failed,
 					Output: "loop only supports strings for now",
 					Task:   task,

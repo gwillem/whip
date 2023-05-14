@@ -4,10 +4,9 @@ import (
 	"os/exec"
 
 	"github.com/google/shlex"
-	"github.com/gwillem/chief-whip/pkg/whip"
 )
 
-func Command(args whip.TaskArgs) (tr whip.TaskResult) {
+func Command(args TaskArgs) (tr TaskResult) {
 	tokens, err := shlex.Split(args.Key(defaultArg))
 	if err != nil {
 		tr.Status = failed

@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/charmbracelet/log"
+	"github.com/gwillem/chief-whip/pkg/runners"
 	"github.com/gwillem/chief-whip/pkg/ssh"
 	"github.com/gwillem/chief-whip/pkg/whip"
 	"github.com/gwillem/go-buildversion"
@@ -67,7 +68,7 @@ func ensureDeputy(c *ssh.Client) error {
 	return nil
 }
 
-func runPlayAtHost(p whip.Play, h whip.Host, results chan<- whip.TaskResult) {
+func runPlayAtHost(p whip.Play, h whip.Host, results chan<- runners.TaskResult) {
 	// log.Infof("Running play at target: %s", h)
 	conn, err := ssh.Connect(string(h))
 	if err != nil {
@@ -94,12 +95,12 @@ func runPlayAtHost(p whip.Play, h whip.Host, results chan<- whip.TaskResult) {
 	cmd := "PATH=~/.cache/chief-whip:$PATH deputy 2>>~/.cache/chief-whip/deputy.err"
 	err = conn.RunLineStreamer(cmd, blob, func(b []byte) {
 		// fmt.Println("got res frm deputy... ", string(b))
-		var res whip.TaskResult
+		var res runners.TaskResult
 		if err := json.Unmarshal(b, &res); err != nil {
 			log.Error(err)
 			return
 		}
-		res.Host = h
+		res.Host = string(h)
 		results <- res
 		// fmt.Println(res)
 	})
@@ -124,7 +125,7 @@ func runWhip(cmd *cobra.Command, args []string) {
 	// TODO merge inventory with playbook if any
 	// TODO convert playbook to map of targets -> jobs, possibly combining plays (vars?)
 
-	resultChan := make(chan whip.TaskResult)
+	resultChan := make(chan runners.TaskResult)
 	wg := sync.WaitGroup{}
 
 	totalTasks := 0
@@ -135,7 +136,7 @@ func runWhip(cmd *cobra.Command, args []string) {
 		totalTasks += len(play.Tasks) * len(play.Hosts)
 		for _, target := range play.Hosts {
 			wg.Add(1)
-			go func(p whip.Play, h whip.Host, r chan<- whip.TaskResult) {
+			go func(p whip.Play, h whip.Host, r chan<- runners.TaskResult) {
 				defer wg.Done()
 				// fmt.Println("sleeping")
 				// time.Sleep(5 * time.Second)
@@ -154,10 +155,10 @@ func runWhip(cmd *cobra.Command, args []string) {
 	// now unblock resultchan
 }
 
-func parseResults(results <-chan whip.TaskResult) {
+func parseResults(results <-chan runners.TaskResult) {
 	fmt.Println()
 	tui := createTui()
-	failed := []whip.TaskResult{}
+	failed := []runners.TaskResult{}
 	for res := range results {
 		tui.Send(res)
 		if res.Status != 0 {

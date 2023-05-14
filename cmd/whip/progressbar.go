@@ -8,7 +8,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/log"
-	"github.com/gwillem/chief-whip/pkg/whip"
+	"github.com/gwillem/chief-whip/pkg/runners"
 )
 
 const (
@@ -42,7 +42,7 @@ type (
 		m      *progress.Model
 	}
 	tuiModel struct {
-		bars map[whip.Host]*bar
+		bars map[string]*bar
 	}
 )
 
@@ -63,7 +63,7 @@ func (m tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// todo, resize existing bars
 		return m, nil
 
-	case whip.TaskResult:
+	case runners.TaskResult:
 		// fmt.Println("got task result", msg)
 		perc := float64(msg.TaskID) / float64(msg.TaskTotal)
 
@@ -99,7 +99,7 @@ func (m tuiModel) View() string {
 	// fmt.Println("got view")
 	var s string
 
-	targets := []whip.Host{}
+	targets := []string{}
 	for t := range m.bars {
 		targets = append(targets, t)
 	}
@@ -120,7 +120,7 @@ func (m tuiModel) View() string {
 
 func createTui() *tea.Program {
 	tui := tea.NewProgram(tuiModel{
-		bars: map[whip.Host]*bar{},
+		bars: map[string]*bar{},
 	})
 
 	go func() {
