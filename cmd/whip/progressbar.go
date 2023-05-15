@@ -65,7 +65,7 @@ func (m tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case runners.TaskResult:
 		// fmt.Println("got task result", msg)
-		perc := float64(msg.TaskID) / float64(msg.TaskTotal)
+		perc := float64(msg.TaskIdx) / float64(msg.TaskTotal)
 
 		b := m.bars[msg.Host]
 		if b == nil {
@@ -78,7 +78,7 @@ func (m tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		b.perc = perc
 		b.total = msg.TaskTotal
-		b.idx = msg.TaskID
+		b.idx = msg.TaskIdx
 
 		if msg.Status != 0 {
 			b.status = ERROR

@@ -13,15 +13,14 @@ func dummyJob() *Job {
 		Vars: Vars{
 			"foo": "bar",
 		},
-		Tasks: []runners.Task{
-			{
+		Playbook: []Play{{
+			Name: "dummy play",
+			Tasks: []runners.Task{{
 				Name:   "foo",
 				Runner: "command",
-				Args: runners.TaskArgs{
-					"cmd": "date",
-				},
-			},
-		},
+				Args:   runners.TaskArgs{"cmd": "date"},
+			}},
+		}},
 		Assets: []Asset{
 			DirToAsset(FixturePath("assets/sample")),
 		},

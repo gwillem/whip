@@ -29,7 +29,8 @@ type (
 	TaskArgs map[string]any
 
 	TaskResult struct {
-		TaskID    int           `json:"task_id,omitempty"`
+		PlayIdx   int           `json:"play_idx,omitempty"`
+		TaskIdx   int           `json:"task_idx,omitempty"`
 		TaskTotal int           `json:"task_total,omitempty"`
 		Host      string        `json:"target,omitempty"`
 		Changed   bool          `json:"changed,omitempty"`

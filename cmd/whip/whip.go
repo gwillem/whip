@@ -68,7 +68,7 @@ func ensureDeputy(c *ssh.Client) error {
 	return nil
 }
 
-func runPlayAtHost(p whip.Play, h whip.Host, results chan<- runners.TaskResult) {
+func runPlaybookAtHost(pb whip.Playbook, h whip.Host, results chan<- runners.TaskResult) {
 	// log.Infof("Running play at target: %s", h)
 	conn, err := ssh.Connect(string(h))
 	if err != nil {
@@ -83,9 +83,8 @@ func runPlayAtHost(p whip.Play, h whip.Host, results chan<- runners.TaskResult) 
 	}
 	// log.Info("Sending job to target deputy...")
 
-	job := whip.Job{
-		Tasks: p.Tasks,
-	}
+	// TODO add vars and assets
+	job := whip.Job{Playbook: pb}
 
 	blob, err := job.ToJSON()
 	if err != nil {
@@ -123,26 +122,24 @@ func runWhip(cmd *cobra.Command, args []string) {
 	}
 
 	// TODO merge inventory with playbook if any
-	// TODO convert playbook to map of targets -> jobs, possibly combining plays (vars?)
+
+	// Create jobbook to map plays to hosts
+	jobBook := map[whip.Host]whip.Playbook{}
+	for _, play := range *playbook {
+		for _, target := range play.Hosts {
+			jobBook[target] = append(jobBook[target], play)
+		}
+	}
 
 	resultChan := make(chan runners.TaskResult)
 	wg := sync.WaitGroup{}
 
-	totalTasks := 0
-
-	for i1, play := range *playbook {
-		log.Infof("Running play %d with %d tasks", i1, len(play.Tasks))
-		// fmt.Println(play.Hosts)
-		totalTasks += len(play.Tasks) * len(play.Hosts)
-		for _, target := range play.Hosts {
-			wg.Add(1)
-			go func(p whip.Play, h whip.Host, r chan<- runners.TaskResult) {
-				defer wg.Done()
-				// fmt.Println("sleeping")
-				// time.Sleep(5 * time.Second)
-				runPlayAtHost(p, h, r)
-			}(play, target, resultChan)
-		}
+	for target, pb := range jobBook {
+		wg.Add(1)
+		go func(pb whip.Playbook, h whip.Host, r chan<- runners.TaskResult) {
+			defer wg.Done()
+			runPlaybookAtHost(pb, h, r)
+		}(pb, target, resultChan)
 	}
 
 	// kill result channel so reader knows when to stop
@@ -152,7 +149,6 @@ func runWhip(cmd *cobra.Command, args []string) {
 	}()
 
 	parseResults(resultChan)
-	// now unblock resultchan
 }
 
 func parseResults(results <-chan runners.TaskResult) {

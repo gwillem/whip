@@ -15,29 +15,35 @@ Whip your servers into line. Chief Whip is a _fast_ and _simple_ Ansible replace
 - [x] chief tests presence of deputy over target
 - [x] chief uploads deputy to target
 - [x] chief supports embedded targets in playbooks
-- [ ] rename Host to Target in code
+- [x] support for with_items / loop
 - [x] chief runs jobs in parallel
-- [ ] chief also reads stderr from deputy to catch panics
-- [ ] limit parallel jobs to x, cli argument
 - [x] properly fix quoting in yaml parsing, maybe use this? https://pkg.go.dev/github.com/mitchellh/mapstructure#example-Decode
 - [x] add license
+- [ ] Deputy handles multi plays
+- [ ] support for template substitution
+- [ ] rename Host to Target in code
+- [ ] support for inventory files
+- [ ] chief also reads stderr from deputy to catch panics
+- [ ] limit parallel jobs to x, cli argument
 - [ ] record gif demo for in readme  https://github.com/charmbracelet/vhs
 - [ ] ensure basic go doc
-- [ ] support handlers
-- [ ] support for inventory files
 - [ ] support for variables
-- [ ] support for template substitution
-- [x] support for "with_items"
+    - can be defined in playbook, task (via "loop")
+- [ ] support handlers
 - [ ] implement basic runners 
     - [ ] copy
+    - [ ] template
+    - [x] authorized_key 
+    - [ ] shell
+    - [ ] command
+    - [ ] template
     - [ ] file
     - [ ] apt
     - [ ] systemd
-- [ ] bump ux with https://charm.sh/libs/
+    - [ ] rsync support (via this? https://github.com/gokrazy/rsync/)
 - [ ] publish on github
+- [ ] support vault
 - [ ] add taskrunner syntax validation so we can lint the tasks before actual run
-- [ ] chief tests playbook for syntax errors
-- [ ] chief deputy supports rsync (via this? https://github.com/gokrazy/rsync/)
 - [ ] struct based cli arg parsing? such as go-arg or go-flags or kong
 
 # Demo
@@ -62,7 +68,8 @@ Fast!
     - copy
     - file
     - systemd
-    - apt
+    - package
+    - pip
 5. No more:
     - support for plain password authentication (key/agent only)
     - `gather_facts` option but instead lazy loading

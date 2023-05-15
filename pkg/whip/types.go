@@ -11,9 +11,9 @@ import (
 // define Job struct
 type (
 	Job struct {
-		Vars   Vars           `json:"vars,omitempty"`
-		Tasks  []runners.Task `json:"tasks,omitempty"`
-		Assets []Asset        `json:"assets,omitempty"`
+		Vars     Vars     `json:"vars,omitempty"`
+		Playbook Playbook `json:"playbook,omitempty"`
+		Assets   []Asset  `json:"assets,omitempty"`
 	}
 
 	Vars map[string]any
@@ -29,15 +29,24 @@ type (
 
 	Playbook []Play
 	Play     struct {
-		Hosts []Host
-		// Targets []string
-		Tasks []runners.Task
+		Name  string         `json:"name,omitempty"`
+		Hosts []Host         `json:"hosts,omitempty"`
+		Vars  map[string]any `json:"vars,omitempty"`
+		Tasks []runners.Task `json:"tasks,omitempty"`
 	}
 	Host string
 )
 
+func (j *Job) Tasks() []runners.Task {
+	tasks := []runners.Task{}
+	for _, play := range j.Playbook {
+		tasks = append(tasks, play.Tasks...)
+	}
+	return tasks
+}
+
 func (j *Job) String() string {
-	return fmt.Sprintf("Job: %d tasks, %d assets, %d vars", len(j.Tasks), len(j.Assets), len(j.Vars))
+	return fmt.Sprintf("Job: %d tasks, %d assets, %d vars", len(j.Tasks()), len(j.Assets), len(j.Vars))
 }
 
 func DirToAsset(root string) Asset {

@@ -1,8 +1,5 @@
 ---
 - hosts: ubuntu@192.168.64.10
-  remote_user: root
-  gather_facts: false
-
   tasks:
     - name: sleep random  
       shell: sleep $[ $RANDOM % 3 ]
