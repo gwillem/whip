@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/charmbracelet/log"
 	"github.com/gwillem/chief-whip/pkg/runners"
@@ -110,6 +109,14 @@ func runPlaybookAtHost(pb whip.Playbook, h whip.Host, results chan<- runners.Tas
 }
 
 func runWhip(cmd *cobra.Command, args []string) {
+
+	verbosity, err := cmd.Flags().GetCount("verbose")
+	if err != nil {
+		log.Error(err)
+	}
+
+	fmt.Println("verbosity level is", verbosity)
+
 	log.SetLevel(log.DebugLevel)
 
 	files, _ := deputies.ReadDir("deputies")
@@ -148,33 +155,5 @@ func runWhip(cmd *cobra.Command, args []string) {
 		close(resultChan)
 	}()
 
-	parseResults(resultChan)
-}
-
-func parseResults(results <-chan runners.TaskResult) {
-	fmt.Println()
-	tui := createTui()
-	failed := []runners.TaskResult{}
-	for res := range results {
-		tui.Send(res)
-		if res.Status != 0 {
-			failed = append(failed, res)
-		}
-	}
-	// _ = tui.ReleaseTerminal()
-	time.Sleep(100 * time.Millisecond)
-	tui.Quit()
-	tui.Wait()
-
-	if len(failed) > 0 {
-		fmt.Println()
-		for _, f := range failed {
-			fmt.Println(f)
-
-			for _, line := range strings.Split(strings.TrimSpace(f.Output), "\n") {
-				fmt.Println("  " + red(line))
-			}
-		}
-	}
-	fmt.Println()
+	reportResults(resultChan, verbosity)
 }

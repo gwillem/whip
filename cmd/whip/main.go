@@ -29,6 +29,9 @@ It aims to be stand-in replacement for Ansible for 90% of use cases.`,
 func init() {
 	rootCmd.AddCommand(vaultCmd)
 	rootCmd.CompletionOptions.HiddenDefaultCmd = true
+
+	rootCmd.PersistentFlags().CountP("verbose", "v", "verbose output")
+
 }
 
 func main() {

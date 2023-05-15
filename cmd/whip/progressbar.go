@@ -21,9 +21,11 @@ const (
 var (
 	// https://raw.githubusercontent.com/muesli/termenv/master/examples/color-chart/color-chart.png
 
-	red   = lipgloss.NewStyle().Foreground(lipgloss.Color("202")).Render
-	green = lipgloss.NewStyle().Foreground(lipgloss.Color("112")).Render
-	blue  = lipgloss.NewStyle().Foreground(lipgloss.Color("27")).Render
+	red    = lipgloss.NewStyle().Foreground(lipgloss.Color("202")).Render
+	green  = lipgloss.NewStyle().Foreground(lipgloss.Color("112")).Render
+	blue   = lipgloss.NewStyle().Foreground(lipgloss.Color("27")).Render
+	dark   = lipgloss.NewStyle().Foreground(lipgloss.Color("243")).Render
+	yellow = lipgloss.NewStyle().Foreground(lipgloss.Color("220")).Render
 
 	BUSY  = blue("BUSY")
 	DONE  = green("DONE")

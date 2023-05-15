@@ -19,7 +19,10 @@ Whip your servers into line. Chief Whip is a _fast_ and _simple_ Ansible replace
 - [x] chief runs jobs in parallel
 - [x] properly fix quoting in yaml parsing, maybe use this? https://pkg.go.dev/github.com/mitchellh/mapstructure#example-Decode
 - [x] add license
-- [ ] Deputy handles multi plays
+- [x] display task results with "whip -v"
+- [x] Deputy handles multi plays
+- [ ] support for variables
+    - can be defined in playbook, task (via "loop") or externally?
 - [ ] support for template substitution
 - [ ] rename Host to Target in code
 - [ ] support for inventory files
@@ -27,8 +30,6 @@ Whip your servers into line. Chief Whip is a _fast_ and _simple_ Ansible replace
 - [ ] limit parallel jobs to x, cli argument
 - [ ] record gif demo for in readme  https://github.com/charmbracelet/vhs
 - [ ] ensure basic go doc
-- [ ] support for variables
-    - can be defined in playbook, task (via "loop")
 - [ ] support handlers
 - [ ] implement basic runners 
     - [ ] copy
