@@ -71,3 +71,11 @@ func createTestFS() {
 	fs = afero.NewMemMapFs()
 	fsutil = &afero.Afero{Fs: fs}
 }
+
+func tplParse(tpl string, data map[string]any) (string, error) {
+	t, err := tplParser.FromString(tpl)
+	if err != nil {
+		return "", err
+	}
+	return t.Execute(data)
+}

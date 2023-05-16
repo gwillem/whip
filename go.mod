@@ -23,6 +23,7 @@ require (
 require (
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/goph/emperror v0.17.1 // indirect
+	github.com/ieee0824/go-deepmerge v0.0.0-20170912170951-7ec7dbbd5a1f // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/konsorten/go-windows-terminal-sequences v1.0.1 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180228061459-e0a39a4cb421 // indirect

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/barkimedes/go-deepcopy"
+	"github.com/ieee0824/go-deepmerge"
 	"github.com/spf13/afero"
 )
 
@@ -52,6 +53,14 @@ var (
 
 	facts = gatherFacts()
 )
+
+func init() {
+	if fs == nil {
+		// fmt.Println("creating layover FS")
+		fs = afero.NewOsFs()
+		fsutil = &afero.Afero{Fs: fs}
+	}
+}
 
 func All() []string {
 	keys := []string{}
@@ -108,58 +117,42 @@ func registerRunner(name string, fn runnerFunc, meta runnerMeta) {
 }
 
 // Run is called by the deputy to run a task on localhost.
-func Run(task Task) (tr TaskResult) {
-	if fs == nil {
-		// fmt.Println("creating layover FS")
-		fs = afero.NewOsFs()
-		fsutil = &afero.Afero{Fs: fs}
+func Run(task Task, vars map[string]any) (tr TaskResult) {
+
+	start := time.Now()
+	fail := func(msg string) TaskResult {
+		return TaskResult{
+			Status: failed,
+			Output: msg,
+			Task:   task,
+		}
 	}
 
 	// fmt.Println("Running", task.Type)
 	runner, ok := runners[task.Runner]
 	if !ok {
-		return TaskResult{
-			Status: failed,
-			Output: fmt.Sprintf("No runner found for task '%s'", task.Runner),
-			Task:   task,
+		return fail("No runner found for task '" + task.Runner + "'")
+	}
+
+	// merge global and task vars
+
+	mergedVars, err := deepmerge.Merge(vars, task.Vars)
+	if err != nil {
+		return fail(err.Error())
+	}
+	task.Vars = mergedVars.(map[string]any)
+
+	// arg substitution, notably for loop {{item}}
+	for k, v := range task.Args {
+		if val, ok := v.(string); ok {
+			new, err := tplParse(val, task.Vars)
+			if err != nil {
+				return fail(err.Error())
+			}
+			task.Args[k] = new
 		}
 	}
-	start := time.Now()
 
-	// loop item? should replace this with generic vars substitution
-	if task.Vars["item"] != nil {
-		item, ok := task.Vars["item"].(string)
-		if !ok {
-			return TaskResult{
-				Status: failed,
-				Output: "loop only supports strings for now",
-				Task:   task,
-			}
-		}
-
-		// subTask := task.Clone()
-		for k, v := range task.Args {
-			if val, ok := v.(string); ok {
-				new := strings.ReplaceAll(val, "{{item}}", item)
-				task.Args[k] = new
-				// fmt.Println("substituting", val, "with", new)
-			}
-		}
-		// // run cloned task
-		// subtr := runner.fn(subTask.Args)
-
-		// if subtr.Changed {
-		// 	tr.Changed = true
-		// }
-		// 	// merge tr with parent tr
-		// 	tr.Output += strings.TrimSpace(subtr.Output) + "\n"
-		// 	tr.Status = subtr.Status
-		// 	if subtr.Status == failed {
-		// 		// fmt.Println("failure, stopping")
-		// 		break
-		// 	}
-		// }
-	}
 	tr = runner.fn(task.Args)
 	tr.Duration = time.Since(start)
 	tr.Task = task

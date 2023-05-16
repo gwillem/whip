@@ -21,8 +21,8 @@ func TestAuthorizedKey(t *testing.T) {
 		Runner: "authorized_key",
 	}
 
-	tr := Run(task)
-	_ = Run(task)
+	tr := Run(task, nil)
+	_ = Run(task, nil)
 
 	_ = fsutil.Walk("/", func(path string, info os.FileInfo, err error) error {
 		fmt.Println(path)

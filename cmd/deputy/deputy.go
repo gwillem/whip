@@ -18,7 +18,7 @@ func main() {
 	for playIdx, play := range job.Playbook {
 		for _, task := range play.Tasks {
 			taskIdx++
-			res := runners.Run(task)
+			res := runners.Run(task, play.Vars)
 			res.PlayIdx = playIdx
 			res.TaskIdx = taskIdx
 			res.TaskTotal = taskTotal
