@@ -10,9 +10,9 @@ import (
 
 	"github.com/charmbracelet/log"
 	"github.com/gwillem/go-buildversion"
-	"github.com/gwillem/whip/pkg/runners"
-	"github.com/gwillem/whip/pkg/ssh"
-	"github.com/gwillem/whip/pkg/whip"
+	"github.com/gwillem/whip/internal/runners"
+	"github.com/gwillem/whip/internal/ssh"
+	"github.com/gwillem/whip/internal/whip"
 	"github.com/spf13/cobra"
 )
 

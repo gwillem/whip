@@ -3,8 +3,8 @@ package main
 import (
 	"testing"
 
-	"github.com/gwillem/whip/pkg/runners"
-	"github.com/gwillem/whip/pkg/whip"
+	"github.com/gwillem/whip/internal/runners"
+	"github.com/gwillem/whip/internal/whip"
 	"github.com/k0kubun/pp"
 	"github.com/stretchr/testify/assert"
 )

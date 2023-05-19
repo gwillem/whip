@@ -6,7 +6,7 @@ import (
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/gwillem/whip/pkg/runners"
+	"github.com/gwillem/whip/internal/runners"
 )
 
 type (

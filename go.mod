@@ -21,42 +21,39 @@ require (
 )
 
 require (
-	github.com/dustin/go-humanize v1.0.1 // indirect
-	github.com/goph/emperror v0.17.1 // indirect
-	github.com/ieee0824/go-deepmerge v0.0.0-20170912170951-7ec7dbbd5a1f // indirect
-	github.com/json-iterator/go v1.1.12 // indirect
-	github.com/konsorten/go-windows-terminal-sequences v1.0.1 // indirect
-	github.com/modern-go/concurrent v0.0.0-20180228061459-e0a39a4cb421 // indirect
-	github.com/modern-go/reflect2 v1.0.2 // indirect
-	github.com/nikolalohinski/gonja v1.5.0 // indirect
-	github.com/pelletier/go-toml/v2 v2.0.7 // indirect
-	github.com/pkg/errors v0.9.1 // indirect
-	github.com/sirupsen/logrus v1.3.0 // indirect
-	github.com/yargevad/filepathx v1.0.0 // indirect
-)
-
-require (
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
 	github.com/charmbracelet/harmonica v0.2.0 // indirect
 	github.com/containerd/console v1.0.4-0.20230313162750-1ae8d489ac81 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/go-logfmt/logfmt v0.6.0 // indirect
+	github.com/goph/emperror v0.17.1 // indirect
+	github.com/ieee0824/go-deepmerge v0.0.0-20170912170951-7ec7dbbd5a1f
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
+	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/k0kubun/colorstring v0.0.0-20150214042306-9440f1994b88 // indirect
+	github.com/konsorten/go-windows-terminal-sequences v1.0.1 // indirect
 	github.com/kr/fs v0.1.0 // indirect
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.18 // indirect
 	github.com/mattn/go-localereader v0.0.1 // indirect
 	github.com/mattn/go-runewidth v0.0.14 // indirect
+	github.com/modern-go/concurrent v0.0.0-20180228061459-e0a39a4cb421 // indirect
+	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/muesli/ansi v0.0.0-20211018074035-2e021307bc4b // indirect
 	github.com/muesli/cancelreader v0.2.2 // indirect
 	github.com/muesli/reflow v0.3.0 // indirect
 	github.com/muesli/termenv v0.15.1 // indirect
+	github.com/nikolalohinski/gonja v1.5.0
+	github.com/pelletier/go-toml/v2 v2.0.7 // indirect
+	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/rivo/uniseg v0.2.0 // indirect
+	github.com/sirupsen/logrus v1.3.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/stretchr/testify v1.8.2
+	github.com/yargevad/filepathx v1.0.0 // indirect
 	golang.org/x/sync v0.1.0 // indirect
 	golang.org/x/sys v0.8.0 // indirect
 	golang.org/x/term v0.7.0 // indirect

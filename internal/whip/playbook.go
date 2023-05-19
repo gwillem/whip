@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/log"
-	"github.com/gwillem/whip/pkg/runners"
+	"github.com/gwillem/whip/internal/runners"
 	"github.com/mitchellh/mapstructure"
 	"golang.org/x/exp/slices"
 	"gopkg.in/yaml.v3"

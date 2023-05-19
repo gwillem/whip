@@ -5,7 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/gwillem/whip/pkg/runners"
+	"github.com/gwillem/whip/internal/runners"
 )
 
 // define Job struct

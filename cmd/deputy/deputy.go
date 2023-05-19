@@ -7,8 +7,8 @@ import (
 	"io"
 	"os"
 
-	"github.com/gwillem/whip/pkg/runners"
-	"github.com/gwillem/whip/pkg/whip"
+	"github.com/gwillem/whip/internal/runners"
+	"github.com/gwillem/whip/internal/whip"
 )
 
 func main() {
