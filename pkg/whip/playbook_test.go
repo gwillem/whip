@@ -3,7 +3,7 @@ package whip
 import (
 	"testing"
 
-	"github.com/gwillem/chief-whip/pkg/runners"
+	"github.com/gwillem/whip/pkg/runners"
 	"github.com/mitchellh/mapstructure"
 	"github.com/stretchr/testify/assert"
 )

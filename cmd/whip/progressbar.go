@@ -8,7 +8,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/log"
-	"github.com/gwillem/chief-whip/pkg/runners"
+	"github.com/gwillem/whip/pkg/runners"
 )
 
 const (

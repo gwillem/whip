@@ -9,15 +9,15 @@ import (
 	"sync"
 
 	"github.com/charmbracelet/log"
-	"github.com/gwillem/chief-whip/pkg/runners"
-	"github.com/gwillem/chief-whip/pkg/ssh"
-	"github.com/gwillem/chief-whip/pkg/whip"
 	"github.com/gwillem/go-buildversion"
+	"github.com/gwillem/whip/pkg/runners"
+	"github.com/gwillem/whip/pkg/ssh"
+	"github.com/gwillem/whip/pkg/whip"
 	"github.com/spf13/cobra"
 )
 
 const (
-	deputyPath = ".cache/chief-whip/deputy"
+	deputyPath = ".cache/whip/deputy"
 )
 
 //go:embed deputies
@@ -26,9 +26,9 @@ var deputies embed.FS
 func ensureDeputy(c *ssh.Client) error {
 	uname, err := c.Run(`
 			uname -sm; 
-			mkdir -p ~/.cache/chief-whip 2>/dev/null
-			touch ~/.cache/chief-whip/deputy 2>/dev/null;
-			sha256sum ~/.cache/chief-whip/deputy 2>/dev/null | awk '{print $1}';
+			mkdir -p ~/.cache/whip 2>/dev/null
+			touch ~/.cache/whip/deputy 2>/dev/null;
+			sha256sum ~/.cache/whip/deputy 2>/dev/null | awk '{print $1}';
 			`)
 	if err != nil {
 		return err
@@ -90,7 +90,7 @@ func runPlaybookAtHost(pb whip.Playbook, h whip.Host, results chan<- runners.Tas
 		log.Error(err)
 		return
 	}
-	cmd := "PATH=~/.cache/chief-whip:$PATH deputy 2>>~/.cache/chief-whip/deputy.err"
+	cmd := "PATH=~/.cache/whip:$PATH deputy 2>>~/.cache/whip/deputy.err"
 	err = conn.RunLineStreamer(cmd, blob, func(b []byte) {
 		// fmt.Println("got res frm deputy... ", string(b))
 		var res runners.TaskResult
@@ -120,7 +120,7 @@ func runWhip(cmd *cobra.Command, args []string) {
 	log.SetLevel(log.DebugLevel)
 
 	files, _ := deputies.ReadDir("deputies")
-	log.Infof("Starting chief-whip %s with %d embedded deputies", buildversion.String(), len(files))
+	log.Infof("Starting whip %s with %d embedded deputies", buildversion.String(), len(files))
 
 	playbook, err := whip.LoadPlaybook(args[0])
 	if err != nil {

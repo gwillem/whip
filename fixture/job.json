@@ -13,7 +13,7 @@
   ],
   "assets": [
     {
-      "name": "/Users/willem/git/chief-whip/fixture/assets/sample",
+      "name": "/Users/willem/git/whip/fixture/assets/sample",
       "files": [
         {
           "path": "/etc/nginx/nginx.conf",

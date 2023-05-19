@@ -1,4 +1,4 @@
-module github.com/gwillem/chief-whip
+module github.com/gwillem/whip
 
 go 1.20
 

@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/gwillem/chief-whip/pkg/runners"
+	"github.com/gwillem/whip/pkg/runners"
 )
 
 func dummyJob() *Job {
