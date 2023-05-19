@@ -9,7 +9,6 @@ Goal: mimic basic ssh cli behaviour as much as possible. Todo: parse .ssh/config
 */
 
 import (
-	"bufio"
 	"bytes"
 	"fmt"
 	"io"
@@ -18,6 +17,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/karrick/gobls"
 	"github.com/pkg/sftp"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/crypto/ssh/agent"
@@ -73,7 +73,8 @@ func (c *Client) RunLineStreamer(cmd string, toWrite []byte, readCB func([]byte)
 	if err := s.Start(cmd); err != nil {
 		return err
 	}
-	scanner := bufio.NewScanner(stdout)
+
+	scanner := gobls.NewScanner(stdout)
 	for scanner.Scan() {
 		readCB(scanner.Bytes())
 	}

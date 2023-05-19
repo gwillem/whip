@@ -83,8 +83,17 @@ func (tr TaskResult) String() string {
 	return fmt.Sprintf("TaskResult %s from %s (%.2f sec)", tr.Task.Runner, tr.Host, tr.Duration.Seconds())
 }
 
-func (ta TaskArgs) Key(s string) string {
+func (ta TaskArgs) String(s string) string {
 	return ta[s].(string)
+}
+
+func (ta TaskArgs) StringSlice(s string) []string {
+	switch val := ta[s].(type) {
+	case []string:
+		return val
+	default:
+		return []string{fmt.Sprintf("%v", val)}
+	}
 }
 
 func (t Task) Clone() Task {

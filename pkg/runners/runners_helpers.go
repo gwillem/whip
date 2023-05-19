@@ -3,6 +3,7 @@ package runners
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"strings"
 
 	"github.com/karrick/gobls"
@@ -49,6 +50,14 @@ func ensureLineInFile(path, line string) (bool, error) {
 	return true, nil
 }
 
+func isExecutable(path string) bool {
+	fi, err := fs.Stat(path)
+	if err != nil {
+		return false
+	}
+	return fi.Mode().Perm()&0o111 != 0
+}
+
 func appendLineToFile(path, line string) error {
 	if !strings.HasSuffix(line, "\n") {
 		line += "\n"
@@ -78,4 +87,17 @@ func tplParse(tpl string, data map[string]any) (string, error) {
 		return "", err
 	}
 	return t.Execute(data)
+}
+
+func system(cmd []string) (tr TaskResult) {
+	data, err := exec.Command(cmd[0], cmd[1:]...).CombinedOutput()
+	tr.Changed = true
+	if err == nil {
+		tr.Status = ok
+		tr.Output = string(data)
+	} else {
+		tr.Status = failed
+		tr.Output = err.Error() + ":\n" + string(data)
+	}
+	return tr
 }

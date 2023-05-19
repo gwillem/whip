@@ -7,12 +7,12 @@ import (
 func AuthorizedKey(args TaskArgs) (tr TaskResult) {
 	tr.Status = ok
 
-	key := args.Key("key")
+	key := args.String("key")
 	if key == "" {
 		return failure("no key provided")
 	}
 
-	user := args.Key("user")
+	user := args.String("user")
 	if user == "" {
 		user = facts["user"]
 	}
@@ -37,7 +37,7 @@ func AuthorizedKey(args TaskArgs) (tr TaskResult) {
 	} else {
 		tr.Changed = changed
 	}
-	tr.Output = "Installed authorized_key for " + args.Key("user") + " with key " + args.Key("key") + "\n"
+	tr.Output = "Installed authorized_key for " + args.String("user") + " with key " + args.String("key") + "\n"
 	return tr
 }
 
