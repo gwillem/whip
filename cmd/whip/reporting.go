@@ -6,12 +6,12 @@ import (
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/gwillem/whip/internal/runners"
+	"github.com/gwillem/whip/internal/model"
 )
 
 type (
 	resultHandler interface {
-		Send(runners.TaskResult)
+		Send(model.TaskResult)
 		Quit()
 	}
 	tuiHandler struct {
@@ -20,7 +20,7 @@ type (
 	verboseHandler struct{}
 )
 
-func (t tuiHandler) Send(r runners.TaskResult) {
+func (t tuiHandler) Send(r model.TaskResult) {
 	t.tui.Send(r)
 }
 func (t tuiHandler) Quit() {
@@ -29,7 +29,7 @@ func (t tuiHandler) Quit() {
 	t.tui.Wait()
 }
 
-func (h verboseHandler) Send(r runners.TaskResult) {
+func (h verboseHandler) Send(r model.TaskResult) {
 
 	statusColor := green
 	status := "ok"
@@ -59,7 +59,7 @@ func (h verboseHandler) Send(r runners.TaskResult) {
 }
 func (h verboseHandler) Quit() {}
 
-func reportResults(results <-chan runners.TaskResult, verbosity int) {
+func reportResults(results <-chan model.TaskResult, verbosity int) {
 	fmt.Println()
 
 	var handler resultHandler = verboseHandler{}
@@ -73,7 +73,7 @@ func reportResults(results <-chan runners.TaskResult, verbosity int) {
 
 	stats := map[string]map[string]int{}
 
-	failed := []runners.TaskResult{}
+	failed := []model.TaskResult{}
 	for res := range results {
 
 		if stats[res.Host] == nil {

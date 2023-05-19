@@ -15,6 +15,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/gwillem/whip/internal/model"
 	"github.com/k0kubun/pp"
 )
 
@@ -30,7 +31,7 @@ type (
 	aptState int
 )
 
-func buildAptCmd(args TaskArgs) ([]string, error) {
+func buildAptCmd(args model.TaskArgs) ([]string, error) {
 	pkglist := map[aptState][]string{}
 
 	var state aptState
@@ -66,7 +67,7 @@ func buildAptCmd(args TaskArgs) ([]string, error) {
 	return cmd, nil
 }
 
-func Apt(args TaskArgs) (tr TaskResult) {
+func Apt(args model.TaskArgs) (tr model.TaskResult) {
 	fmt.Fprintln(os.Stderr, "starting apt task", args)
 
 	if !isExecutable(aptBin) {

@@ -14,11 +14,12 @@ package runners
 import (
 	"testing"
 
+	"github.com/gwillem/whip/internal/model"
 	"github.com/stretchr/testify/assert"
 )
 
 func Test_buildAptCmd(t *testing.T) {
-	args := TaskArgs{
+	args := model.TaskArgs{
 		"name":  []string{"foo", "bar"},
 		"state": "latest",
 	}

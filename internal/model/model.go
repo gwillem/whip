@@ -3,8 +3,9 @@ package model
 import (
 	"encoding/json"
 	"fmt"
+	"time"
 
-	"github.com/gwillem/whip/internal/runners"
+	"github.com/barkimedes/go-deepcopy"
 )
 
 type (
@@ -30,7 +31,7 @@ type (
 		Name  string         `json:"name,omitempty"`
 		Hosts []Host         `json:"hosts,omitempty"`
 		Vars  map[string]any `json:"vars,omitempty"`
-		Tasks []runners.Task `json:"tasks,omitempty"`
+		Tasks []Task         `json:"tasks,omitempty"`
 	}
 	Host string
 
@@ -41,10 +42,32 @@ type (
 		Tag  string
 	}
 	Inventory []Target
+
+	Task struct {
+		Runner string         `json:"runner,omitempty"`
+		Name   string         `json:"name,omitempty"`
+		Args   TaskArgs       `json:"args,omitempty"`
+		Loop   []any          `json:"loop,omitempty"`
+		Vars   map[string]any `json:"vars,omitempty"`
+	}
+
+	TaskArgs map[string]any
+
+	TaskResult struct {
+		PlayIdx   int           `json:"play_idx,omitempty"`
+		TaskIdx   int           `json:"task_idx,omitempty"`
+		TaskTotal int           `json:"task_total,omitempty"`
+		Host      string        `json:"target,omitempty"`
+		Changed   bool          `json:"changed,omitempty"`
+		Output    string        `json:"output,omitempty"`
+		Status    int           `json:"status_code,omitempty"`
+		Duration  time.Duration `json:"duration,omitempty"`
+		Task      Task          `json:"task,omitempty"`
+	}
 )
 
-func (j *Job) Tasks() []runners.Task {
-	tasks := []runners.Task{}
+func (j *Job) Tasks() []Task {
+	tasks := []Task{}
 	for _, play := range j.Playbook {
 		tasks = append(tasks, play.Tasks...)
 	}
@@ -57,4 +80,25 @@ func (j *Job) String() string {
 
 func (j *Job) ToJSON() ([]byte, error) {
 	return json.Marshal(j)
+}
+
+func (tr TaskResult) String() string {
+	return fmt.Sprintf("TaskResult %s from %s (%.2f sec)", tr.Task.Runner, tr.Host, tr.Duration.Seconds())
+}
+
+func (ta TaskArgs) String(s string) string {
+	return ta[s].(string)
+}
+
+func (ta TaskArgs) StringSlice(s string) []string {
+	switch val := ta[s].(type) {
+	case []string:
+		return val
+	default:
+		return []string{fmt.Sprintf("%v", val)}
+	}
+}
+
+func (t Task) Clone() Task {
+	return deepcopy.MustAnything(t).(Task)
 }

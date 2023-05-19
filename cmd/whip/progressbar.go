@@ -8,7 +8,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/log"
-	"github.com/gwillem/whip/internal/runners"
+	"github.com/gwillem/whip/internal/model"
 )
 
 const (
@@ -65,7 +65,7 @@ func (m tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// todo, resize existing bars
 		return m, nil
 
-	case runners.TaskResult:
+	case model.TaskResult:
 		// fmt.Println("got task result", msg)
 		perc := float64(msg.TaskIdx) / float64(msg.TaskTotal)
 

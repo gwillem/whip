@@ -6,6 +6,7 @@ import (
 	"os/exec"
 	"strings"
 
+	"github.com/gwillem/whip/internal/model"
 	"github.com/karrick/gobls"
 	"github.com/spf13/afero"
 )
@@ -89,7 +90,7 @@ func tplParse(tpl string, data map[string]any) (string, error) {
 	return t.Execute(data)
 }
 
-func system(cmd []string) (tr TaskResult) {
+func system(cmd []string) (tr model.TaskResult) {
 	data, err := exec.Command(cmd[0], cmd[1:]...).CombinedOutput()
 	tr.Changed = true
 	if err == nil {

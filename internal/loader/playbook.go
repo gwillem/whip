@@ -66,7 +66,7 @@ func yamlToPlaybook(y any) (*model.Playbook, error) {
 
 func parseTasksFunc() mapstructure.DecodeHookFunc {
 	return func(f, t reflect.Type, data interface{}) (interface{}, error) {
-		if t != reflect.TypeOf(runners.Task{}) {
+		if t != reflect.TypeOf(model.Task{}) {
 			return data, nil
 		}
 		if f != reflect.TypeOf(map[string]any{}) {
@@ -129,7 +129,7 @@ func expandPlaybookLoops(pb *model.Playbook) {
 		// fmt.Println("len tasks BEFORE", len(play.Tasks))
 		for i := len(play.Tasks) - 1; i >= 0; i-- { //reverse range, because we are expanding the slice in place
 			if loops := play.Tasks[i].Loop; loops != nil {
-				newTasks := []runners.Task{}
+				newTasks := []model.Task{}
 				for _, l := range loops {
 					newTask := play.Tasks[i].Clone()
 					newTask.Vars["item"] = l

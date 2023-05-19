@@ -5,15 +5,16 @@ import (
 	"os"
 	"testing"
 
+	"github.com/gwillem/whip/internal/model"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestAuthorizedKey(t *testing.T) {
 	createTestFS()
 
-	task := Task{
+	task := model.Task{
 		Name: "blabla",
-		Args: TaskArgs{
+		Args: model.TaskArgs{
 			"key":  `{{item}}`,
 			"user": "root",
 		},

@@ -12,7 +12,6 @@ import (
 	"github.com/gwillem/go-buildversion"
 	"github.com/gwillem/whip/internal/loader"
 	"github.com/gwillem/whip/internal/model"
-	"github.com/gwillem/whip/internal/runners"
 	"github.com/gwillem/whip/internal/ssh"
 	"github.com/spf13/cobra"
 )
@@ -68,7 +67,7 @@ func ensureDeputy(c *ssh.Client) error {
 	return nil
 }
 
-func runPlaybookAtHost(pb model.Playbook, h model.Host, results chan<- runners.TaskResult) {
+func runPlaybookAtHost(pb model.Playbook, h model.Host, results chan<- model.TaskResult) {
 	// log.Infof("Running play at target: %s", h)
 	conn, err := ssh.Connect(string(h))
 	if err != nil {
@@ -94,7 +93,7 @@ func runPlaybookAtHost(pb model.Playbook, h model.Host, results chan<- runners.T
 	cmd := "PATH=~/.cache/whip:$PATH deputy 2>>~/.cache/whip/deputy.err"
 	err = conn.RunLineStreamer(cmd, blob, func(b []byte) {
 		// fmt.Println("got res frm deputy... ", string(b))
-		var res runners.TaskResult
+		var res model.TaskResult
 		if err := json.Unmarshal(b, &res); err != nil {
 			log.Error(err)
 			return
@@ -139,12 +138,12 @@ func runWhip(cmd *cobra.Command, args []string) {
 		}
 	}
 
-	resultChan := make(chan runners.TaskResult)
+	resultChan := make(chan model.TaskResult)
 	wg := sync.WaitGroup{}
 
 	for target, pb := range jobBook {
 		wg.Add(1)
-		go func(pb model.Playbook, h model.Host, r chan<- runners.TaskResult) {
+		go func(pb model.Playbook, h model.Host, r chan<- model.TaskResult) {
 			defer wg.Done()
 			runPlaybookAtHost(pb, h, r)
 		}(pb, target, resultChan)

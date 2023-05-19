@@ -2,9 +2,11 @@ package runners
 
 import (
 	osuser "os/user"
+
+	"github.com/gwillem/whip/internal/model"
 )
 
-func AuthorizedKey(args TaskArgs) (tr TaskResult) {
+func AuthorizedKey(args model.TaskArgs) (tr model.TaskResult) {
 	tr.Status = ok
 
 	key := args.String("key")

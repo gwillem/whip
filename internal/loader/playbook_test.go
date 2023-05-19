@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/gwillem/whip/internal/model"
-	"github.com/gwillem/whip/internal/runners"
 	"github.com/gwillem/whip/internal/testutil"
 	"github.com/mitchellh/mapstructure"
 	"github.com/stretchr/testify/assert"
@@ -18,11 +17,11 @@ func TestLoadPlaybookSimple1(t *testing.T) {
 			Hosts: []model.Host{
 				"ubuntu@192.168.64.10",
 			},
-			Tasks: []runners.Task{
+			Tasks: []model.Task{
 				{
 					Runner: "shell",
 					Name:   "sleep random",
-					Args: runners.TaskArgs{
+					Args: model.TaskArgs{
 						"_args": "sleep $[ $RANDOM % 3 ]",
 					},
 					Loop: nil,
@@ -44,11 +43,11 @@ func TestExpandTaskLoops(t *testing.T) {
 			Hosts: []model.Host{
 				"ubuntu@192.168.64.10",
 			},
-			Tasks: []runners.Task{
+			Tasks: []model.Task{
 				{
 					Runner: "authorized_key",
 					Name:   "install ssh keys",
-					Args: runners.TaskArgs{
+					Args: model.TaskArgs{
 						"key":  "{{item}}",
 						"user": "ubuntu",
 					},
@@ -59,7 +58,7 @@ func TestExpandTaskLoops(t *testing.T) {
 				{
 					Runner: "authorized_key",
 					Name:   "install ssh keys",
-					Args: runners.TaskArgs{
+					Args: model.TaskArgs{
 						"key":  "{{item}}",
 						"user": "ubuntu",
 					},

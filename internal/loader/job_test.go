@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/gwillem/whip/internal/model"
-	"github.com/gwillem/whip/internal/runners"
 	"github.com/gwillem/whip/internal/testutil"
 )
 
@@ -17,10 +16,10 @@ func dummyJob() *model.Job {
 		},
 		Playbook: []model.Play{{
 			Name: "dummy play",
-			Tasks: []runners.Task{{
+			Tasks: []model.Task{{
 				Name:   "foo",
 				Runner: "command",
-				Args:   runners.TaskArgs{"cmd": "date"},
+				Args:   model.TaskArgs{"cmd": "date"},
 			}},
 		}},
 		Assets: []model.Asset{
