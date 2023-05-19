@@ -1,14 +1,12 @@
-package whip
+package model
 
 import (
+	"encoding/json"
 	"fmt"
-	"os"
-	"path/filepath"
 
 	"github.com/gwillem/whip/internal/runners"
 )
 
-// define Job struct
 type (
 	Job struct {
 		Vars     Vars     `json:"vars,omitempty"`
@@ -35,6 +33,14 @@ type (
 		Tasks []runners.Task `json:"tasks,omitempty"`
 	}
 	Host string
+
+	Target struct {
+		User string
+		Host string
+		Port int
+		Tag  string
+	}
+	Inventory []Target
 )
 
 func (j *Job) Tasks() []runners.Task {
@@ -49,27 +55,6 @@ func (j *Job) String() string {
 	return fmt.Sprintf("Job: %d tasks, %d assets, %d vars", len(j.Tasks()), len(j.Assets), len(j.Vars))
 }
 
-func DirToAsset(root string) Asset {
-	asset := Asset{Name: root}
-	err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-		if info.IsDir() {
-			return nil
-		}
-		data, err := os.ReadFile(path)
-		if err != nil {
-			return err
-		}
-
-		relPath := path[len(root):]
-
-		asset.Files = append(asset.Files, File{Path: relPath, Data: data})
-		return nil
-	})
-	if err != nil {
-		panic(err)
-	}
-	return asset
+func (j *Job) ToJSON() ([]byte, error) {
+	return json.Marshal(j)
 }

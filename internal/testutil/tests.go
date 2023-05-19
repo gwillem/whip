@@ -1,4 +1,4 @@
-package whip
+package testutil
 
 import (
 	"os"

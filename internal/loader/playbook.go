@@ -1,4 +1,4 @@
-package whip
+package loader
 
 import (
 	"fmt"
@@ -8,13 +8,14 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/log"
+	"github.com/gwillem/whip/internal/model"
 	"github.com/gwillem/whip/internal/runners"
 	"github.com/mitchellh/mapstructure"
 	"golang.org/x/exp/slices"
 	"gopkg.in/yaml.v3"
 )
 
-func LoadPlaybook(path string) (*Playbook, error) {
+func LoadPlaybook(path string) (*model.Playbook, error) {
 	rawData, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
@@ -35,8 +36,8 @@ func LoadPlaybook(path string) (*Playbook, error) {
 
 }
 
-func yamlToPlaybook(y any) (*Playbook, error) {
-	pb := Playbook{}
+func yamlToPlaybook(y any) (*model.Playbook, error) {
+	pb := model.Playbook{}
 	md := mapstructure.Metadata{}
 
 	config := &mapstructure.DecoderConfig{
@@ -122,7 +123,7 @@ func unquote(s string) string {
 
 // expandPlaybookLoops takes a playbook and expands any tasks that have a Loop,
 // replacing them with multiple tasks, each loop item copied into task.Vars
-func expandPlaybookLoops(pb *Playbook) {
+func expandPlaybookLoops(pb *model.Playbook) {
 	for playidx := range *pb {
 		play := &(*pb)[playidx]
 		// fmt.Println("len tasks BEFORE", len(play.Tasks))

@@ -1,19 +1,21 @@
-package whip
+package loader
 
 import (
 	"encoding/json"
 	"os"
 	"testing"
 
+	"github.com/gwillem/whip/internal/model"
 	"github.com/gwillem/whip/internal/runners"
+	"github.com/gwillem/whip/internal/testutil"
 )
 
-func dummyJob() *Job {
-	return &Job{
-		Vars: Vars{
+func dummyJob() *model.Job {
+	return &model.Job{
+		Vars: model.Vars{
 			"foo": "bar",
 		},
-		Playbook: []Play{{
+		Playbook: []model.Play{{
 			Name: "dummy play",
 			Tasks: []runners.Task{{
 				Name:   "foo",
@@ -21,8 +23,8 @@ func dummyJob() *Job {
 				Args:   runners.TaskArgs{"cmd": "date"},
 			}},
 		}},
-		Assets: []Asset{
-			DirToAsset(FixturePath("assets/sample")),
+		Assets: []model.Asset{
+			DirToAsset(testutil.FixturePath("assets/sample")),
 		},
 	}
 }
@@ -35,7 +37,7 @@ func Test_JobFixture(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if e := os.WriteFile(FixturePath("job.json"), blob, 0o644); e != nil {
+	if e := os.WriteFile(testutil.FixturePath("job.json"), blob, 0o644); e != nil {
 		t.Fatal(e)
 	}
 }

@@ -1,19 +1,21 @@
-package whip
+package loader
 
 import (
 	"testing"
 
+	"github.com/gwillem/whip/internal/model"
 	"github.com/gwillem/whip/internal/runners"
+	"github.com/gwillem/whip/internal/testutil"
 	"github.com/mitchellh/mapstructure"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestLoadPlaybookSimple1(t *testing.T) {
-	pb, err := LoadPlaybook(FixturePath("playbook/simple.yml"))
+	pb, err := LoadPlaybook(testutil.FixturePath("playbook/simple.yml"))
 	assert.NoError(t, err)
-	want := &Playbook{
-		Play{
-			Hosts: []Host{
+	want := &model.Playbook{
+		model.Play{
+			Hosts: []model.Host{
 				"ubuntu@192.168.64.10",
 			},
 			Tasks: []runners.Task{
@@ -35,11 +37,11 @@ func TestLoadPlaybookSimple1(t *testing.T) {
 }
 
 func TestExpandTaskLoops(t *testing.T) {
-	pb, err := LoadPlaybook(FixturePath("playbook/task-loop.yml"))
+	pb, err := LoadPlaybook(testutil.FixturePath("playbook/task-loop.yml"))
 	assert.NoError(t, err)
-	want := &Playbook{
-		Play{
-			Hosts: []Host{
+	want := &model.Playbook{
+		model.Play{
+			Hosts: []model.Host{
 				"ubuntu@192.168.64.10",
 			},
 			Tasks: []runners.Task{
@@ -72,7 +74,7 @@ func TestExpandTaskLoops(t *testing.T) {
 }
 
 func TestDuplicateRunner(t *testing.T) {
-	_, err := LoadPlaybook(FixturePath("playbook/duplicate_runner.yml"))
+	_, err := LoadPlaybook(testutil.FixturePath("playbook/duplicate_runner.yml"))
 	var e *mapstructure.Error
 	assert.ErrorAs(t, err, &e)
 }

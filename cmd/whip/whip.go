@@ -10,9 +10,10 @@ import (
 
 	"github.com/charmbracelet/log"
 	"github.com/gwillem/go-buildversion"
+	"github.com/gwillem/whip/internal/loader"
+	"github.com/gwillem/whip/internal/model"
 	"github.com/gwillem/whip/internal/runners"
 	"github.com/gwillem/whip/internal/ssh"
-	"github.com/gwillem/whip/internal/whip"
 	"github.com/spf13/cobra"
 )
 
@@ -67,7 +68,7 @@ func ensureDeputy(c *ssh.Client) error {
 	return nil
 }
 
-func runPlaybookAtHost(pb whip.Playbook, h whip.Host, results chan<- runners.TaskResult) {
+func runPlaybookAtHost(pb model.Playbook, h model.Host, results chan<- runners.TaskResult) {
 	// log.Infof("Running play at target: %s", h)
 	conn, err := ssh.Connect(string(h))
 	if err != nil {
@@ -83,7 +84,7 @@ func runPlaybookAtHost(pb whip.Playbook, h whip.Host, results chan<- runners.Tas
 	// log.Info("Sending job to target deputy...")
 
 	// TODO add vars and assets
-	job := whip.Job{Playbook: pb}
+	job := model.Job{Playbook: pb}
 
 	blob, err := job.ToJSON()
 	if err != nil {
@@ -122,7 +123,7 @@ func runWhip(cmd *cobra.Command, args []string) {
 	files, _ := deputies.ReadDir("deputies")
 	log.Infof("Starting whip %s with %d embedded deputies", buildversion.String(), len(files))
 
-	playbook, err := whip.LoadPlaybook(args[0])
+	playbook, err := loader.LoadPlaybook(args[0])
 	if err != nil {
 		log.Error(err)
 		return
@@ -131,7 +132,7 @@ func runWhip(cmd *cobra.Command, args []string) {
 	// TODO merge inventory with playbook if any
 
 	// Create jobbook to map plays to hosts
-	jobBook := map[whip.Host]whip.Playbook{}
+	jobBook := map[model.Host]model.Playbook{}
 	for _, play := range *playbook {
 		for _, target := range play.Hosts {
 			jobBook[target] = append(jobBook[target], play)
@@ -143,7 +144,7 @@ func runWhip(cmd *cobra.Command, args []string) {
 
 	for target, pb := range jobBook {
 		wg.Add(1)
-		go func(pb whip.Playbook, h whip.Host, r chan<- runners.TaskResult) {
+		go func(pb model.Playbook, h model.Host, r chan<- runners.TaskResult) {
 			defer wg.Done()
 			runPlaybookAtHost(pb, h, r)
 		}(pb, target, resultChan)

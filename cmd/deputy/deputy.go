@@ -7,8 +7,8 @@ import (
 	"io"
 	"os"
 
+	"github.com/gwillem/whip/internal/model"
 	"github.com/gwillem/whip/internal/runners"
-	"github.com/gwillem/whip/internal/whip"
 )
 
 func main() {
@@ -35,14 +35,14 @@ func main() {
 	}
 }
 
-func getJobFromStdin() *whip.Job {
+func getJobFromStdin() *model.Job {
 	reader := bufio.NewReader(os.Stdin)
 	blob, err := io.ReadAll(reader)
 	if err != nil {
 		panic(err)
 	}
 	// println("got blob with length", len(blob))
-	job := &whip.Job{}
+	job := &model.Job{}
 	if e := json.Unmarshal(blob, job); e != nil {
 		panic(e)
 	}

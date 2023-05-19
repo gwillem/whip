@@ -3,14 +3,15 @@ package main
 import (
 	"testing"
 
+	"github.com/gwillem/whip/internal/loader"
 	"github.com/gwillem/whip/internal/runners"
-	"github.com/gwillem/whip/internal/whip"
+	"github.com/gwillem/whip/internal/testutil"
 	"github.com/k0kubun/pp"
 	"github.com/stretchr/testify/assert"
 )
 
 func Test_DeputyIntegration(t *testing.T) {
-	pb, err := whip.LoadPlaybook(whip.FixturePath("playbook/simple.yml"))
+	pb, err := loader.LoadPlaybook(testutil.FixturePath("playbook/simple.yml"))
 	assert.NoError(t, err)
 	pp.Println(pb)
 
