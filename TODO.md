@@ -16,27 +16,38 @@
 - [x] display task results with "whip -v"
 - [x] Deputy handles multi plays
 - [x] support for variables
-    - can be defined in playbook, task (via "loop") or externally?
+  - can be defined in playbook, task (via "loop") or externally?
+- [ ] kill duplicate build process, just add "deputy" as cli command
 - [ ] support for template substitution
 - [ ] rename Host to Target in code
 - [ ] support for inventory files
 - [ ] chief also reads stderr from deputy to catch panics
 - [ ] limit parallel jobs to x, cli argument
-- [ ] record gif demo for in readme  https://github.com/charmbracelet/vhs
+- [ ] record gif demo for in readme https://github.com/charmbracelet/vhs
 - [ ] ensure basic go doc
 - [ ] support handlers
 - [ ] implement basic runners https://mike42.me/blog/2019-01-the-top-100-ansible-modules
-    - [ ] copy
-    - [ ] template
-    - [x] authorized_key 
-    - [ ] shell
-    - [ ] command
-    - [ ] template
-    - [ ] file
-    - [ ] apt
-    - [ ] systemd
-    - [ ] rsync support (via this? https://github.com/gokrazy/rsync/)
+  - [ ] copy
+  - [ ] template
+  - [x] authorized_key
+  - [ ] shell
+  - [ ] command
+  - [ ] template
+  - [ ] file
+  - [ ] apt
+  - [ ] systemd
+  - [ ] rsync support (via this? https://github.com/gokrazy/rsync/)
 - [ ] publish on github
 - [ ] support vault
 - [ ] add taskrunner syntax validation so we can lint the tasks before actual run
 - [ ] struct based cli arg parsing? such as go-arg or go-flags or kong
+
+# Ideal playbook
+
+- hosts: ubuntu@192.168.64.16
+  tasks:
+  - files: base/host1
+    - /etc/nginx:
+      handler: nginx
+      owner: root
+    -

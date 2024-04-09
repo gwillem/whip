@@ -98,7 +98,7 @@ func system(cmd []string) (tr model.TaskResult) {
 		tr.Output = string(data)
 	} else {
 		tr.Status = failed
-		tr.Output = err.Error() + ":\n" + string(data)
+		tr.Output = strings.Join(cmd, " ") + "\n" + err.Error() + ":\n" + string(data)
 	}
 	return tr
 }

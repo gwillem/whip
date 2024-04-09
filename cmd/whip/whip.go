@@ -10,8 +10,8 @@ import (
 
 	"github.com/charmbracelet/log"
 	"github.com/gwillem/go-buildversion"
-	"github.com/gwillem/whip/internal/loader"
 	"github.com/gwillem/whip/internal/model"
+	"github.com/gwillem/whip/internal/playbook"
 	"github.com/gwillem/whip/internal/ssh"
 	"github.com/spf13/cobra"
 )
@@ -122,7 +122,7 @@ func runWhip(cmd *cobra.Command, args []string) {
 	files, _ := deputies.ReadDir("deputies")
 	log.Infof("Starting whip %s with %d embedded deputies", buildversion.String(), len(files))
 
-	playbook, err := loader.LoadPlaybook(args[0])
+	playbook, err := playbook.Load(args[0])
 	if err != nil {
 		log.Error(err)
 		return

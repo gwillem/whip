@@ -9,6 +9,10 @@ for cmd in deputy whip; do
         os=$(echo $x | cut -d, -f1)
         arch=$(echo $x | cut -d, -f2)
 
+        if [ "$cmd" == "deputy" ] && [ "$os" != "linux" ]; then
+            continue
+        fi
+
         dst="build/$os-$arch"
         mkdir -p $dst
         echo $dst/$cmd ..

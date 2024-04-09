@@ -6,6 +6,8 @@ import (
 	"time"
 
 	"github.com/barkimedes/go-deepcopy"
+	"github.com/charmbracelet/log"
+	"github.com/mitchellh/mapstructure"
 )
 
 type (
@@ -91,11 +93,16 @@ func (ta TaskArgs) String(s string) string {
 }
 
 func (ta TaskArgs) StringSlice(s string) []string {
-	switch val := ta[s].(type) {
-	case []string:
-		return val
+	switch ta[s].(type) {
+	case string:
+		return []string{ta[s].(string)}
 	default:
-		return []string{fmt.Sprintf("%v", val)}
+		out := []string{}
+		if err := mapstructure.Decode(ta[s], &out); err != nil {
+			log.Error(err)
+			return []string{}
+		}
+		return out
 	}
 }
 

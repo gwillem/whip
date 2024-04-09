@@ -1,6 +1,7 @@
 ---
-- hosts: ubuntu@192.168.64.10
-  # - ubuntu@192.168.64.11
+- hosts:
+    - ubuntu@192.168.64.16
+    - ubuntu@192.168.64.17
   remote_user: root
   gather_facts: false
 
@@ -10,5 +11,5 @@
         user: ubuntu
         key: "{{item}}"
       loop:
-      - abc
-      - xyz
+        - abc
+        - xyz

@@ -1,0 +1,10 @@
+---
+- hosts: web
+  tasks:
+    - name: install pkgs
+      apt:
+        state: latest
+        update_cache: no
+        name:
+          - nginx
+          - gunicorn 

@@ -1,4 +1,4 @@
-package loader
+package playbook
 
 import (
 	"fmt"
@@ -15,7 +15,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-func LoadPlaybook(path string) (*model.Playbook, error) {
+func Load(path string) (*model.Playbook, error) {
 	rawData, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
