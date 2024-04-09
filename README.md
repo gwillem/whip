@@ -54,3 +54,8 @@ Fret no more, let's relive the original Ansible experience!
 - [gossh: declarative config management using Go](https://github.com/krilor/gossh)
 - [Ansible's YAML file is essentially code](https://news.ycombinator.com/item?id=16238005)
 - [Configuration complexity clock](http://mikehadlow.blogspot.com/2012/05/configuration-complexity-clock.html?m=1)
+
+# FAQ
+
+- Why is there an embedded build? To support different architectures between host and client
+- Is Chief Whip designed to be an Ansible replacement (backwards compatible) or to be a better solution to the same problem?

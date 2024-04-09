@@ -1,0 +1,1 @@
+air | egrep --line-buffered ^build | ts %T 

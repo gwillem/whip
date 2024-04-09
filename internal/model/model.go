@@ -31,13 +31,12 @@ type (
 	Playbook []Play
 	Play     struct {
 		Name  string         `json:"name,omitempty"`
-		Hosts []Host         `json:"hosts,omitempty"`
+		Hosts []TargetName   `json:"hosts,omitempty"`
 		Vars  map[string]any `json:"vars,omitempty"`
 		Tasks []Task         `json:"tasks,omitempty"`
 	}
-	Host string
-
-	Target struct {
+	TargetName string
+	Target     struct {
 		User string
 		Host string
 		Port int

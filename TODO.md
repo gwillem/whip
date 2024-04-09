@@ -17,7 +17,7 @@
 - [x] Deputy handles multi plays
 - [x] support for variables
   - can be defined in playbook, task (via "loop") or externally?
-- [ ] kill duplicate build process, just add "deputy" as cli command
+- [ ] add air for dev rebuild
 - [ ] support for template substitution
 - [ ] rename Host to Target in code
 - [ ] support for inventory files

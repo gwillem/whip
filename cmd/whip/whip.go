@@ -67,9 +67,9 @@ func ensureDeputy(c *ssh.Client) error {
 	return nil
 }
 
-func runPlaybookAtHost(pb model.Playbook, h model.Host, results chan<- model.TaskResult) {
-	// log.Infof("Running play at target: %s", h)
-	conn, err := ssh.Connect(string(h))
+func runPlaybookAtHost(pb model.Playbook, t model.TargetName, results chan<- model.TaskResult) {
+	log.Infof("Running play at target: %s", t)
+	conn, err := ssh.Connect(string(t))
 	if err != nil {
 		log.Error(err)
 		return
@@ -80,7 +80,7 @@ func runPlaybookAtHost(pb model.Playbook, h model.Host, results chan<- model.Tas
 		log.Error(err)
 		return
 	}
-	// log.Info("Sending job to target deputy...")
+	log.Info("Sending job to target deputy...")
 
 	// TODO add vars and assets
 	job := model.Job{Playbook: pb}
@@ -98,7 +98,7 @@ func runPlaybookAtHost(pb model.Playbook, h model.Host, results chan<- model.Tas
 			log.Error(err)
 			return
 		}
-		res.Host = string(h)
+		res.Host = string(t)
 		results <- res
 		// fmt.Println(res)
 	})
@@ -109,13 +109,12 @@ func runPlaybookAtHost(pb model.Playbook, h model.Host, results chan<- model.Tas
 }
 
 func runWhip(cmd *cobra.Command, args []string) {
-
 	verbosity, err := cmd.Flags().GetCount("verbose")
 	if err != nil {
 		log.Error(err)
 	}
 
-	fmt.Println("verbosity level is", verbosity)
+	// fmt.Println("verbosity level is", verbosity)
 
 	log.SetLevel(log.DebugLevel)
 
@@ -131,7 +130,7 @@ func runWhip(cmd *cobra.Command, args []string) {
 	// TODO merge inventory with playbook if any
 
 	// Create jobbook to map plays to hosts
-	jobBook := map[model.Host]model.Playbook{}
+	jobBook := map[model.TargetName]model.Playbook{}
 	for _, play := range *playbook {
 		for _, target := range play.Hosts {
 			jobBook[target] = append(jobBook[target], play)
@@ -143,7 +142,7 @@ func runWhip(cmd *cobra.Command, args []string) {
 
 	for target, pb := range jobBook {
 		wg.Add(1)
-		go func(pb model.Playbook, h model.Host, r chan<- model.TaskResult) {
+		go func(pb model.Playbook, h model.TargetName, r chan<- model.TaskResult) {
 			defer wg.Done()
 			runPlaybookAtHost(pb, h, r)
 		}(pb, target, resultChan)

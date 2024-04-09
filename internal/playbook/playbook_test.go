@@ -14,7 +14,7 @@ func TestLoadPlaybookSimple1(t *testing.T) {
 	assert.NoError(t, err)
 	want := &model.Playbook{
 		model.Play{
-			Hosts: []model.Host{
+			Hosts: []model.TargetName{
 				"ubuntu@192.168.64.10",
 			},
 			Tasks: []model.Task{
@@ -40,7 +40,7 @@ func TestExpandTaskLoops(t *testing.T) {
 	assert.NoError(t, err)
 	want := &model.Playbook{
 		model.Play{
-			Hosts: []model.Host{
+			Hosts: []model.TargetName{
 				"ubuntu@192.168.64.10",
 			},
 			Tasks: []model.Task{
@@ -85,5 +85,4 @@ func TestTaskArgList(t *testing.T) {
 	task := (*pb)[0].Tasks[0]
 
 	assert.ElementsMatch(t, task.Args.StringSlice("name"), []string{"gunicorn", "nginx"})
-
 }
