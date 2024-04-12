@@ -1,15 +1,12 @@
 package main
 
 import (
-	"crypto/sha256"
 	"embed"
 	"encoding/json"
-	"fmt"
-	"strings"
 	"sync"
 
-	"github.com/charmbracelet/log"
 	"github.com/gwillem/go-buildversion"
+	log "github.com/gwillem/go-simplelog"
 	"github.com/gwillem/whip/internal/model"
 	"github.com/gwillem/whip/internal/playbook"
 	"github.com/gwillem/whip/internal/ssh"
@@ -17,58 +14,86 @@ import (
 )
 
 const (
-	deputyPath = ".cache/whip/deputy"
+	deputyPath       = ".cache/whip/deputy"
+	defaultAssetPath = "files"
 )
 
 //go:embed deputies
 var deputies embed.FS
 
-func ensureDeputy(c *ssh.Client) error {
-	uname, err := c.Run(`
-			uname -sm; 
-			mkdir -p ~/.cache/whip 2>/dev/null
-			touch ~/.cache/whip/deputy 2>/dev/null;
-			sha256sum ~/.cache/whip/deputy 2>/dev/null | awk '{print $1}';
-			`)
+func runWhip(cmd *cobra.Command, args []string) {
+	verbosity, err := cmd.Flags().GetCount("verbose")
 	if err != nil {
-		return err
+		log.Error(err)
 	}
 
-	lines := strings.Split(strings.TrimSpace(uname), "\n")
-	if len(lines) != 2 {
-		return fmt.Errorf("unexpected output from uname: %s", uname)
+	// fmt.Println("verbosity level is", verbosity)
+	log.SetLevel(log.LevelError)
+	if verbosity > 0 {
+		log.SetLevel(log.LevelDebug)
 	}
 
-	osarg := strings.ToLower(lines[0])
-	osarg = strings.ReplaceAll(osarg, " ", "-")
-	osarg = strings.ReplaceAll(osarg, "aarch64", "arm64")
+	files, _ := deputies.ReadDir("deputies")
+	log.Task("Starting whip", buildversion.String(), "with", len(files), "embedded deputies")
 
-	remoteSha := strings.TrimSpace(lines[1])
-
-	myDep, err := deputies.ReadFile("deputies/" + osarg)
+	pb, err := playbook.Load(args[0])
 	if err != nil {
-		return fmt.Errorf("could not read deputy for %s: %s", osarg, err)
+		log.Error(err)
+		return
 	}
 
-	localSha := fmt.Sprintf("%x", sha256.Sum256(myDep))
+	log.Progress("Loaded playbook with", len(*pb), "plays")
 
-	// log.Debugf("local/remote sha:\n\t%s\n\t%s", localSha, remoteSha)
-
-	if localSha == remoteSha {
-		// log.Debug("remote deputy seems to be fine")
-		return nil
+	// load assets
+	assets, err := playbook.DirToAsset(defaultAssetPath)
+	if err != nil {
+		log.Warn(err)
 	}
 
-	// log.Debug("uploading deputy for ", osarg)
-	if err := c.UploadBytes(myDep, deputyPath, 0o755); err != nil {
-		return fmt.Errorf("Could not upload deputy: %s", err)
+	// load external vars?
+
+	// Create jobbook to map plays to targets
+	jobBook := map[model.TargetName]model.Job{}
+	for i, play := range *pb {
+		log.Progress("Processing play", i, "with", len(play.Hosts), "hosts")
+		for _, target := range play.Hosts {
+
+			if _, ok := jobBook[target]; !ok {
+				jobBook[target] = model.Job{}
+			}
+
+			t := jobBook[target]
+			t.Assets = assets
+			t.Playbook = append(t.Playbook, play)
+			jobBook[target] = t
+		}
 	}
 
-	return nil
+	resultChan := make(chan model.TaskResult)
+	wg := sync.WaitGroup{}
+
+	for target, job := range jobBook {
+		wg.Add(1)
+		go func(job model.Job, h model.TargetName, r chan<- model.TaskResult) {
+			defer wg.Done()
+			runPlaybookAtHost(job, h, r)
+		}(job, target, resultChan)
+	}
+
+	// kill result channel so reader knows when to stop
+	go func() {
+		wg.Wait()
+		close(resultChan)
+	}()
+
+	reportResults(resultChan, verbosity)
 }
 
-func runPlaybookAtHost(pb model.Playbook, t model.TargetName, results chan<- model.TaskResult) {
-	log.Infof("Running play at target: %s", t)
+func runPlaybookAtHost(job model.Job, t model.TargetName, results chan<- model.TaskResult) {
+	if len(job.Playbook) == 0 {
+		log.Fatal("no plays to run at target", t)
+	}
+	log.Task("Running play at target:", t, "with", len(job.Playbook), "plays")
 	conn, err := ssh.Connect(string(t))
 	if err != nil {
 		log.Error(err)
@@ -80,19 +105,14 @@ func runPlaybookAtHost(pb model.Playbook, t model.TargetName, results chan<- mod
 		log.Error(err)
 		return
 	}
-	log.Info("Sending job to target deputy...")
 
-	// TODO add vars and assets
-	job := model.Job{Playbook: pb}
-
-	blob, err := job.ToJSON()
+	blob, err := job.Serialize()
 	if err != nil {
 		log.Error(err)
 		return
 	}
-	cmd := "PATH=~/.cache/whip:$PATH deputy 2>>~/.cache/whip/deputy.err"
+	cmd := "PATH=~/.cache/whip:$PATH deputy 2>~/.cache/whip/deputy.err"
 	err = conn.RunLineStreamer(cmd, blob, func(b []byte) {
-		// fmt.Println("got res frm deputy... ", string(b))
 		var res model.TaskResult
 		if err := json.Unmarshal(b, &res); err != nil {
 			log.Error(err)
@@ -103,56 +123,7 @@ func runPlaybookAtHost(pb model.Playbook, t model.TargetName, results chan<- mod
 		// fmt.Println(res)
 	})
 	if err != nil {
-		log.Error(fmt.Errorf("could not run deputy: %s", err))
+		log.Fatal("Deputy error, see ~/.cache/whip/deputy.err at", t, err)
 		return
 	}
-}
-
-func runWhip(cmd *cobra.Command, args []string) {
-	verbosity, err := cmd.Flags().GetCount("verbose")
-	if err != nil {
-		log.Error(err)
-	}
-
-	// fmt.Println("verbosity level is", verbosity)
-
-	log.SetLevel(log.DebugLevel)
-
-	files, _ := deputies.ReadDir("deputies")
-	log.Infof("Starting whip %s with %d embedded deputies", buildversion.String(), len(files))
-
-	playbook, err := playbook.Load(args[0])
-	if err != nil {
-		log.Error(err)
-		return
-	}
-
-	// TODO merge inventory with playbook if any
-
-	// Create jobbook to map plays to hosts
-	jobBook := map[model.TargetName]model.Playbook{}
-	for _, play := range *playbook {
-		for _, target := range play.Hosts {
-			jobBook[target] = append(jobBook[target], play)
-		}
-	}
-
-	resultChan := make(chan model.TaskResult)
-	wg := sync.WaitGroup{}
-
-	for target, pb := range jobBook {
-		wg.Add(1)
-		go func(pb model.Playbook, h model.TargetName, r chan<- model.TaskResult) {
-			defer wg.Done()
-			runPlaybookAtHost(pb, h, r)
-		}(pb, target, resultChan)
-	}
-
-	// kill result channel so reader knows when to stop
-	go func() {
-		wg.Wait()
-		close(resultChan)
-	}()
-
-	reportResults(resultChan, verbosity)
 }

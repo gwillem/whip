@@ -6,6 +6,8 @@ Whip your servers into line. Chief Whip is a _fast_ and _simple_ Ansible replace
 
 # Demo
 
+> [!NOTE] Keep this in mind.
+
 # Objectives
 
 Fast!
@@ -53,6 +55,7 @@ Fret no more, let's relive the original Ansible experience!
 - [Is Ansible turing complete?](https://stackoverflow.com/questions/40127586/is-ansible-turing-complete)
 - [gossh: declarative config management using Go](https://github.com/krilor/gossh)
 - [Ansible's YAML file is essentially code](https://news.ycombinator.com/item?id=16238005)
+- [Top Ansible tasks](https://mike42.me/blog/2019-01-the-top-100-ansible-modules)
 - [Configuration complexity clock](http://mikehadlow.blogspot.com/2012/05/configuration-complexity-clock.html?m=1)
 
 # FAQ

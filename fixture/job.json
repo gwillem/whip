@@ -2,24 +2,28 @@
   "vars": {
     "foo": "bar"
   },
-  "tasks": [
+  "playbook": [
     {
-      "runner": "command",
-      "name": "foo",
-      "args": {
-        "cmd": "date"
-      }
-    }
-  ],
-  "assets": [
-    {
-      "name": "/Users/willem/git/whip/fixture/assets/sample",
-      "files": [
+      "name": "dummy play",
+      "tasks": [
         {
-          "path": "/etc/nginx/nginx.conf",
-          "data": "aHR0cCB7CiAgICBzZXJ2ZXIgewogICAgICAgIGxpc3RlbiA4MDsKICAgICAgICByb290IC92YXIvd3d3L2h0bWw7CiAgICB9Cn0="
+          "runner": "command",
+          "name": "foo",
+          "args": {
+            "cmd": "date"
+          }
         }
       ]
     }
-  ]
+  ],
+  "assets": {
+    "name": "/Users/willem/git/whip/fixture/assets/sample",
+    "files": [
+      {
+        "path": "/etc/nginx/nginx.conf",
+        "data": "aHR0cCB7CiAgICBzZXJ2ZXIgewogICAgICAgIGxpc3RlbiA4MDsKICAgICAgICByb290IC92YXIvd3d3L2h0bWw7CiAgICB9Cn0=",
+        "mode": 420
+      }
+    ]
+  }
 }

@@ -15,6 +15,10 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+const (
+	defaultAssetPath = "files"
+)
+
 func Load(path string) (*model.Playbook, error) {
 	rawData, err := os.ReadFile(path)
 	if err != nil {
@@ -31,10 +35,23 @@ func Load(path string) (*model.Playbook, error) {
 		return nil, err
 	}
 
+	for _, pb := range *pb {
+		for _, t := range pb.Hosts {
+			log.Debug("Found playbook target:", t)
+		}
+	}
+
 	expandPlaybookLoops(pb)
 	return pb, nil
-
 }
+
+// parses given playbook for asset references, returning a list of unique assets
+// func LoadAssets(pb *model.Playbook) (*model.Asset, error) {
+// 	if _, err := os.Stat(defaultAssetPath); os.IsNotExist(err) {
+// 		return &model.Asset{}, nil
+// 	}
+// 	return DirToAsset(defaultAssetPath)
+// }
 
 func yamlToPlaybook(y any) (*model.Playbook, error) {
 	pb := model.Playbook{}
@@ -127,7 +144,7 @@ func expandPlaybookLoops(pb *model.Playbook) {
 	for playidx := range *pb {
 		play := &(*pb)[playidx]
 		// fmt.Println("len tasks BEFORE", len(play.Tasks))
-		for i := len(play.Tasks) - 1; i >= 0; i-- { //reverse range, because we are expanding the slice in place
+		for i := len(play.Tasks) - 1; i >= 0; i-- { // reverse range, because we are expanding the slice in place
 			if loops := play.Tasks[i].Loop; loops != nil {
 				newTasks := []model.Task{}
 				for _, l := range loops {

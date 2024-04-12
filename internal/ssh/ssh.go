@@ -16,6 +16,7 @@ import (
 	"net"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/karrick/gobls"
 	"github.com/pkg/sftp"
@@ -24,9 +25,10 @@ import (
 )
 
 const (
-	TCP        = "tcp"
-	UNIX       = "unix"
-	AGENT_SOCK = "SSH_AUTH_SOCK"
+	tcp        = "tcp"
+	unix       = "unix"
+	agentSock  = "SSH_AUTH_SOCK"
+	sshTimeout = 3 * time.Second
 )
 
 var defaultKeyFile = os.ExpandEnv("$HOME/.ssh/id_rsa")
@@ -160,8 +162,8 @@ func Connect(target string) (*Client, error) {
 	}
 
 	// Try agent?
-	if os.Getenv(AGENT_SOCK) != "" {
-		if agentConn, err := net.Dial("unix", os.Getenv(AGENT_SOCK)); err == nil {
+	if os.Getenv(agentSock) != "" {
+		if agentConn, err := net.Dial("unix", os.Getenv(agentSock)); err == nil {
 			// fmt.Println("Adding agent auth")
 			authMethod := ssh.PublicKeysCallback(agent.NewClient(agentConn).Signers)
 			authMethods = append(authMethods, authMethod)
@@ -176,9 +178,10 @@ func Connect(target string) (*Client, error) {
 		User:            user,
 		Auth:            authMethods,
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+		Timeout:         sshTimeout,
 	}
 	addr := fmt.Sprintf("%s:%s", host, port)
-	cl, err := ssh.Dial(TCP, addr, config)
+	cl, err := ssh.Dial(tcp, addr, config)
 	return &Client{cl: cl}, err
 }
 

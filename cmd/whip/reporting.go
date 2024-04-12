@@ -6,6 +6,7 @@ import (
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
+	log "github.com/gwillem/go-simplelog"
 	"github.com/gwillem/whip/internal/model"
 )
 
@@ -23,6 +24,7 @@ type (
 func (t tuiHandler) Send(r model.TaskResult) {
 	t.tui.Send(r)
 }
+
 func (t tuiHandler) Quit() {
 	time.Sleep(100 * time.Millisecond) // TODO eliminate this
 	t.tui.Quit()
@@ -30,7 +32,6 @@ func (t tuiHandler) Quit() {
 }
 
 func (h verboseHandler) Send(r model.TaskResult) {
-
 	statusColor := green
 	status := "ok"
 
@@ -47,22 +48,21 @@ func (h verboseHandler) Send(r model.TaskResult) {
 	runner := r.Task.Runner
 	taskSummary := fmt.Sprintf("%s %s", statusColor(runner), r.Task.Args)
 
-	fmt.Printf("%s %s (%.2fs %s)\n", r.Host, taskSummary, r.Duration.Seconds(), status)
+	log.Progress(fmt.Sprintf("%s %s (%.2fs %s)", r.Host, taskSummary, r.Duration.Seconds(), status))
 	// fmt.Printf("<%s>\n", r.Output)
 	if len(r.Output) > 0 {
 		for _, line := range strings.Split(strings.TrimSpace(r.Output), "\n") {
-			fmt.Printf("  %s\n", dark(line))
+			fmt.Printf("    %s\n", dark(line))
 		}
 	}
 	// fmt.Println(r.Output)
-
 }
 func (h verboseHandler) Quit() {}
 
 func reportResults(results <-chan model.TaskResult, verbosity int) {
-	fmt.Println()
+	// fmt.Println()
 
-	var handler resultHandler = verboseHandler{}
+	var handler resultHandler
 
 	switch verbosity {
 	case 0:
@@ -107,10 +107,9 @@ func reportResults(results <-chan model.TaskResult, verbosity int) {
 		}
 	}
 
-	fmt.Println()
-	for k, stats := range stats {
-		fmt.Println(k, stats)
+	if verbosity > 0 {
+		for k, stats := range stats {
+			log.Ok(fmt.Sprint(k, " ", stats))
+		}
 	}
-
-	fmt.Println()
 }

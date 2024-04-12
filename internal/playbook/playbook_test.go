@@ -41,7 +41,7 @@ func TestExpandTaskLoops(t *testing.T) {
 	want := &model.Playbook{
 		model.Play{
 			Hosts: []model.TargetName{
-				"ubuntu@192.168.64.10",
+				"ubuntu@192.168.64.16",
 			},
 			Tasks: []model.Task{
 				{

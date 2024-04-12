@@ -3,6 +3,7 @@ package model
 import (
 	"encoding/json"
 	"fmt"
+	"io/fs"
 	"time"
 
 	"github.com/barkimedes/go-deepcopy"
@@ -14,7 +15,7 @@ type (
 	Job struct {
 		Vars     Vars     `json:"vars,omitempty"`
 		Playbook Playbook `json:"playbook,omitempty"`
-		Assets   []Asset  `json:"assets,omitempty"`
+		Assets   *Asset   `json:"assets,omitempty"`
 	}
 
 	Vars map[string]any
@@ -24,16 +25,17 @@ type (
 		Files []File `json:"files,omitempty"`
 	}
 	File struct {
-		Path string `json:"path,omitempty"`
-		Data []byte `json:"data,omitempty"`
+		Path string      `json:"path,omitempty"`
+		Data []byte      `json:"data,omitempty"`
+		Mode fs.FileMode `json:"mode,omitempty"`
 	}
-
 	Playbook []Play
 	Play     struct {
-		Name  string         `json:"name,omitempty"`
-		Hosts []TargetName   `json:"hosts,omitempty"`
-		Vars  map[string]any `json:"vars,omitempty"`
-		Tasks []Task         `json:"tasks,omitempty"`
+		Name      string         `json:"name,omitempty"`
+		AssetPath string         `json:"assets,omitempty"`
+		Hosts     []TargetName   `json:"hosts,omitempty"`
+		Vars      map[string]any `json:"vars,omitempty"`
+		Tasks     []Task         `json:"tasks,omitempty"`
 	}
 	TargetName string
 	Target     struct {
@@ -76,10 +78,10 @@ func (j *Job) Tasks() []Task {
 }
 
 func (j *Job) String() string {
-	return fmt.Sprintf("Job: %d tasks, %d assets, %d vars", len(j.Tasks()), len(j.Assets), len(j.Vars))
+	return fmt.Sprintf("Job: %d tasks, %d assets, %d vars", len(j.Tasks()), len(j.Assets.Files), len(j.Vars))
 }
 
-func (j *Job) ToJSON() ([]byte, error) {
+func (j *Job) Serialize() ([]byte, error) {
 	return json.Marshal(j)
 }
 

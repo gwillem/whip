@@ -10,14 +10,19 @@ require (
 	github.com/charmbracelet/log v0.2.1
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510
 	github.com/gwillem/go-buildversion v0.0.0-20230402114832-b1addefa8764
+	github.com/gwillem/go-simplelog v0.3.1
+	github.com/ieee0824/go-deepmerge v0.0.0-20170912170951-7ec7dbbd5a1f
 	github.com/k0kubun/pp v3.0.1+incompatible
 	github.com/karrick/gobls v1.3.5
 	github.com/mitchellh/mapstructure v1.5.0
+	github.com/nikolalohinski/gonja v1.5.0
 	github.com/pkg/sftp v1.13.5
 	github.com/spf13/afero v1.9.5
 	github.com/spf13/cobra v1.7.0
+	github.com/stretchr/testify v1.8.2
 	golang.org/x/crypto v0.8.0
 	golang.org/x/exp v0.0.0-20230510235704-dd950f8aeaea
+	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
@@ -26,9 +31,9 @@ require (
 	github.com/containerd/console v1.0.4-0.20230313162750-1ae8d489ac81 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
+	github.com/fatih/color v1.15.0 // indirect
 	github.com/go-logfmt/logfmt v0.6.0 // indirect
 	github.com/goph/emperror v0.17.1 // indirect
-	github.com/ieee0824/go-deepmerge v0.0.0-20170912170951-7ec7dbbd5a1f
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/k0kubun/colorstring v0.0.0-20150214042306-9440f1994b88 // indirect
@@ -45,18 +50,17 @@ require (
 	github.com/muesli/cancelreader v0.2.2 // indirect
 	github.com/muesli/reflow v0.3.0 // indirect
 	github.com/muesli/termenv v0.15.1 // indirect
-	github.com/nikolalohinski/gonja v1.5.0
 	github.com/pelletier/go-toml/v2 v2.0.7 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/rivo/uniseg v0.2.0 // indirect
 	github.com/sirupsen/logrus v1.3.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
-	github.com/stretchr/testify v1.8.2
 	github.com/yargevad/filepathx v1.0.0 // indirect
 	golang.org/x/sync v0.1.0 // indirect
 	golang.org/x/sys v0.8.0 // indirect
 	golang.org/x/term v0.7.0 // indirect
 	golang.org/x/text v0.9.0 // indirect
-	gopkg.in/yaml.v3 v3.0.1
 )
+
+replace github.com/gwillem/go-simplelog => ../go-simplelog

@@ -20,7 +20,7 @@ It aims to be stand-in replacement for Ansible for 90% of use cases.`,
 	vaultCmd = &cobra.Command{
 		Use:   "vault",
 		Short: "Encrypt and decrypt secrets",
-		Run: func(cmd *cobra.Command, args []string) {
+		Run: func(_ *cobra.Command, _ []string) {
 			fmt.Println("not implemented yet")
 		},
 	}

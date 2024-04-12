@@ -8,6 +8,7 @@ import (
 	"os"
 
 	"github.com/gwillem/whip/internal/model"
+	"github.com/gwillem/whip/internal/playbook"
 	"github.com/gwillem/whip/internal/runners"
 )
 
@@ -15,10 +16,16 @@ func main() {
 	job := getJobFromStdin()
 	taskTotal := len(job.Tasks())
 	taskIdx := 0
+
+	assetFs, err := playbook.AssetToFS(job.Assets)
+	if err != nil {
+		panic(err)
+	}
+
 	for playIdx, play := range job.Playbook {
 		for _, task := range play.Tasks {
 			taskIdx++
-			res := runners.Run(task, play.Vars)
+			res := runners.Run(task, play.Vars, assetFs)
 			res.PlayIdx = playIdx
 			res.TaskIdx = taskIdx
 			res.TaskTotal = taskTotal

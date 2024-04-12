@@ -10,6 +10,7 @@ import (
 )
 
 func dummyJob() *model.Job {
+	asset, _ := DirToAsset(testutil.FixturePath("assets/sample"))
 	return &model.Job{
 		Vars: model.Vars{
 			"foo": "bar",
@@ -22,9 +23,7 @@ func dummyJob() *model.Job {
 				Args:   model.TaskArgs{"cmd": "date"},
 			}},
 		}},
-		Assets: []model.Asset{
-			DirToAsset(testutil.FixturePath("assets/sample")),
-		},
+		Assets: asset,
 	}
 }
 
@@ -38,5 +37,14 @@ func Test_JobFixture(t *testing.T) {
 	}
 	if e := os.WriteFile(testutil.FixturePath("job.json"), blob, 0o644); e != nil {
 		t.Fatal(e)
+	}
+
+	var job2 model.Job
+	blob, err = os.ReadFile(testutil.FixturePath("job.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := json.Unmarshal(blob, &job2); err != nil {
+		t.Fatal(err)
 	}
 }

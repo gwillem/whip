@@ -7,7 +7,8 @@ import (
 )
 
 func AuthorizedKey(args model.TaskArgs) (tr model.TaskResult) {
-	tr.Status = ok
+	var err error
+	tr.Status = success
 
 	key := args.String("key")
 	if key == "" {
@@ -34,10 +35,8 @@ func AuthorizedKey(args model.TaskArgs) (tr model.TaskResult) {
 	}
 	authfile := sshdir + "/authorized_keys"
 
-	if changed, e := ensureLineInFile(authfile, key); e != nil {
+	if tr.Changed, err = ensureLineInFile(authfile, key); err != nil {
 		return failure("failed to add key to authorized_keys file", e)
-	} else {
-		tr.Changed = changed
 	}
 	tr.Output = "Installed authorized_key for " + args.String("user") + " with key " + args.String("key") + "\n"
 	return tr

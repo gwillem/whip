@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	ok int = iota
+	success int = iota
 	failed
 
 	defaultArg = "_args"
@@ -81,8 +81,7 @@ func registerRunner(name string, fn runnerFunc, meta runnerMeta) {
 }
 
 // Run is called by the deputy to run a task on localhost.
-func Run(task model.Task, vars map[string]any) (tr model.TaskResult) {
-
+func Run(task model.Task, vars map[string]any, afs afero.Fs) (tr model.TaskResult) {
 	start := time.Now()
 	fail := func(msg string) model.TaskResult {
 		return model.TaskResult{
@@ -92,10 +91,16 @@ func Run(task model.Task, vars map[string]any) (tr model.TaskResult) {
 		}
 	}
 
+	// defer func() {
+	// 	if r := recover(); r != nil {
+	// 		fail("skdjfjksdjf")
+	// 	}
+	// }()
+
 	// fmt.Println("Running", task.Type)
 	runner, ok := runners[task.Runner]
 	if !ok {
-		return fail("No runner found for task '" + task.Runner + "'")
+		return fail("No runner found for task '" + task.Runner + "'") // todo, is empty for unknown runners
 	}
 
 	// merge global and task vars
@@ -115,6 +120,10 @@ func Run(task model.Task, vars map[string]any) (tr model.TaskResult) {
 			}
 			task.Args[k] = new
 		}
+	}
+
+	if afs != nil {
+		task.Args["_assets"] = afs
 	}
 
 	tr = runner.fn(task.Args)

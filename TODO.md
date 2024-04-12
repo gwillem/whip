@@ -17,7 +17,9 @@
 - [x] Deputy handles multi plays
 - [x] support for variables
   - can be defined in playbook, task (via "loop") or externally?
-- [ ] add air for dev rebuild
+- [x] add air for dev rebuild
+- [ ] actually sends files
+- [ ] replace json ipc with gob streaming
 - [ ] support for template substitution
 - [ ] rename Host to Target in code
 - [ ] support for inventory files
@@ -46,8 +48,26 @@
 
 - hosts: ubuntu@192.168.64.16
   tasks:
-  - files: base/host1
-    - /etc/nginx:
-      handler: nginx
-      owner: root
-    -
+  - files: base/host1 - /etc/nginx:
+    handler: nginx
+    owner: root -
+    f
+
+# Todo for MVP / internal use
+
+- authorized_keys
+- secrets (age?)
+- templates
+- apt
+- handlers, notify
+- files meta data
+- files: owner, state
+- lineinfile
+- files: actual checksum comparison
+- systemd
+
+nice:
+
+- move assets from run param to arg param
+- file sync: use tar or std serialization
+- use gob instead of json for cmd streaming
