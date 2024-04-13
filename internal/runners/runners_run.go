@@ -2,6 +2,7 @@ package runners
 
 import (
 	"fmt"
+	"runtime/debug"
 	"sort"
 	"strings"
 	"time"
@@ -91,11 +92,14 @@ func Run(task model.Task, vars map[string]any, afs afero.Fs) (tr model.TaskResul
 		}
 	}
 
-	// defer func() {
-	// 	if r := recover(); r != nil {
-	// 		fail("skdjfjksdjf")
-	// 	}
-	// }()
+	defer func() {
+		if r := recover(); r != nil {
+			trace := string(debug.Stack())
+			// get rid of first 5 lines
+			trace = strings.Join(strings.Split(trace, "\n")[5:], "\n")
+			tr = fail(trace)
+		}
+	}()
 
 	// fmt.Println("Running", task.Type)
 	runner, ok := runners[task.Runner]
