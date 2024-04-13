@@ -10,6 +10,7 @@ Goal: mimic basic ssh cli behaviour as much as possible. Todo: parse .ssh/config
 
 import (
 	"bytes"
+	"encoding/gob"
 	"fmt"
 	"io"
 	"log"
@@ -60,6 +61,39 @@ func (c *Client) RunWriteRead(cmd string, toWrite []byte) ([]byte, error) {
 	return sess.CombinedOutput(cmd)
 }
 
+// RunGobStreamer runs command over SSH, while parsing its stdout as gob stream.
+// No method, because can't use generics on methods. Do we actually need
+// generics to make the ssh package unaware of actual objects being passed?
+func RunGobStreamer[T any](c *Client, cmd string, stdin io.Reader, callback func(T)) error {
+	s, err := c.cl.NewSession()
+	if err != nil {
+		return fmt.Errorf("failed to create session: %w", err)
+	}
+	s.Stdin = stdin
+	stdout, err := s.StdoutPipe()
+	if err != nil {
+		return err
+	}
+	if err := s.Start(cmd); err != nil {
+		return err
+	}
+
+	dec := gob.NewDecoder(stdout)
+
+	var obj T
+	for {
+		err := dec.Decode(&obj)
+		if err == io.EOF {
+			// End of the stream
+			break
+		} else if err != nil {
+			log.Fatalf("error decoding GOB data: %v", err)
+		}
+		callback(obj)
+	}
+	return s.Wait()
+}
+
 func (c *Client) RunLineStreamer(cmd string, toWrite []byte, readCB func([]byte)) error {
 	s, err := c.cl.NewSession()
 	if err != nil {
@@ -75,7 +109,6 @@ func (c *Client) RunLineStreamer(cmd string, toWrite []byte, readCB func([]byte)
 	if err := s.Start(cmd); err != nil {
 		return err
 	}
-
 	scanner := gobls.NewScanner(stdout)
 	for scanner.Scan() {
 		readCB(scanner.Bytes())

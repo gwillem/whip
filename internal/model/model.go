@@ -1,7 +1,7 @@
 package model
 
 import (
-	"encoding/json"
+	"encoding/gob"
 	"fmt"
 	"io/fs"
 	"time"
@@ -69,6 +69,11 @@ type (
 	}
 )
 
+func init() {
+	gob.Register(map[string]interface{}{})
+	gob.Register([]interface{}{})
+}
+
 func (j *Job) Tasks() []Task {
 	tasks := []Task{}
 	for _, play := range j.Playbook {
@@ -79,10 +84,6 @@ func (j *Job) Tasks() []Task {
 
 func (j *Job) String() string {
 	return fmt.Sprintf("Job: %d tasks, %d assets, %d vars", len(j.Tasks()), len(j.Assets.Files), len(j.Vars))
-}
-
-func (j *Job) Serialize() ([]byte, error) {
-	return json.Marshal(j)
 }
 
 func (tr TaskResult) String() string {

@@ -1,8 +1,9 @@
 package main
 
 import (
+	"bytes"
 	"embed"
-	"encoding/json"
+	"encoding/gob"
 	"sync"
 
 	"github.com/gwillem/go-buildversion"
@@ -106,21 +107,17 @@ func runPlaybookAtHost(job model.Job, t model.TargetName, results chan<- model.T
 		return
 	}
 
-	blob, err := job.Serialize()
-	if err != nil {
-		log.Error(err)
+	var buffer bytes.Buffer
+	if err := gob.NewEncoder(&buffer).Encode(job); err != nil {
+		log.Fatal("gob encode err", err)
 		return
+
 	}
+
 	cmd := "PATH=~/.cache/whip:$PATH deputy 2>~/.cache/whip/deputy.err"
-	err = conn.RunLineStreamer(cmd, blob, func(b []byte) {
-		var res model.TaskResult
-		if err := json.Unmarshal(b, &res); err != nil {
-			log.Error(err)
-			return
-		}
+	err = ssh.RunGobStreamer(conn, cmd, &buffer, func(res model.TaskResult) {
 		res.Host = string(t)
 		results <- res
-		// fmt.Println(res)
 	})
 	if err != nil {
 		log.Fatal("Deputy error, see ~/.cache/whip/deputy.err at", t, err)
