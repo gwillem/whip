@@ -1,15 +1,47 @@
 package runners
 
 import (
+	"bytes"
+	"crypto/sha256"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"strings"
 
+	log "github.com/gwillem/go-simplelog"
 	"github.com/gwillem/whip/internal/model"
 	"github.com/karrick/gobls"
 	"github.com/spf13/afero"
 )
+
+func filesAreEqual(fs1, fs2 afero.Fs, path1, path2 string) bool {
+	h1, err := getFileChecksum(fs1, path1)
+	if err != nil {
+		log.Error(err)
+		return false
+	}
+	h2, err := getFileChecksum(fs2, path2)
+	if err != nil {
+		log.Error(err)
+		return false
+	}
+	return bytes.Equal(h1, h2)
+}
+
+func getFileChecksum(fs afero.Fs, filePath string) ([]byte, error) {
+	file, err := fs.Open(filePath)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	hash := sha256.New()
+	if _, err := io.Copy(hash, file); err != nil {
+		return nil, err
+	}
+	return hash.Sum(nil), nil
+}
 
 func ensureLineInFile(path, line string) (bool, error) {
 	// will add later

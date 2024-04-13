@@ -18,8 +18,8 @@
 - [x] support for variables
   - can be defined in playbook, task (via "loop") or externally?
 - [x] add air for dev rebuild
-- [ ] actually sends files
-- [ ] replace json ipc with gob streaming
+- [x] actually sends files
+- [x] replace json ipc with gob streaming
 - [ ] support for template substitution
 - [ ] rename Host to Target in code
 - [ ] support for inventory files

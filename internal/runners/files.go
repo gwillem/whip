@@ -24,7 +24,6 @@ const (
 func Files(args model.TaskArgs) (tr model.TaskResult) {
 	// root is eiter the abs dst or $HOME + dst  or / + dst
 	root, _ := args["dst"].(string)
-
 	switch {
 	case root == "":
 		root = filepath.Join("/", os.ExpandEnv("$HOME"))
@@ -43,8 +42,11 @@ func Files(args model.TaskArgs) (tr model.TaskResult) {
 	if !ok {
 		return failure("wrong type of _assets?")
 	}
-
-	err := afero.Walk(srcFs, "/", func(srcPath string, srcFi os.FileInfo, err error) error {
+	srcRoot := "/"
+	err := afero.Walk(srcFs, srcRoot, func(srcPath string, srcFi os.FileInfo, err error) error {
+		if srcRoot == srcPath {
+			return nil // don't modify root element
+		}
 		if err != nil {
 			return err
 		}
@@ -58,7 +60,11 @@ func Files(args model.TaskArgs) (tr model.TaskResult) {
 		if changed {
 			tr.Changed = true
 		}
-		output += fmt.Sprintf("%v %s\n", changed, dstPath)
+		status := "ok"
+		if changed {
+			status = "changed"
+		}
+		output += fmt.Sprintf("%-7s %s\n", status, dstPath)
 		return nil
 	})
 	if err != nil {
@@ -110,8 +116,8 @@ func ensureFile(path string, srcFi os.FileInfo, srcFs afero.Fs, srcPath string) 
 		return false, fmt.Errorf("read error on %s: %w", path, err)
 	}
 
-	if os.IsNotExist(err) || dstFi.Size() != srcFi.Size() { // todo: actually run checksums or check on date
-		// create file
+	if os.IsNotExist(err) || dstFi.Size() != srcFi.Size() ||
+		!filesAreEqual(srcFs, fs, srcPath, path) { // todo: also compare perms/owner
 
 		srcFile, err := srcFs.Open(srcPath)
 		if err != nil {
