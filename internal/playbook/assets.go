@@ -4,7 +4,6 @@ import (
 	"os"
 	"path/filepath"
 
-	log "github.com/gwillem/go-simplelog"
 	"github.com/gwillem/whip/internal/model"
 	"github.com/spf13/afero"
 )
@@ -25,7 +24,7 @@ func DirToAsset(root string) (*model.Asset, error) {
 
 		relPath := path[len(root):]
 
-		log.Debug("Adding relpath", relPath)
+		// log.Debug("Adding relpath", relPath)
 
 		asset.Files = append(asset.Files, model.File{Path: relPath, Data: data, Mode: info.Mode()})
 		return nil
@@ -49,8 +48,8 @@ func AssetToFS(asset *model.Asset) (afero.Fs, error) {
 		}
 		fh.Close()
 
-		if fi, err := fs.Stat(f.Path); err == nil {
-			log.Debug("Wrote", f.Path, "to fs, mode", fi.Mode())
+		if _, err := fs.Stat(f.Path); err == nil {
+			// log.Debug("Wrote", f.Path, "to fs, mode", fi.Mode())
 		}
 
 	}

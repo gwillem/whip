@@ -80,8 +80,8 @@ func RunGobStreamer[T any](c *Client, cmd string, stdin io.Reader, callback func
 
 	dec := gob.NewDecoder(stdout)
 
-	var obj T
 	for {
+		var obj T
 		err := dec.Decode(&obj)
 		if err == io.EOF {
 			// End of the stream

@@ -51,19 +51,18 @@
   - files: base/host1 - /etc/nginx:
     handler: nginx
     owner: root -
-    f
 
 # Todo for MVP / internal use
 
+- bug: \_args get assigned to every task
 - authorized_keys
 - secrets (age?)
 - templates
 - apt
 - handlers, notify
-- files meta data
 - files: owner, state
 - lineinfile
-- files: actual checksum comparison
+  x files: actual checksum comparison
 - systemd
 
 nice:

@@ -118,11 +118,11 @@ func Run(task model.Task, vars map[string]any, afs afero.Fs) (tr model.TaskResul
 	// arg substitution, notably for loop {{item}}
 	for k, v := range task.Args {
 		if val, ok := v.(string); ok {
-			new, err := tplParse(val, task.Vars)
+			parsed, err := tplParse(val, task.Vars)
 			if err != nil {
 				return fail(err.Error())
 			}
-			task.Args[k] = new
+			task.Args[k] = parsed
 		}
 	}
 

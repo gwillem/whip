@@ -29,6 +29,8 @@ func main() {
 			res.TaskIdx = taskIdx
 			res.TaskTotal = taskTotal
 
+			// log.Debug("task result here", res.Task.Args)
+
 			// don't echo back all the files..
 			delete(res.Task.Args, "_assets")
 

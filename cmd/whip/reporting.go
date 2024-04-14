@@ -72,10 +72,8 @@ func reportResults(results <-chan model.TaskResult, verbosity int) {
 	}
 
 	stats := map[string]map[string]int{}
-
 	failed := []model.TaskResult{}
 	for res := range results {
-
 		if stats[res.Host] == nil {
 			stats[res.Host] = map[string]int{}
 		}

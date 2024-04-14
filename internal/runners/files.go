@@ -77,7 +77,7 @@ func Files(args model.TaskArgs) (tr model.TaskResult) {
 }
 
 func ensurePath(srcFs afero.Fs, srcFi os.FileInfo, srcPath, dstPath string) (changed bool, err error) {
-	log.Debug("ensure path", srcPath, "scrFi mode", srcFi.Mode())
+	// log.Debug("ensure path", srcPath, "scrFi mode", srcFi.Mode())
 	if srcFi.IsDir() {
 		changed, err = ensureDir(dstPath, srcFi.Mode())
 	} else {
