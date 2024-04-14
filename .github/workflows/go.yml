@@ -22,7 +22,7 @@ jobs:
         go-version: '1.21'
 
     - name: Build
-      run: tools/buildall.sh
+      run: scripts/buildall.sh
 
     - name: Test
       run: go test -v ./...

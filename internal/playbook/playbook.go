@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"reflect"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -18,6 +19,8 @@ import (
 const (
 	defaultAssetPath = "files"
 )
+
+var stringToSliceSep = regexp.MustCompile(`,\s*`)
 
 func Load(path string) (*model.Playbook, error) {
 	rawData, err := os.ReadFile(path)
@@ -63,7 +66,7 @@ func yamlToPlaybook(y any) (*model.Playbook, error) {
 		Metadata:         &md,
 		DecodeHook: mapstructure.ComposeDecodeHookFunc(
 			parseTasksFunc(),
-			mapstructure.StringToSliceHookFunc(","),
+			parseStringToSlice(),
 		),
 	}
 
@@ -110,6 +113,15 @@ func parseTasksFunc() mapstructure.DecodeHookFunc {
 			}
 		}
 		return data, nil
+	}
+}
+
+func parseStringToSlice() mapstructure.DecodeHookFunc {
+	return func(f reflect.Kind, t reflect.Kind, data interface{}) (interface{}, error) {
+		if f != reflect.String || t != reflect.Slice {
+			return data, nil
+		}
+		return stringToSliceSep.Split(data.(string), -1), nil
 	}
 }
 

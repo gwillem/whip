@@ -51,7 +51,7 @@ type (
 		Runner string         `json:"runner,omitempty"`
 		Name   string         `json:"name,omitempty"`
 		Args   TaskArgs       `json:"args,omitempty"`
-		Notify string         `json:"notify,omitempty"`
+		Notify []string       `json:"notify,omitempty"`
 		Loop   []any          `json:"loop,omitempty"`
 		Vars   map[string]any `json:"vars,omitempty"`
 		Tags   []string       `json:"tags,omitempty"`

@@ -24,7 +24,7 @@ func TestLoadPlaybookSimple1(t *testing.T) {
 					Args: model.TaskArgs{
 						"_args": "sleep $[ $RANDOM % 3 ]",
 					},
-					Notify: "nginx",
+					Notify: []string{"nginx", "systemd"},
 					Loop:   nil,
 				},
 			},
@@ -65,7 +65,8 @@ func TestExpandTaskLoops(t *testing.T) {
 					Vars: map[string]any{
 						"item": "abc",
 					},
-					Tags: []string{},
+					Tags:   []string{},
+					Notify: []string{},
 				},
 				{
 					Runner: "authorized_key",
@@ -77,7 +78,8 @@ func TestExpandTaskLoops(t *testing.T) {
 					Vars: map[string]any{
 						"item": "xyz",
 					},
-					Tags: []string{},
+					Tags:   []string{},
+					Notify: []string{},
 				},
 			},
 		},

@@ -47,7 +47,9 @@ func main() {
 			}
 
 			if res.Changed {
-				handlers[res.Task.Notify] = true
+				for _, handler := range task.Notify {
+					handlers[handler] = true
+				}
 			}
 
 		}
