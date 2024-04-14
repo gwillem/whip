@@ -36,6 +36,7 @@ type (
 		Hosts     []TargetName   `json:"hosts,omitempty"`
 		Vars      map[string]any `json:"vars,omitempty"`
 		Tasks     []Task         `json:"tasks,omitempty"`
+		Handlers  []Task         `json:"handlers,omitempty"`
 	}
 	TargetName string
 	Target     struct {
@@ -50,15 +51,17 @@ type (
 		Runner string         `json:"runner,omitempty"`
 		Name   string         `json:"name,omitempty"`
 		Args   TaskArgs       `json:"args,omitempty"`
+		Notify string         `json:"notify,omitempty"`
 		Loop   []any          `json:"loop,omitempty"`
 		Vars   map[string]any `json:"vars,omitempty"`
+		Tags   []string       `json:"tags,omitempty"`
 	}
 
 	TaskArgs map[string]any
 
 	TaskResult struct {
 		PlayIdx   int           `json:"play_idx,omitempty"`
-		TaskIdx   int           `json:"task_idx,omitempty"`
+		TaskIdx   int           `json:"task_idx,omitempty"` // TODO ugly, should refactor
 		TaskTotal int           `json:"task_total,omitempty"`
 		Host      string        `json:"target,omitempty"`
 		Changed   bool          `json:"changed,omitempty"`

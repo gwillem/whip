@@ -1,0 +1,66 @@
+---
+- hosts:
+    - root@192.168.64.16
+    # - ubuntu@192.168.64.17
+  vars:
+    install:
+      path: /data
+      type: gunicorn
+    plans:
+      - large
+      - medium
+      - tiny
+
+  tasks:
+    # - name: install ssh keys
+    #   authorized_key:
+    #     user: ubuntu
+    #     key: "{{item}}"
+    #   loop:
+    #   - abc
+    #   - xyz
+
+    - name: file sync
+      files:
+        src: fixture/files
+        dst: /tmp
+        /etc/nginx: mode=0700 handler=nginx
+
+      # - /etc/nginx: mode=0700
+
+    # - name: install packages
+    #   apt:
+    #     state: latest
+    #     name:
+    #       - binutils
+    #       - moreutils
+
+    - name: sleep random
+      shell: sleep $( printf '0.%04d\n' $RANDOM )
+      notify: nginx
+      loop:
+        - a
+
+    - shell: id
+
+    - name: testing vars
+      command: echo {{install.type}} {{plans| join(",")}}
+
+    # - name: induced failure
+    #   command: /bin/false
+
+    # - name: sleep a bit
+    #   command: echo hoi
+
+    # - name: sleep a bit
+    #   command: echo hoi
+
+    # - name: sleep a bit
+    #   command: /bin/true
+    # - name: sync repo to prod
+    #   synchronize:
+    #     src: "x"
+    #     dest: "y"
+  handlers:
+    - name: nginx
+      shell: echo restarting nginx

@@ -54,7 +54,8 @@
 
 # Todo for MVP / internal use
 
-- bug: \_args get assigned to every task
+x bug: \_args get assigned to every task
+
 - authorized_keys
 - secrets (age?)
 - templates
@@ -69,4 +70,6 @@ nice:
 
 - move assets from run param to arg param
 - file sync: use tar or std serialization
-- use gob instead of json for cmd streaming
+  x use gob instead of json for cmd streaming
+- validate handler names
+- alert on duplicate handlers

@@ -24,6 +24,17 @@ func TestLoadPlaybookSimple1(t *testing.T) {
 					Args: model.TaskArgs{
 						"_args": "sleep $[ $RANDOM % 3 ]",
 					},
+					Notify: "nginx",
+					Loop:   nil,
+				},
+			},
+			Handlers: []model.Task{
+				{
+					Runner: "command",
+					Name:   "nginx",
+					Args: model.TaskArgs{
+						"_args": "echo restarting nginx",
+					},
 					Loop: nil,
 				},
 			},
@@ -54,6 +65,7 @@ func TestExpandTaskLoops(t *testing.T) {
 					Vars: map[string]any{
 						"item": "abc",
 					},
+					Tags: []string{},
 				},
 				{
 					Runner: "authorized_key",
@@ -65,6 +77,7 @@ func TestExpandTaskLoops(t *testing.T) {
 					Vars: map[string]any{
 						"item": "xyz",
 					},
+					Tags: []string{},
 				},
 			},
 		},

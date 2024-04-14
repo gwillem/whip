@@ -1,5 +1,9 @@
 ---
 - hosts: ubuntu@192.168.64.10
   tasks:
-    - name: sleep random  
+    - name: sleep random
       shell: sleep $[ $RANDOM % 3 ]
+      notify: nginx
+  handlers:
+    - name: nginx
+      command: echo restarting nginx
