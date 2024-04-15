@@ -5,6 +5,7 @@ import (
 
 	"github.com/gwillem/whip/internal/model"
 	tu "github.com/gwillem/whip/internal/testutil"
+	"github.com/k0kubun/pp"
 	"github.com/mitchellh/mapstructure"
 	"github.com/stretchr/testify/assert"
 )
@@ -85,6 +86,12 @@ func TestExpandTaskLoops(t *testing.T) {
 		},
 	}
 	assert.Equal(t, want, pb)
+}
+
+func TestFilesWithMeta(t *testing.T) {
+	pb, err := Load(tu.FixturePath("playbook/files.yml"))
+	assert.NoError(t, err)
+	pp.Println(pb)
 }
 
 func TestDuplicateRunner(t *testing.T) {

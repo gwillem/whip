@@ -4,11 +4,15 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/user"
 	"path/filepath"
+	"slices"
+	"strconv"
 	"strings"
 
 	log "github.com/gwillem/go-simplelog"
 	"github.com/gwillem/whip/internal/model"
+	"github.com/gwillem/whip/internal/parser"
 	"github.com/spf13/afero"
 )
 
@@ -16,21 +20,68 @@ func init() {
 	registerRunner("files", Files, runnerMeta{})
 }
 
-const (
-	defaultDirMode  = 0o755
-	defaultFileMode = 0o644
+const srcRoot = "/"
+
+var (
+	defaultUmask    = os.FileMode(0o022)
+	defaultDirMode  = os.FileMode(0o755)
+	defaultFileMode = os.FileMode(0o644)
 )
 
+type fileMeta struct {
+	uid    *int
+	gid    *int
+	umask  *os.FileMode
+	notify []string
+}
+type prefixMetaMap struct {
+	orderedPrefixes []string
+	metamap         map[string]fileMeta
+}
+
+func (pm *prefixMetaMap) getMeta(path string) fileMeta {
+	finalMeta := fileMeta{}
+	for _, prefix := range pm.orderedPrefixes {
+		if strings.HasPrefix(path, prefix) {
+			meta := pm.metamap[prefix]
+			if meta.uid != nil {
+				finalMeta.uid = meta.uid
+			}
+			if meta.gid != nil {
+				finalMeta.gid = meta.gid
+			}
+			if meta.umask != nil {
+				finalMeta.umask = meta.umask
+			}
+			if meta.notify != nil {
+				finalMeta.notify = append(finalMeta.notify, meta.notify...)
+			}
+		}
+	}
+	return finalMeta
+}
+
 func Files(args model.TaskArgs) (tr model.TaskResult) {
-	// root is eiter the abs dst or $HOME + dst  or / + dst
-	root, _ := args["dst"].(string)
+	// dstRoot is eiter the abs dst or $HOME + dst  or / + dst
+	dstRoot, _ := args["dst"].(string)
 	switch {
-	case root == "":
-		root = filepath.Join("/", os.ExpandEnv("$HOME"))
-	case strings.HasPrefix(root, "/"):
+	case dstRoot == "":
+		dstRoot = filepath.Join("/", os.ExpandEnv("$HOME"))
+	case strings.HasPrefix(dstRoot, "/"):
 		// do nothing
 	default:
-		root = filepath.Join("/", os.ExpandEnv("$HOME"), root)
+		dstRoot = filepath.Join("/", os.ExpandEnv("$HOME"), dstRoot)
+	}
+
+	pm, err := parsePrefixMeta(args)
+	if err != nil {
+		return failure(err)
+	}
+	log.Debug("prefix meta", pm)
+
+	// dst root should exist already (so we won't change perms on / or $HOME)
+	if ok, err := fsutil.Exists(dstRoot); !ok || err != nil {
+		return failure("cannot read dst path", dstRoot, err)
 	}
 
 	output := ""
@@ -42,15 +93,17 @@ func Files(args model.TaskArgs) (tr model.TaskResult) {
 	if !ok {
 		return failure("wrong type of _assets?")
 	}
-	srcRoot := "/"
-	err := afero.Walk(srcFs, srcRoot, func(srcPath string, srcFi os.FileInfo, err error) error {
-		if srcRoot == srcPath {
-			return nil // don't modify root element
-		}
+	err = afero.Walk(srcFs, srcRoot, func(srcPath string, srcFi os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
-		dstPath := filepath.Join(root, srcPath)
+		if srcPath == srcRoot {
+			return nil // don't modify root element
+		}
+
+		// update srcFs[srcPath] and srcFi with prefix meta, if any
+
+		dstPath := filepath.Join(dstRoot, srcPath)
 		// output += pp.Sprintln(dstPath)
 		// from here on, ensure path
 		changed, err := ensurePath(srcFs, srcFi, srcPath, dstPath)
@@ -74,6 +127,80 @@ func Files(args model.TaskArgs) (tr model.TaskResult) {
 	tr.Output = output
 	tr.Status = success
 	return tr
+}
+
+// Takes meta attributes for a "files" task and returns a prefixMetaMap so that
+// the runner can chown/chmod part of the file tree and notify different handlers
+func parsePrefixMeta(args model.TaskArgs) (*prefixMetaMap, error) {
+	pm := prefixMetaMap{
+		orderedPrefixes: []string{},
+		metamap:         map[string]fileMeta{},
+	}
+
+	for prefix, v := range args {
+		if !strings.HasPrefix(prefix, "/") {
+			continue
+		}
+
+		argStr, ok := v.(string)
+		if !ok {
+			return nil, fmt.Errorf("prefix args %v is not a string", v)
+		}
+		attrs := parser.ParseArgString(argStr)
+
+		fm := fileMeta{
+			umask: &defaultUmask,
+		}
+		if attrs["umask"] != "" {
+			if ui, err := strconv.Atoi(attrs["umask"]); err != nil {
+				return nil, fmt.Errorf("cannot parse umask %s", attrs["umask"])
+			} else {
+				um := os.FileMode(ui)
+				fm.umask = &um
+			}
+		}
+
+		var uid, gid int
+
+		if attrs["owner"] != "" {
+			owner, err := user.Lookup(attrs["owner"])
+			if err != nil {
+				return nil, fmt.Errorf("cannot find user %s", attrs["owner"])
+			}
+			uid, err = strconv.Atoi(owner.Uid)
+			if err != nil {
+				return nil, fmt.Errorf("cannot parse uid %s", owner.Uid)
+			}
+		}
+
+		if attrs["group"] != "" {
+			group, err := user.LookupGroup(attrs["group"])
+			if err != nil {
+				return nil, fmt.Errorf("cannot find group %s", attrs["group"])
+			}
+
+			gid, err = strconv.Atoi(group.Gid)
+			if err != nil {
+				return nil, fmt.Errorf("cannot parse gid %s", group.Gid)
+			}
+		}
+
+		if attrs["notify"] != "" {
+			fm.notify = strings.Split(attrs["notify"], ",") // TODO generalize
+		}
+
+		fm.uid = &uid
+		fm.gid = &gid
+
+		pm.metamap[prefix] = fm
+	}
+
+	for prefix := range pm.metamap {
+		pm.orderedPrefixes = append(pm.orderedPrefixes, prefix)
+	}
+	slices.Sort(pm.orderedPrefixes) // sort prefixes to ensure shorted prefix is first
+
+	return &pm, nil
 }
 
 func ensurePath(srcFs afero.Fs, srcFi os.FileInfo, srcPath, dstPath string) (changed bool, err error) {

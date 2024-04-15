@@ -81,6 +81,7 @@ func (j *Job) Tasks() []Task {
 	tasks := []Task{}
 	for _, play := range j.Playbook {
 		tasks = append(tasks, play.Tasks...)
+		tasks = append(tasks, play.Handlers...)
 	}
 	return tasks
 }

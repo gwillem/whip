@@ -10,7 +10,7 @@ require (
 	github.com/charmbracelet/log v0.2.1
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510
 	github.com/gwillem/go-buildversion v0.0.0-20230402114832-b1addefa8764
-	github.com/gwillem/go-simplelog v0.3.1
+	github.com/gwillem/go-simplelog v0.3.2-0.20240414203525-590c6ddfd6f0
 	github.com/ieee0824/go-deepmerge v0.0.0-20170912170951-7ec7dbbd5a1f
 	github.com/k0kubun/pp v3.0.1+incompatible
 	github.com/karrick/gobls v1.3.5
@@ -63,4 +63,4 @@ require (
 	golang.org/x/text v0.9.0 // indirect
 )
 
-replace github.com/gwillem/go-simplelog => ../go-simplelog
+//replace github.com/gwillem/go-simplelog => ../go-simplelog

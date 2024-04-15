@@ -5,13 +5,13 @@ import (
 	"os"
 	"reflect"
 	"regexp"
-	"strconv"
-	"strings"
 
 	"github.com/charmbracelet/log"
 	"github.com/gwillem/whip/internal/model"
+	"github.com/gwillem/whip/internal/parser"
 	"github.com/gwillem/whip/internal/runners"
 	"github.com/mitchellh/mapstructure"
+
 	"golang.org/x/exp/slices"
 	"gopkg.in/yaml.v3"
 )
@@ -20,7 +20,7 @@ const (
 	defaultAssetPath = "files"
 )
 
-var stringToSliceSep = regexp.MustCompile(`,\s*`)
+var StringToSliceSep = regexp.MustCompile(`,\s*`)
 
 func Load(path string) (*model.Playbook, error) {
 	rawData, err := os.ReadFile(path)
@@ -103,7 +103,7 @@ func parseTasksFunc() mapstructure.DecodeHookFunc {
 				data.(map[string]any)["runner"] = k
 				switch v.(type) {
 				case string:
-					data.(map[string]any)["args"] = parseArgString(v.(string))
+					data.(map[string]any)["args"] = parser.ParseArgString(v.(string))
 				case map[string]any:
 					data.(map[string]any)["args"] = v
 				default:
@@ -117,37 +117,12 @@ func parseTasksFunc() mapstructure.DecodeHookFunc {
 }
 
 func parseStringToSlice() mapstructure.DecodeHookFunc {
-	return func(f reflect.Kind, t reflect.Kind, data interface{}) (interface{}, error) {
+	return func(f, t reflect.Kind, data interface{}) (interface{}, error) {
 		if f != reflect.String || t != reflect.Slice {
 			return data, nil
 		}
-		return stringToSliceSep.Split(data.(string), -1), nil
+		return StringToSliceSep.Split(data.(string), -1), nil
 	}
-}
-
-func parseArgString(arg string) map[string]string {
-	kv := map[string]string{}
-
-	baseArgs := []string{}
-	for _, t := range strings.Split(arg, " ") {
-		if strings.Contains(t, "=") {
-			opt := strings.SplitN(t, "=", 2)
-
-			kv[opt[0]] = unquote(opt[1])
-		} else {
-			baseArgs = append(baseArgs, t)
-		}
-	}
-
-	kv["_args"] = strings.Join(baseArgs, " ")
-	return kv
-}
-
-func unquote(s string) string {
-	if n, e := strconv.Unquote(s); e == nil {
-		return n
-	}
-	return s
 }
 
 // expandPlaybookLoops takes a playbook and expands any tasks that have a Loop,
