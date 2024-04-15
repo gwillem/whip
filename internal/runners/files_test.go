@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/user"
+	"path/filepath"
 	"strconv"
 	"testing"
 
@@ -69,7 +70,7 @@ func getGID(grp string) int {
 }
 
 func newFileMeta(uid, gid int, umask os.FileMode, notify []string) *fileMeta {
-	return &fileMeta{uid: &uid, gid: &gid, umask: &umask, notify: notify}
+	return &fileMeta{uid: &uid, gid: &gid, umask: umask, notify: notify}
 }
 
 func getDummyTaskArgs() model.TaskArgs {
@@ -147,4 +148,50 @@ func Test_prefixMetaMap_getMeta(t *testing.T) {
 
 	fm = pmm.getMeta("/d/lkkijfksdlsdf/dsfsdf")
 	assert.Equal(t, *newFileMeta(testUID, testGID, testUmask, nil), fm)
+}
+
+func Test_ensurePathUpdatesFileMode(t *testing.T) {
+	var changed bool
+	var err error
+	var dir string
+
+	dir, err = os.MkdirTemp("", "test")
+	assert.NoError(t, err)
+	defer os.RemoveAll(dir)
+
+	testPath := filepath.Join(dir, "hsdfjkjskdfsd")
+
+	changed, err = ensureFile(filesObj{
+		path:  testPath,
+		data:  []byte("hoi"),
+		umask: os.FileMode(0o22),
+		uid:   &testUID,
+		gid:   &testGID,
+	})
+	assert.NoError(t, err)
+	assert.True(t, changed)
+
+	changed, err = ensurePath(filesObj{
+		path:  testPath,
+		data:  []byte("hoi"),
+		umask: os.FileMode(0o22),
+		uid:   &testUID,
+		gid:   &testGID,
+	})
+	assert.NoError(t, err)
+	assert.False(t, changed)
+
+	changed, err = ensurePath(filesObj{
+		path:  testPath,
+		data:  []byte("hoi"),
+		umask: os.FileMode(0o77),
+		uid:   &testUID,
+		gid:   &testGID,
+	})
+	assert.NoError(t, err)
+	assert.True(t, changed)
+
+	fi, err := os.Stat(testPath)
+	assert.NoError(t, err)
+	assert.Equal(t, fi.Mode(), os.FileMode(0o600))
 }

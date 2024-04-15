@@ -1,14 +1,15 @@
 package runners
 
 import (
+	"bytes"
 	"fmt"
-	"io"
 	"os"
 	"os/user"
 	"path/filepath"
 	"slices"
 	"strconv"
 	"strings"
+	"syscall"
 
 	log "github.com/gwillem/go-simplelog"
 	"github.com/gwillem/whip/internal/model"
@@ -24,19 +25,28 @@ const srcRoot = "/"
 
 var (
 	defaultUmask    = os.FileMode(0o022)
-	defaultDirMode  = os.FileMode(0o755)
-	defaultFileMode = os.FileMode(0o644)
+	defaultDirMode  = os.FileMode(0o777)
+	defaultFileMode = os.FileMode(0o666)
 )
 
 type fileMeta struct {
 	uid    *int
 	gid    *int
-	umask  *os.FileMode
+	umask  os.FileMode
 	notify []string
 }
 type prefixMetaMap struct {
 	orderedPrefixes []string
 	metamap         map[string]fileMeta
+}
+
+type filesObj struct {
+	path  string
+	data  []byte
+	isDir bool
+	umask os.FileMode
+	uid   *int
+	gid   *int
 }
 
 func (pm *prefixMetaMap) getMeta(path string) fileMeta {
@@ -50,7 +60,7 @@ func (pm *prefixMetaMap) getMeta(path string) fileMeta {
 			if meta.gid != nil {
 				finalMeta.gid = meta.gid
 			}
-			if meta.umask != nil {
+			if meta.umask > 0 {
 				finalMeta.umask = meta.umask
 			}
 			if meta.notify != nil {
@@ -100,13 +110,27 @@ func Files(args model.TaskArgs) (tr model.TaskResult) {
 		if srcPath == srcRoot {
 			return nil // don't modify root element
 		}
+		dstPath := filepath.Join(dstRoot, srcPath)
+
+		f := filesObj{
+			path:  dstPath,
+			isDir: srcFi.IsDir(),
+			umask: defaultUmask,
+		}
+
+		if !f.isDir {
+			f.data, err = afero.ReadFile(srcFs, srcPath)
+		}
 
 		// update srcFs[srcPath] and srcFi with prefix meta, if any
+		meta := pm.getMeta(srcPath)
+		f.umask = meta.umask
+		f.uid = meta.uid
+		f.gid = meta.gid
 
-		dstPath := filepath.Join(dstRoot, srcPath)
 		// output += pp.Sprintln(dstPath)
 		// from here on, ensure path
-		changed, err := ensurePath(srcFs, srcFi, srcPath, dstPath)
+		changed, err := ensurePath(f)
 		if err != nil {
 			return err
 		}
@@ -116,6 +140,11 @@ func Files(args model.TaskArgs) (tr model.TaskResult) {
 		status := "ok"
 		if changed {
 			status = "changed"
+
+			if meta.notify != nil {
+				// activate handlers
+			}
+
 		}
 		output += fmt.Sprintf("%-7s %s\n", status, dstPath)
 		return nil
@@ -148,15 +177,12 @@ func parsePrefixMeta(args model.TaskArgs) (*prefixMetaMap, error) {
 		}
 		attrs := parser.ParseArgString(argStr)
 
-		fm := fileMeta{
-			umask: &defaultUmask,
-		}
+		fm := fileMeta{}
 		if attrs["umask"] != "" {
 			if ui, err := strconv.Atoi(attrs["umask"]); err != nil {
 				return nil, fmt.Errorf("cannot parse umask %s", attrs["umask"])
 			} else {
-				um := os.FileMode(ui)
-				fm.umask = &um
+				fm.umask = os.FileMode(ui)
 			}
 		}
 
@@ -203,70 +229,138 @@ func parsePrefixMeta(args model.TaskArgs) (*prefixMetaMap, error) {
 	return &pm, nil
 }
 
-func ensurePath(srcFs afero.Fs, srcFi os.FileInfo, srcPath, dstPath string) (changed bool, err error) {
-	// log.Debug("ensure path", srcPath, "scrFi mode", srcFi.Mode())
-	if srcFi.IsDir() {
-		changed, err = ensureDir(dstPath, srcFi.Mode())
-	} else {
-		changed, err = ensureFile(dstPath, srcFi, srcFs, srcPath)
+func ensurePath(f filesObj) (changed bool, err error) {
+	if f.isDir {
+		return ensureDir(f)
+	}
+	return ensureFile(f)
+}
+
+func ensureDir(f filesObj) (changed bool, err error) {
+	if !f.isDir {
+		return false, fmt.Errorf("ensureDir called on non-dir? %s", f.path)
 	}
 
+	fi, err := os.Stat(f.path)
+	mode := defaultDirMode &^ f.umask
+	if err != nil && os.IsNotExist(err) {
+		// create dir
+		if err := fs.Mkdir(f.path, mode); err != nil {
+			return false, err
+		}
+		changed = true
+	}
+	if err != nil {
+		return false, fmt.Errorf("read error on %s: %w", f.path, err)
+	}
+
+	if !fi.IsDir() {
+		return false, fmt.Errorf("cannot overwrite path %s with dir", f.path)
+	}
+
+	if fi.Mode()&os.ModePerm != mode {
+		log.Debug("changing mode", uint32(fi.Mode()), "to", mode)
+		if err := fs.Chmod(f.path, mode); err != nil {
+			return false, err
+		}
+		changed = true
+	}
+
+	if c, e := chown(f.path, f.uid, f.gid); e != nil {
+		return false, e
+	} else if c {
+		changed = true
+	}
+	return changed, nil
+}
+
+func ensureFile(f filesObj) (changed bool, err error) {
+	if f.isDir {
+		return false, fmt.Errorf("ensureFile called on dir? %s", f.path)
+	}
+	mode := defaultFileMode &^ f.umask
+
+	fi, err := fs.Stat(f.path)
+	if err != nil && !os.IsNotExist(err) {
+		return false, fmt.Errorf("read error on %s: %w", f.path, err)
+	}
+
+	dataDiffers := func() bool {
+		if fi.Size() != int64(len(f.data)) {
+			return true
+		}
+		chk, err := getFileChecksum(fs, f.path)
+		if err != nil {
+			log.Warn("cannot get checksum for", f.path, err)
+			return true
+		}
+		return !bytes.Equal(getDataChecksum(f.data), chk)
+	}
+
+	if fi != nil && fi.IsDir() {
+		return false, fmt.Errorf("cannot overwrite path %s with file", f.path)
+	}
+
+	// need to write file?
+	if os.IsNotExist(err) || dataDiffers() {
+		fh, err := fs.OpenFile(f.path, os.O_CREATE|os.O_WRONLY, mode) // todo: does this update the mode?
+		if err != nil {
+			return false, fmt.Errorf("open error on %s: %w", f.path, err)
+		}
+		defer fh.Close()
+
+		_, err = fh.Write(f.data)
+		if err != nil {
+			return false, fmt.Errorf("write error on %s: %w", f.path, err)
+		}
+		changed = true
+	}
+
+	// need to change mode?
+	if fi != nil && fi.Mode() != mode {
+		if err := fs.Chmod(f.path, mode); err != nil {
+			return false, fmt.Errorf("chmod err on %s: %w", f.path, err)
+		}
+		changed = true
+	}
+
+	// need to change owner?
+	if c, err := chown(f.path, f.uid, f.gid); err != nil {
+		return false, fmt.Errorf("chown err on %s: %w", f.path, err)
+	} else if c {
+		changed = true
+	}
+
+	return changed, nil
+}
+
+func chown(path string, u, g *int) (changed bool, err error) {
+	uid := -1
+	gid := -1
+
+	fi, err := fs.Stat(path)
 	if err != nil {
 		return false, err
 	}
-	return
-}
 
-func ensureDir(path string, _ os.FileMode) (bool, error) {
-	dstFi, err := os.Stat(path)
-	if err != nil && os.IsNotExist(err) {
-		// create dir
-		return true, fs.Mkdir(path, defaultDirMode)
-	}
-	if err != nil {
-		return false, fmt.Errorf("read error on %s: %w", path, err)
+	stat, ok := fi.Sys().(*syscall.Stat_t)
+	if !ok {
+		return false, fmt.Errorf("cannot get stat_t for %s", path)
 	}
 
-	if !dstFi.IsDir() {
-		return false, fmt.Errorf("cannot overwrite path %s with dir", path)
+	if u != nil && stat.Uid != uint32(*u) {
+		uid = *u
 	}
-	if dstFi.Mode()&os.ModePerm != defaultDirMode {
-		log.Debug("changing mode", uint32(dstFi.Mode()), "to", defaultDirMode)
-		return true, fs.Chmod(path, defaultDirMode)
-	}
-	return false, nil
-}
-
-func ensureFile(path string, srcFi os.FileInfo, srcFs afero.Fs, srcPath string) (bool, error) {
-	dstFi, err := os.Stat(path)
-	if err != nil && !os.IsNotExist(err) {
-		return false, fmt.Errorf("read error on %s: %w", path, err)
+	if g != nil && stat.Gid != uint32(*g) {
+		gid = *g
 	}
 
-	if os.IsNotExist(err) || dstFi.Size() != srcFi.Size() ||
-		!filesAreEqual(srcFs, fs, srcPath, path) { // todo: also compare perms/owner
+	if uid == -1 && gid == -1 {
+		return false, nil
+	}
 
-		srcFile, err := srcFs.Open(srcPath)
-		if err != nil {
-			return false, err
-		}
-		defer srcFile.Close()
-		dstFile, err := fs.OpenFile(path, os.O_CREATE|os.O_WRONLY, srcFi.Mode())
-		if err != nil {
-			return false, err
-		}
-		defer dstFile.Close()
-		_, err = io.Copy(dstFile, srcFile)
-		if err != nil {
-			return false, err
-		}
-		return true, nil
+	if err := fs.Chown(path, uid, gid); err != nil {
+		return false, err
 	}
-	if dstFi.IsDir() {
-		return false, fmt.Errorf("cannot overwrite path %s with file", path)
-	}
-	if dstFi.Mode() != srcFi.Mode() {
-		return true, fs.Chmod(path, srcFi.Mode())
-	}
-	return false, nil
+	return true, nil
 }

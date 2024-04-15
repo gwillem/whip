@@ -20,6 +20,7 @@ for cmd in deputy whip; do
         env GOOS=$os GOARCH=$arch go build -ldflags="-s -w" -o $dst/$cmd ./cmd/$cmd
 
         if [ "$cmd-$os" = "deputy-linux" ]; then
+            mkdir -p cmd/whip/deputies
             cp $dst/$cmd cmd/whip/deputies/$os-$arch
         fi
 

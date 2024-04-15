@@ -24,9 +24,7 @@
       files:
         src: fixture/files
         dst: /tmp
-        /etc/nginx:
-          umask: 0022
-          handler: nginx
+        /etc/nginx: umask=0022 handler=nginx
 
       # - /etc/nginx: mode=0700
 

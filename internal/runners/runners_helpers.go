@@ -29,6 +29,11 @@ func filesAreEqual(fs1, fs2 afero.Fs, path1, path2 string) bool {
 	return bytes.Equal(h1, h2)
 }
 
+func getDataChecksum(data []byte) []byte {
+	h := sha256.Sum256(data)
+	return h[:]
+}
+
 func getFileChecksum(fs afero.Fs, filePath string) ([]byte, error) {
 	file, err := fs.Open(filePath)
 	if err != nil {
