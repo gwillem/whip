@@ -21,7 +21,7 @@
     #   - xyz
 
     - name: file sync
-      files:
+      tree:
         src: fixture/files
         dst: /tmp
         /etc: handler=nginx owner=www-data

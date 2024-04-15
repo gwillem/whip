@@ -18,7 +18,7 @@ import (
 )
 
 func init() {
-	registerRunner("files", Files, runnerMeta{})
+	registerRunner("tree", Tree, runnerMeta{})
 }
 
 const srcRoot = "/"
@@ -71,7 +71,7 @@ func (pm *prefixMetaMap) getMeta(path string) fileMeta {
 	return finalMeta
 }
 
-func Files(args model.TaskArgs) (tr model.TaskResult) {
+func Tree(args model.TaskArgs) (tr model.TaskResult) {
 	// dstRoot is eiter the abs dst or $HOME + dst  or / + dst
 	dstRoot := getDstRoot(args["dst"])
 

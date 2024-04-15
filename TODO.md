@@ -21,9 +21,8 @@
 - [x] actually sends files
 - [x] replace json ipc with gob streaming
 - [ ] support for template substitution
-- [ ] rename Host to Target in code
 - [ ] support for inventory files
-- [ ] chief also reads stderr from deputy to catch panics
+- [x] chief also reads stderr from deputy to catch panics
 - [ ] limit parallel jobs to x, cli argument
 - [ ] record gif demo for in readme https://github.com/charmbracelet/vhs
 - [ ] ensure basic go doc
@@ -74,3 +73,4 @@ nice:
 - validate handler names
 - alert on duplicate handlers
 - exit 1 if any tasks errorred?
+- replace Afero with tar for files serialization, so we can infer filemode from the src files

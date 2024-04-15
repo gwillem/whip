@@ -2,7 +2,7 @@
 - hosts: ubuntu@192.168.64.10
   tasks:
     - name: file sync
-      files:
+      tree:
         src: fixture/files
         dst: /tmp
         /etc/nginx: handler=nginx

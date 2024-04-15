@@ -89,7 +89,7 @@ func TestExpandTaskLoops(t *testing.T) {
 }
 
 func TestFilesWithMeta(t *testing.T) {
-	pb, err := Load(tu.FixturePath("playbook/files.yml"))
+	pb, err := Load(tu.FixturePath("playbook/tree.yml"))
 	assert.NoError(t, err)
 	pp.Println(pb)
 }
