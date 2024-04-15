@@ -24,7 +24,8 @@
       files:
         src: fixture/files
         dst: /tmp
-        /etc/nginx: umask=0022 handler=nginx
+        /etc: handler=nginx owner=www-data
+        /etc/nginx/nginx.conf: umask=077 owner=root
 
       # - /etc/nginx: mode=0700
 
@@ -35,11 +36,11 @@
     #       - binutils
     #       - moreutils
 
-    - name: sleep random
-      shell: sleep $( printf '0.%04d\n' $RANDOM )
-      notify: nginx
-      loop:
-        - a
+    # - name: sleep random
+    #   shell: sleep $( printf '0.%04d\n' $RANDOM )
+    #   notify: nginx
+    #   loop:
+    #     - a
 
     - shell: id
 

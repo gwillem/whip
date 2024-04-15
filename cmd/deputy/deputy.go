@@ -4,7 +4,6 @@ import (
 	"encoding/gob"
 	"os"
 
-	log "github.com/gwillem/go-simplelog"
 	"github.com/gwillem/whip/internal/model"
 	"github.com/gwillem/whip/internal/playbook"
 	"github.com/gwillem/whip/internal/runners"
@@ -53,25 +52,28 @@ func main() {
 			}
 
 		}
-		log.Debug("now running handlers:", handlers)
 		for _, handler := range play.Handlers {
+			taskIdx++
+
+			// empty tr in case of unnotified handler
+			res := model.TaskResult{}
+
 			if handlers[handler.Name] {
-				taskIdx++
-				log.Debug("running handler", handler)
-				res := runners.Run(handler, play.Vars, assetFs)
-				res.PlayIdx = playIdx
-				res.TaskIdx = taskIdx
-				res.TaskTotal = taskTotal
-				delete(res.Task.Args, "_assets")
-				if err := encoder.Encode(res); err != nil {
-					panic(err)
-				}
-				if res.Status != 0 {
-					break
-				}
+				// log.Debug("Running handler", handler)
+				res = runners.Run(handler, play.Vars, assetFs)
+			}
+			res.PlayIdx = playIdx
+			res.TaskIdx = taskIdx
+			res.TaskTotal = taskTotal
+			res.Task.Runner = "handler:" + handler.Runner // todo fixme
+			delete(res.Task.Args, "_assets")
+			if err := encoder.Encode(res); err != nil {
+				panic(err)
+			}
+			if res.Status != 0 {
+				break
 			}
 		}
-
 	}
 }
 

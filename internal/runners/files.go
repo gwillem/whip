@@ -73,26 +73,18 @@ func (pm *prefixMetaMap) getMeta(path string) fileMeta {
 
 func Files(args model.TaskArgs) (tr model.TaskResult) {
 	// dstRoot is eiter the abs dst or $HOME + dst  or / + dst
-	dstRoot, _ := args["dst"].(string)
-	switch {
-	case dstRoot == "":
-		dstRoot = filepath.Join("/", os.ExpandEnv("$HOME"))
-	case strings.HasPrefix(dstRoot, "/"):
-		// do nothing
-	default:
-		dstRoot = filepath.Join("/", os.ExpandEnv("$HOME"), dstRoot)
+	dstRoot := getDstRoot(args["dst"])
+
+	// dst root should exist already (so we won't change perms on / or $HOME)
+	if ok, err := fsutil.Exists(dstRoot); !ok || err != nil {
+		return failure("cannot read dst path", dstRoot, err)
 	}
 
 	pm, err := parsePrefixMeta(args)
 	if err != nil {
 		return failure(err)
 	}
-	log.Debug("prefix meta", pm)
-
-	// dst root should exist already (so we won't change perms on / or $HOME)
-	if ok, err := fsutil.Exists(dstRoot); !ok || err != nil {
-		return failure("cannot read dst path", dstRoot, err)
-	}
+	// log.Debug("prefix meta", pm)
 
 	output := ""
 	if args["_assets"] == nil {
@@ -120,11 +112,16 @@ func Files(args model.TaskArgs) (tr model.TaskResult) {
 
 		if !f.isDir {
 			f.data, err = afero.ReadFile(srcFs, srcPath)
+			if err != nil {
+				return fmt.Errorf("afero read rr on %s: %w", srcPath, err)
+			}
 		}
 
 		// update srcFs[srcPath] and srcFi with prefix meta, if any
 		meta := pm.getMeta(srcPath)
-		f.umask = meta.umask
+		if meta.umask > 0 {
+			f.umask = meta.umask
+		}
 		f.uid = meta.uid
 		f.gid = meta.gid
 
@@ -132,7 +129,7 @@ func Files(args model.TaskArgs) (tr model.TaskResult) {
 		// from here on, ensure path
 		changed, err := ensurePath(f)
 		if err != nil {
-			return err
+			return fmt.Errorf("ensurePath error on %s: %w", dstPath, err)
 		}
 		if changed {
 			tr.Changed = true
@@ -142,6 +139,7 @@ func Files(args model.TaskArgs) (tr model.TaskResult) {
 			status = "changed"
 
 			if meta.notify != nil {
+				tr.Task.Notify = append(tr.Task.Notify, meta.notify...)
 				// activate handlers
 			}
 
@@ -155,7 +153,25 @@ func Files(args model.TaskArgs) (tr model.TaskResult) {
 
 	tr.Output = output
 	tr.Status = success
+
+	// remove dupes, todo, should use set
+	slices.Sort(tr.Task.Notify)
+	tr.Task.Notify = slices.Compact(tr.Task.Notify)
+
 	return tr
+}
+
+func getDstRoot(arg any) string {
+	dstRoot, _ := arg.(string)
+	switch {
+	case dstRoot == "":
+		return filepath.Join("/", os.ExpandEnv("$HOME"))
+	case strings.HasPrefix(dstRoot, "/"):
+		// do nothing
+	default:
+		return filepath.Join("/", os.ExpandEnv("$HOME"), dstRoot)
+	}
+	return dstRoot
 }
 
 // Takes meta attributes for a "files" task and returns a prefixMetaMap so that
@@ -179,8 +195,8 @@ func parsePrefixMeta(args model.TaskArgs) (*prefixMetaMap, error) {
 
 		fm := fileMeta{}
 		if attrs["umask"] != "" {
-			if ui, err := strconv.Atoi(attrs["umask"]); err != nil {
-				return nil, fmt.Errorf("cannot parse umask %s", attrs["umask"])
+			if ui, err := strconv.ParseInt(attrs["umask"], 8, 32); err != nil {
+				return nil, fmt.Errorf("cannot parse octal umask %s", attrs["umask"])
 			} else {
 				fm.umask = os.FileMode(ui)
 			}
@@ -242,23 +258,22 @@ func ensureDir(f filesObj) (changed bool, err error) {
 	}
 
 	fi, err := os.Stat(f.path)
+
 	mode := defaultDirMode &^ f.umask
 	if err != nil && os.IsNotExist(err) {
 		// create dir
 		if err := fs.Mkdir(f.path, mode); err != nil {
-			return false, err
+			return false, fmt.Errorf("mkdir error on %s: %w", f.path, err)
 		}
 		changed = true
-	}
-	if err != nil {
+	} else if err != nil {
 		return false, fmt.Errorf("read error on %s: %w", f.path, err)
 	}
 
-	if !fi.IsDir() {
-		return false, fmt.Errorf("cannot overwrite path %s with dir", f.path)
+	if fi != nil && !fi.IsDir() {
+		return false, fmt.Errorf("cannot overwrite non-dir %s with dir", f.path)
 	}
-
-	if fi.Mode()&os.ModePerm != mode {
+	if fi != nil && fi.Mode()&os.ModePerm != mode {
 		log.Debug("changing mode", uint32(fi.Mode()), "to", mode)
 		if err := fs.Chmod(f.path, mode); err != nil {
 			return false, err

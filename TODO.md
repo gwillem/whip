@@ -61,7 +61,7 @@ x bug: \_args get assigned to every task
 - templates
 - apt
 - handlers, notify
-- files: owner, state
+  x files: owner, state, notify
 - lineinfile
   x files: actual checksum comparison
 - systemd
@@ -73,3 +73,4 @@ nice:
   x use gob instead of json for cmd streaming
 - validate handler names
 - alert on duplicate handlers
+- exit 1 if any tasks errorred?
