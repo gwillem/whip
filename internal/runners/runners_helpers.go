@@ -1,33 +1,18 @@
 package runners
 
 import (
-	"bytes"
 	"crypto/sha256"
 	"fmt"
 	"io"
 	"os"
 	"os/exec"
 	"strings"
+	"unicode/utf8"
 
-	log "github.com/gwillem/go-simplelog"
 	"github.com/gwillem/whip/internal/model"
 	"github.com/karrick/gobls"
 	"github.com/spf13/afero"
 )
-
-func filesAreEqual(fs1, fs2 afero.Fs, path1, path2 string) bool {
-	h1, err := getFileChecksum(fs1, path1)
-	if err != nil {
-		log.Error(err)
-		return false
-	}
-	h2, err := getFileChecksum(fs2, path2)
-	if err != nil {
-		log.Error(err)
-		return false
-	}
-	return bytes.Equal(h1, h2)
-}
 
 func getDataChecksum(data []byte) []byte {
 	h := sha256.Sum256(data)
@@ -119,12 +104,20 @@ func createTestFS() {
 	fsutil = &afero.Afero{Fs: fs}
 }
 
-func tplParse(tpl string, data map[string]any) (string, error) {
+func tplParseString(tpl string, data map[string]any) (string, error) {
 	t, err := tplParser.FromString(tpl)
 	if err != nil {
 		return "", err
 	}
 	return t.Execute(data)
+}
+
+func tplParseBytes(tpl []byte, data map[string]any) ([]byte, error) {
+	t, err := tplParser.FromBytes(tpl)
+	if err != nil {
+		return nil, err
+	}
+	return t.ExecuteBytes(data)
 }
 
 func system(cmd []string) (tr model.TaskResult) {
@@ -138,4 +131,22 @@ func system(cmd []string) (tr model.TaskResult) {
 		tr.Output = strings.Join(cmd, " ") + "\n" + err.Error() + ":\n" + string(data)
 	}
 	return tr
+}
+
+func isText(s []byte) bool {
+	const max = 1024 // at least utf8.UTFMax
+	if len(s) > max {
+		s = s[0:max]
+	}
+	for i, c := range string(s) {
+		if i+utf8.UTFMax > len(s) {
+			// last char may be incomplete - ignore
+			break
+		}
+		if c == 0xFFFD || c < ' ' && c != '\n' && c != '\t' && c != '\f' {
+			// decoding error or control character - not a text file
+			return false
+		}
+	}
+	return true
 }

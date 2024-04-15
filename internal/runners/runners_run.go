@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	log "github.com/gwillem/go-simplelog"
 	"github.com/gwillem/whip/internal/model"
 	"github.com/ieee0824/go-deepmerge"
 	"github.com/spf13/afero"
@@ -49,7 +50,7 @@ func All() []string {
 }
 
 type (
-	runnerFunc func(model.TaskArgs) model.TaskResult
+	runnerFunc func(model.TaskArgs, model.TaskVars) model.TaskResult
 	runnerMeta struct {
 		requiredArgs []string
 		optionalArgs []string
@@ -95,9 +96,10 @@ func Run(task model.Task, vars map[string]any, afs afero.Fs) (tr model.TaskResul
 	defer func() {
 		if r := recover(); r != nil {
 			trace := string(debug.Stack())
+			log.Debug("Panic in runner", r, trace)
 			// get rid of first 5 lines
-			trace = strings.Join(strings.Split(trace, "\n")[5:], "\n")
-			tr = fail(trace)
+			// trace = strings.Join(strings.Split(trace, "\n")[5:], "\n")
+			tr = fail(trace) // will return from parent func
 		}
 	}()
 
@@ -108,8 +110,7 @@ func Run(task model.Task, vars map[string]any, afs afero.Fs) (tr model.TaskResul
 	}
 
 	// merge global and task vars
-
-	mergedVars, err := deepmerge.Merge(vars, task.Vars)
+	mergedVars, err := deepmerge.Merge(vars, map[string]any(task.Vars))
 	if err != nil {
 		return fail(err.Error())
 	}
@@ -118,7 +119,7 @@ func Run(task model.Task, vars map[string]any, afs afero.Fs) (tr model.TaskResul
 	// arg substitution, notably for loop {{item}}
 	for k, v := range task.Args {
 		if val, ok := v.(string); ok {
-			parsed, err := tplParse(val, task.Vars)
+			parsed, err := tplParseString(val, task.Vars)
 			if err != nil {
 				return fail(err.Error())
 			}
@@ -126,11 +127,11 @@ func Run(task model.Task, vars map[string]any, afs afero.Fs) (tr model.TaskResul
 		}
 	}
 
-	if afs != nil {
+	if afs != nil { // todo move to whip
 		task.Args["_assets"] = afs
 	}
 
-	tr = runner.fn(task.Args)
+	tr = runner.fn(task.Args, task.Vars)
 	tr.Duration = time.Since(start)
 	tr.Task = task
 	return tr

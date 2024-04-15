@@ -5,7 +5,7 @@ import (
 	"github.com/gwillem/whip/internal/model"
 )
 
-func Command(args model.TaskArgs) (tr model.TaskResult) {
+func Command(args model.TaskArgs, _ model.TaskVars) (tr model.TaskResult) {
 	tokens, err := shlex.Split(args.String(defaultArg))
 	if err != nil {
 		tr.Status = failed

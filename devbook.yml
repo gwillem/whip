@@ -26,6 +26,10 @@
         dst: /tmp
         /etc: handler=nginx owner=www-data
         /etc/nginx/nginx.conf: umask=077 owner=root
+      vars:
+        server: banaan
+
+    - service: name=cron state=restarted
 
       # - /etc/nginx: mode=0700
 

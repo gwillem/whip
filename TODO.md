@@ -25,8 +25,7 @@
 - [x] chief also reads stderr from deputy to catch panics
 - [ ] limit parallel jobs to x, cli argument
 - [ ] record gif demo for in readme https://github.com/charmbracelet/vhs
-- [ ] ensure basic go doc
-- [ ] support handlers
+- [x] support handlers
 - [ ] implement basic runners https://mike42.me/blog/2019-01-the-top-100-ansible-modules
   - [ ] copy
   - [ ] template
@@ -55,20 +54,19 @@
 
 x bug: \_args get assigned to every task
 
-- authorized_keys
 - secrets (age?)
-- templates
+  x templates
 - apt
-- handlers, notify
+  x handlers, notify
   x files: owner, state, notify
 - lineinfile
   x files: actual checksum comparison
-- systemd
+  x systemd (service?)
 
 nice:
 
-- move assets from run param to arg param
-- file sync: use tar or std serialization
+- tree: move assets from run param to arg param
+- tree sync: use tar or std serialization
   x use gob instead of json for cmd streaming
 - validate handler names
 - alert on duplicate handlers

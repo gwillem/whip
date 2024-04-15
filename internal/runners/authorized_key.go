@@ -6,7 +6,7 @@ import (
 	"github.com/gwillem/whip/internal/model"
 )
 
-func AuthorizedKey(args model.TaskArgs) (tr model.TaskResult) {
+func AuthorizedKey(args model.TaskArgs, _ model.TaskVars) (tr model.TaskResult) {
 	var err error
 	tr.Status = success
 

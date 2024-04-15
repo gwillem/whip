@@ -71,7 +71,7 @@ func (pm *prefixMetaMap) getMeta(path string) fileMeta {
 	return finalMeta
 }
 
-func Tree(args model.TaskArgs) (tr model.TaskResult) {
+func Tree(args model.TaskArgs, vars model.TaskVars) (tr model.TaskResult) {
 	// dstRoot is eiter the abs dst or $HOME + dst  or / + dst
 	dstRoot := getDstRoot(args["dst"])
 
@@ -115,6 +115,16 @@ func Tree(args model.TaskArgs) (tr model.TaskResult) {
 			if err != nil {
 				return fmt.Errorf("afero read rr on %s: %w", srcPath, err)
 			}
+
+			// template?
+			if isText(f.data) {
+				// log.Debug("parsing template", srcPath, "with vars", vars)
+				f.data, err = tplParseBytes(f.data, vars)
+				if err != nil {
+					return fmt.Errorf("tplParseBytes error on %s: %w", srcPath, err)
+				}
+			}
+
 		}
 
 		// update srcFs[srcPath] and srcFi with prefix meta, if any

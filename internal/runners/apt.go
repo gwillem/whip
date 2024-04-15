@@ -67,7 +67,7 @@ func buildAptCmd(args model.TaskArgs) ([]string, error) {
 	return cmd, nil
 }
 
-func Apt(args model.TaskArgs) (tr model.TaskResult) {
+func Apt(args model.TaskArgs, _ model.TaskVars) (tr model.TaskResult) {
 	fmt.Fprintln(os.Stderr, "starting apt task", args)
 
 	if !isExecutable(aptBin) {
