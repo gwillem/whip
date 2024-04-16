@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 
 	"github.com/gwillem/whip/internal/model"
+	"github.com/gwillem/whip/internal/vault"
 	"github.com/spf13/afero"
 )
 
@@ -17,7 +18,7 @@ func DirToAsset(root string) (*model.Asset, error) {
 		if info.IsDir() {
 			return nil
 		}
-		data, err := os.ReadFile(path)
+		data, err := vault.ReadFile(path)
 		if err != nil {
 			return err
 		}

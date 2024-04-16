@@ -56,6 +56,7 @@ x bug: \_args get assigned to every task
 
 - secrets (age?)
   x templates
+- local command (go build)
 - apt
   x handlers, notify
   x files: owner, state, notify

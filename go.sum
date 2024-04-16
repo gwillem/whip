@@ -36,6 +36,8 @@ cloud.google.com/go/storage v1.8.0/go.mod h1:Wv1Oy7z6Yz3DshWRJFhqM/UCfaWIRTdp0RX
 cloud.google.com/go/storage v1.10.0/go.mod h1:FLPqc6j+Ki4BU591ie1oL6qBQGu2Bl/tZ9ullr3+Kg0=
 cloud.google.com/go/storage v1.14.0/go.mod h1:GrKmX003DSIwi9o29oFT7YDnHYwZoctc3fOKtUw0Xmo=
 dmitri.shuralyov.com/gpu/mtl v0.0.0-20190408044501-666a987793e9/go.mod h1:H6x//7gZCb22OMCxBHrMx7a5I7Hp++hsVxbQ4BYO7hU=
+filippo.io/age v1.1.1 h1:pIpO7l151hCnQ4BdyBujnGP2YlUo0uj6sAVNHGBvXHg=
+filippo.io/age v1.1.1/go.mod h1:l03SrzDUrBkdBx8+IILdnn2KZysqQdbEBUQ4p3sqEQE=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
 github.com/BurntSushi/xgb v0.0.0-20160522181843-27f122750802/go.mod h1:IVnqGOEym/WlBOVXweHU+Q+/VP0lqqI8lqeDx9IjBqo=
 github.com/airbrake/gobrake v3.6.1+incompatible/go.mod h1:wM4gu3Cn0W0K7GUuVWnlXZU11AGBXMILnrdOU8Kn00o=
@@ -157,8 +159,6 @@ github.com/goph/emperror v0.17.1 h1:6lOybhIvG/BB6VGoWfdv30FVZeZFBBZ9VvgzGXLVkyY=
 github.com/goph/emperror v0.17.1/go.mod h1:+ZbQ+fUNO/6FNiUo0ujtMjhgad9Xa6fQL9KhH4LNHic=
 github.com/gwillem/go-buildversion v0.0.0-20230402114832-b1addefa8764 h1:GL/gS9rv5F1oBgQwbT+pl0HefNbDZLjbcWmDNT/pUOU=
 github.com/gwillem/go-buildversion v0.0.0-20230402114832-b1addefa8764/go.mod h1:yf2A6rXn1ptErQTutA0vpEDZJG6E0b/aUnMnXelY5tU=
-github.com/gwillem/go-simplelog v0.3.1 h1:xl4ZP5TCSH5Kz6u+RcN+4nKnf/7hoedUmo/oIV/+X3Q=
-github.com/gwillem/go-simplelog v0.3.1/go.mod h1:VzaKnjEPW0JUVseBHP2c4w1kOxMG+TZXLeuT3xWpnbA=
 github.com/gwillem/go-simplelog v0.3.2-0.20240414203525-590c6ddfd6f0 h1:NZrB78gTqX5y1pG7CV+jVfE7YHaRG9q0QtDsB9g26bs=
 github.com/gwillem/go-simplelog v0.3.2-0.20240414203525-590c6ddfd6f0/go.mod h1:VzaKnjEPW0JUVseBHP2c4w1kOxMG+TZXLeuT3xWpnbA=
 github.com/hashicorp/golang-lru v0.5.0/go.mod h1:/m3WP610KZHVQ1SGc6re/UDhFvYD7pJ4Ao+sR/qLZy8=

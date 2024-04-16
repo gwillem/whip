@@ -3,6 +3,7 @@ module github.com/gwillem/whip
 go 1.20
 
 require (
+	filippo.io/age v1.1.1
 	github.com/barkimedes/go-deepcopy v0.0.0-20220514131651-17c30cfc62df
 	github.com/charmbracelet/bubbles v0.15.0
 	github.com/charmbracelet/bubbletea v0.24.0

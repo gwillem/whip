@@ -6,7 +6,8 @@ Whip your servers into line. Chief Whip is a _fast_ and _simple_ Ansible replace
 
 # Demo
 
-> [!NOTE] Keep this in mind.
+> [!NOTE]
+> Keep this in mind.
 
 # Objectives
 

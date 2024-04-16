@@ -4,3 +4,4 @@ cmd/whip/deputies/*
 playbook.yml
 /files
 /tmp
+.envrc

@@ -328,7 +328,10 @@ func ensureFile(f filesObj) (changed bool, err error) {
 
 	// need to write file?
 	if os.IsNotExist(err) || dataDiffers() {
-		fh, err := fs.OpenFile(f.path, os.O_CREATE|os.O_WRONLY, mode) // todo: does this update the mode?
+		log.Debug("data differs", f.path)
+
+		// os.O_CREATE on existing file does not update mode, so need to do that below
+		fh, err := fs.OpenFile(f.path, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, mode)
 		if err != nil {
 			return false, fmt.Errorf("open error on %s: %w", f.path, err)
 		}
@@ -343,6 +346,7 @@ func ensureFile(f filesObj) (changed bool, err error) {
 
 	// need to change mode?
 	if fi != nil && fi.Mode() != mode {
+		log.Debug("needs mode change", f.path)
 		if err := fs.Chmod(f.path, mode); err != nil {
 			return false, fmt.Errorf("chmod err on %s: %w", f.path, err)
 		}
@@ -351,6 +355,7 @@ func ensureFile(f filesObj) (changed bool, err error) {
 
 	// need to change owner?
 	if c, err := chown(f.path, f.uid, f.gid); err != nil {
+		log.Debug("needs owner change", f.path)
 		return false, fmt.Errorf("chown err on %s: %w", f.path, err)
 	} else if c {
 		changed = true

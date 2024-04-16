@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"strings"
 	"time"
 
@@ -109,5 +110,8 @@ func reportResults(results <-chan model.TaskResult, verbosity int) {
 		for k, stats := range stats {
 			log.Ok(fmt.Sprint(k, " ", stats))
 		}
+	}
+	if len(failed) > 0 {
+		os.Exit(1)
 	}
 }

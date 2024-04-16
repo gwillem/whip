@@ -1,9 +1,11 @@
 package main
 
 import (
-	"fmt"
 	"os"
 
+	log "github.com/gwillem/go-simplelog"
+
+	"github.com/gwillem/whip/internal/vault"
 	"github.com/spf13/cobra"
 )
 
@@ -18,10 +20,13 @@ It aims to be stand-in replacement for Ansible for 90% of use cases.`,
 		Run:               runWhip,
 	}
 	vaultCmd = &cobra.Command{
-		Use:   "vault",
+		Use:   "edit",
 		Short: "Encrypt and decrypt secrets",
-		Run: func(_ *cobra.Command, _ []string) {
-			fmt.Println("not implemented yet")
+		Args:  cobra.ExactArgs(1),
+		Run: func(_ *cobra.Command, args []string) {
+			if err := vault.LaunchEditor(args[0]); err != nil {
+				log.Fatal(err)
+			}
 		},
 	}
 )
