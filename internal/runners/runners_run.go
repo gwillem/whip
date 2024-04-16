@@ -14,22 +14,36 @@ import (
 )
 
 const (
-	success int = iota
-	failed
+	Success int = iota
+	Failed
+	Skipped
 
 	defaultArg = "_args"
 )
 
+type (
+	runnerFunc    func(*model.Task) model.TaskResult
+	validatorFunc func(model.TaskArgs) error
+	preRunnerFunc func(*model.Task) model.TaskResult
+
+	runnerMeta struct {
+		requiredArgs []string
+		optionalArgs []string
+	}
+
+	runner struct {
+		run      runnerFunc
+		meta     runnerMeta
+		preRun   runnerFunc
+		validate validatorFunc
+	}
+)
+
 var (
-	fs     afero.Fs
-	fsutil *afero.Afero
-
-	runners = map[string]struct {
-		fn   runnerFunc
-		meta runnerMeta
-	}{}
-
-	facts = gatherFacts()
+	fs      afero.Fs
+	fsutil  *afero.Afero
+	runners = map[string]runner{}
+	facts   = gatherFacts()
 )
 
 func init() {
@@ -49,14 +63,6 @@ func All() []string {
 	return keys
 }
 
-type (
-	runnerFunc func(model.TaskArgs, model.TaskVars) model.TaskResult
-	runnerMeta struct {
-		requiredArgs []string
-		optionalArgs []string
-	}
-)
-
 func failure(msg ...any) model.TaskResult {
 	output := ""
 	for _, m := range msg {
@@ -69,25 +75,46 @@ func failure(msg ...any) model.TaskResult {
 	output = strings.TrimSpace(output)
 
 	return model.TaskResult{
-		Status:  failed,
+		Status:  Failed,
 		Changed: false,
 		Output:  output,
 	}
 }
 
-func registerRunner(name string, fn runnerFunc, meta runnerMeta) {
-	runners[name] = struct {
-		fn   runnerFunc
-		meta runnerMeta
-	}{fn, meta}
+func registerRunner(name string, r runner) {
+	runners[name] = r
+}
+
+func PreRun(task *model.Task, playVars model.TaskVars) (tr model.TaskResult) {
+	// fmt.Println("Running", task.Type)
+	runner, ok := runners[task.Runner]
+	if !ok || runner.preRun == nil {
+		tr.Status = Skipped
+		return tr
+	}
+
+	// todo: isolate this
+	// merge global and task vars
+	mergedVars, err := deepmerge.Merge(map[string]any(playVars), map[string]any(task.Vars))
+	if err != nil {
+		tr.Status = Failed
+		tr.Output = err.Error()
+		return
+	}
+	task.Vars = mergedVars.(map[string]any)
+
+	// todo: merge vars
+	tr = runner.preRun(task)
+	tr.Task = task
+	return tr
 }
 
 // Run is called by the deputy to run a task on localhost.
-func Run(task model.Task, vars map[string]any, afs afero.Fs) (tr model.TaskResult) {
+func Run(task *model.Task, playVars model.TaskVars) (tr model.TaskResult) {
 	start := time.Now()
 	fail := func(msg string) model.TaskResult {
 		return model.TaskResult{
-			Status: failed,
+			Status: Failed,
 			Output: msg,
 			Task:   task,
 		}
@@ -109,8 +136,16 @@ func Run(task model.Task, vars map[string]any, afs afero.Fs) (tr model.TaskResul
 		return fail("No runner found for task '" + task.Runner + "'") // todo, is empty for unknown runners
 	}
 
+	if runner.run == nil {
+		// local_action perhaps?
+		return model.TaskResult{
+			Output: "skipped, no runner",
+			Task:   task,
+		}
+	}
+
 	// merge global and task vars
-	mergedVars, err := deepmerge.Merge(vars, map[string]any(task.Vars))
+	mergedVars, err := deepmerge.Merge(map[string]any(playVars), map[string]any(task.Vars))
 	if err != nil {
 		return fail(err.Error())
 	}
@@ -127,11 +162,11 @@ func Run(task model.Task, vars map[string]any, afs afero.Fs) (tr model.TaskResul
 		}
 	}
 
-	if afs != nil { // todo move to whip
-		task.Args["_assets"] = afs
-	}
+	// if afs != nil { // todo move to prerunner
+	// 	task.Args["_assets"] = afs
+	// }
 
-	tr = runner.fn(task.Args, task.Vars)
+	tr = runner.run(task)
 	tr.Duration = time.Since(start)
 	tr.Task = task
 	return tr

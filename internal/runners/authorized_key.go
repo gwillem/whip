@@ -1,10 +1,6 @@
 package runners
 
-import (
-	osuser "os/user"
-
-	"github.com/gwillem/whip/internal/model"
-)
+/* deprecated this module, as it is easier to do with the tree module
 
 func AuthorizedKey(args model.TaskArgs, _ model.TaskVars) (tr model.TaskResult) {
 	var err error
@@ -43,5 +39,6 @@ func AuthorizedKey(args model.TaskArgs, _ model.TaskVars) (tr model.TaskResult) 
 }
 
 func init() {
-	registerRunner("authorized_key", AuthorizedKey, runnerMeta{})
+	registerRunner("authorized_key", runner{run: AuthorizedKey})
 }
+*/

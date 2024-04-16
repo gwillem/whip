@@ -4,12 +4,15 @@ import (
 	"bytes"
 	"embed"
 	"encoding/gob"
+	"fmt"
 	"sync"
+	"time"
 
 	"github.com/gwillem/go-buildversion"
 	log "github.com/gwillem/go-simplelog"
 	"github.com/gwillem/whip/internal/model"
 	"github.com/gwillem/whip/internal/playbook"
+	"github.com/gwillem/whip/internal/runners"
 	"github.com/gwillem/whip/internal/ssh"
 	"github.com/spf13/cobra"
 )
@@ -31,7 +34,14 @@ func runWhip(cmd *cobra.Command, args []string) {
 	// fmt.Println("verbosity level is", verbosity)
 	log.SetLevel(log.LevelError)
 	if verbosity > 0 {
+		log.SetLevel(log.LevelTask)
+	}
+
+	if verbosity > 1 {
 		log.SetLevel(log.LevelDebug)
+	}
+	if verbosity > 2 {
+		log.SetPrefixer(&durationPrefixer{})
 	}
 
 	files, _ := deputies.ReadDir("deputies")
@@ -45,10 +55,25 @@ func runWhip(cmd *cobra.Command, args []string) {
 
 	log.Progress("Loaded playbook with", len(*pb), "plays")
 
-	// load assets
+	// load assets TODO move to prerun
 	assets, err := playbook.DirToAsset(defaultAssetPath)
 	if err != nil {
 		log.Warn(err)
+	}
+
+	// validation... should happen at deputy, because controller doesn't have access
+	// to facts and cannot parse dynamic tasks without them
+
+	// prerun!
+	log.Task("Running any pre-run tasks on controller")
+	for _, play := range *pb {
+		for _, task := range play.Tasks {
+			tr := runners.PreRun(&task, play.Vars)
+			if tr.Status == runners.Skipped {
+				continue
+			}
+			log.Progress("pre-run", task.Runner, "with status", tr.Output)
+		}
 	}
 
 	// load external vars?
@@ -106,6 +131,7 @@ func runPlaybookAtHost(job model.Job, t model.TargetName, results chan<- model.T
 		log.Error(err)
 		return
 	}
+	log.Debug("Connected and ready at", t)
 
 	var buffer bytes.Buffer
 	if err := gob.NewEncoder(&buffer).Encode(job); err != nil {
@@ -123,4 +149,17 @@ func runPlaybookAtHost(job model.Job, t model.TargetName, results chan<- model.T
 		log.Fatal("Deputy error, see ~/.cache/whip/deputy.err at", t, err)
 		return
 	}
+}
+
+type durationPrefixer struct {
+	last time.Time
+}
+
+func (p *durationPrefixer) Prefix() string {
+	var delta time.Duration
+	if !p.last.IsZero() {
+		delta = time.Since(p.last)
+	}
+	p.last = time.Now()
+	return dark(fmt.Sprintf("%.3f", delta.Seconds()))
 }

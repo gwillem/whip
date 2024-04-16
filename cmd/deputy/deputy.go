@@ -5,7 +5,6 @@ import (
 	"os"
 
 	"github.com/gwillem/whip/internal/model"
-	"github.com/gwillem/whip/internal/playbook"
 	"github.com/gwillem/whip/internal/runners"
 )
 
@@ -14,10 +13,10 @@ func main() {
 	taskTotal := len(job.Tasks())
 	taskIdx := 0
 
-	assetFs, err := playbook.AssetToFS(job.Assets)
-	if err != nil {
-		panic(err)
-	}
+	// assetFs, err := playbook.AssetToFS(job.Assets)
+	// if err != nil {
+	// 	panic(err)
+	// }
 
 	encoder := gob.NewEncoder(os.Stdout)
 
@@ -27,25 +26,26 @@ func main() {
 
 		for _, task := range play.Tasks {
 			taskIdx++
-			res := runners.Run(task, play.Vars, assetFs)
-			res.PlayIdx = playIdx
-			res.TaskIdx = taskIdx
-			res.TaskTotal = taskTotal
+			tr := runners.Run(&task, play.Vars)
+			tr.Task = &task
+			tr.PlayIdx = playIdx
+			tr.TaskIdx = taskIdx
+			tr.TaskTotal = taskTotal
 
 			// log.Debug("task result here", res.Task.Args)
 
 			// don't echo back all the files..
-			delete(res.Task.Args, "_assets")
+			delete(tr.Task.Args, "_assets")
 
-			if err := encoder.Encode(res); err != nil {
+			if err := encoder.Encode(tr); err != nil {
 				panic(err)
 			}
 
-			if res.Status != 0 {
+			if tr.Status != 0 {
 				break
 			}
 
-			if res.Changed {
+			if tr.Changed {
 				for _, handler := range task.Notify {
 					handlers[handler] = true
 				}
@@ -56,21 +56,22 @@ func main() {
 			taskIdx++
 
 			// empty tr in case of unnotified handler
-			res := model.TaskResult{}
+			tr := model.TaskResult{}
 
 			if handlers[handler.Name] {
 				// log.Debug("Running handler", handler)
-				res = runners.Run(handler, play.Vars, assetFs)
+				tr = runners.Run(&handler, play.Vars)
 			}
-			res.PlayIdx = playIdx
-			res.TaskIdx = taskIdx
-			res.TaskTotal = taskTotal
-			res.Task.Runner = "handler:" + handler.Runner // todo fixme
-			delete(res.Task.Args, "_assets")
-			if err := encoder.Encode(res); err != nil {
+			tr.Task = &handler
+			tr.PlayIdx = playIdx
+			tr.TaskIdx = taskIdx
+			tr.TaskTotal = taskTotal
+			tr.Task.Runner = "handler:" + handler.Runner // todo fixme
+			delete(tr.Task.Args, "_assets")
+			if err := encoder.Encode(tr); err != nil {
 				panic(err)
 			}
-			if res.Status != 0 {
+			if tr.Status != 0 {
 				break
 			}
 		}

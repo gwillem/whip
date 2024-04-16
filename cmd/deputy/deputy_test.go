@@ -17,7 +17,7 @@ func Test_DeputyIntegration(t *testing.T) {
 
 	for _, play := range *pb {
 		for _, task := range play.Tasks {
-			res := runners.Run(task, nil, nil)
+			res := runners.Run(&task, nil)
 
 			pp.Print(res)
 			assert.Equal(t, 0, res.Status)

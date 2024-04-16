@@ -20,7 +20,7 @@
 - [x] add air for dev rebuild
 - [x] actually sends files
 - [x] replace json ipc with gob streaming
-- [ ] support for template substitution
+- [x] support for template substitution
 - [ ] support for inventory files
 - [x] chief also reads stderr from deputy to catch panics
 - [ ] limit parallel jobs to x, cli argument
@@ -38,7 +38,7 @@
   - [ ] systemd
   - [ ] rsync support (via this? https://github.com/gokrazy/rsync/)
 - [ ] publish on github
-- [ ] support vault
+- [x] support vault
 - [ ] add taskrunner syntax validation so we can lint the tasks before actual run
 - [ ] struct based cli arg parsing? such as go-arg or go-flags or kong
 
@@ -54,9 +54,11 @@
 
 x bug: \_args get assigned to every task
 
-- secrets (age?)
+- [ ] bug: task (pre-) runner should be able to modify their vars, args
+- x secrets (age?)
   x templates
 - local command (go build)
+- task pre-runners? could load files, run local commands etc
 - apt
   x handlers, notify
   x files: owner, state, notify
@@ -66,10 +68,11 @@ x bug: \_args get assigned to every task
 
 nice:
 
+- fix tests
 - tree: move assets from run param to arg param
 - tree sync: use tar or std serialization
   x use gob instead of json for cmd streaming
 - validate handler names
 - alert on duplicate handlers
-- exit 1 if any tasks errorred?
+  x exit 1 if any tasks errorred?
 - replace Afero with tar for files serialization, so we can infer filemode from the src files

@@ -53,7 +53,7 @@ func (h verboseHandler) Send(r model.TaskResult) {
 	// fmt.Printf("<%s>\n", r.Output)
 	if len(r.Output) > 0 {
 		for _, line := range strings.Split(strings.TrimSpace(r.Output), "\n") {
-			fmt.Printf("    %s\n", dark(line))
+			log.Debug(dark(line))
 		}
 	}
 	// fmt.Println(r.Output)

@@ -5,10 +5,10 @@ import (
 	"github.com/gwillem/whip/internal/model"
 )
 
-func Command(args model.TaskArgs, _ model.TaskVars) (tr model.TaskResult) {
-	tokens, err := shlex.Split(args.String(defaultArg))
+func Command(t *model.Task) (tr model.TaskResult) {
+	tokens, err := shlex.Split(t.Args.String(defaultArg))
 	if err != nil {
-		tr.Status = failed
+		tr.Status = Failed
 		tr.Output = err.Error()
 		return tr
 	}
@@ -16,5 +16,5 @@ func Command(args model.TaskArgs, _ model.TaskVars) (tr model.TaskResult) {
 }
 
 func init() {
-	registerRunner("command", Command, runnerMeta{})
+	registerRunner("command", runner{run: Command})
 }

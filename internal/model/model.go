@@ -69,7 +69,7 @@ type (
 		Output    string        `json:"output,omitempty"`
 		Status    int           `json:"status_code,omitempty"`
 		Duration  time.Duration `json:"duration,omitempty"`
-		Task      Task          `json:"task,omitempty"`
+		Task      *Task         `json:"task,omitempty"`
 	}
 )
 

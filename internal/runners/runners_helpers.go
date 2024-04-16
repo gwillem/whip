@@ -124,10 +124,10 @@ func system(cmd []string) (tr model.TaskResult) {
 	data, err := exec.Command(cmd[0], cmd[1:]...).CombinedOutput()
 	tr.Changed = true
 	if err == nil {
-		tr.Status = success
+		tr.Status = Success
 		tr.Output = string(data)
 	} else {
-		tr.Status = failed
+		tr.Status = Failed
 		tr.Output = strings.Join(cmd, " ") + "\n" + err.Error() + ":\n" + string(data)
 	}
 	return tr

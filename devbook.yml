@@ -31,6 +31,8 @@
 
     - service: name=cron state=restarted
 
+    - local_action: command hostname
+
       # - /etc/nginx: mode=0700
 
     # - name: install packages

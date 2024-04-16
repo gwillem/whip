@@ -67,13 +67,13 @@ func buildAptCmd(args model.TaskArgs) ([]string, error) {
 	return cmd, nil
 }
 
-func Apt(args model.TaskArgs, _ model.TaskVars) (tr model.TaskResult) {
-	fmt.Fprintln(os.Stderr, "starting apt task", args)
+func Apt(t *model.Task) (tr model.TaskResult) {
+	fmt.Fprintln(os.Stderr, "starting apt task", t.Args)
 
 	if !isExecutable(aptBin) {
 		return failure(aptBin + " not found")
 	}
-	cmd, err := buildAptCmd(args)
+	cmd, err := buildAptCmd(t.Args)
 	if err != nil {
 		return failure(err)
 	}
@@ -84,5 +84,5 @@ func Apt(args model.TaskArgs, _ model.TaskVars) (tr model.TaskResult) {
 }
 
 func init() {
-	registerRunner("apt", Apt, runnerMeta{})
+	registerRunner("apt", runner{run: Apt})
 }

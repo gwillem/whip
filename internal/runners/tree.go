@@ -18,7 +18,7 @@ import (
 )
 
 func init() {
-	registerRunner("tree", Tree, runnerMeta{})
+	registerRunner("tree", runner{run: Tree})
 }
 
 const srcRoot = "/"
@@ -71,27 +71,27 @@ func (pm *prefixMetaMap) getMeta(path string) fileMeta {
 	return finalMeta
 }
 
-func Tree(args model.TaskArgs, vars model.TaskVars) (tr model.TaskResult) {
+func Tree(t *model.Task) (tr model.TaskResult) {
 	// dstRoot is eiter the abs dst or $HOME + dst  or / + dst
-	dstRoot := getDstRoot(args["dst"])
+	dstRoot := getDstRoot(t.Args["dst"])
 
 	// dst root should exist already (so we won't change perms on / or $HOME)
 	if ok, err := fsutil.Exists(dstRoot); !ok || err != nil {
 		return failure("cannot read dst path", dstRoot, err)
 	}
 
-	pm, err := parsePrefixMeta(args)
+	pm, err := parsePrefixMeta(t.Args)
 	if err != nil {
 		return failure(err)
 	}
 	// log.Debug("prefix meta", pm)
 
 	output := ""
-	if args["_assets"] == nil {
+	if t.Args["_assets"] == nil {
 		return failure("no assets found")
 	}
 
-	srcFs, ok := args["_assets"].(afero.Fs)
+	srcFs, ok := t.Args["_assets"].(afero.Fs)
 	if !ok {
 		return failure("wrong type of _assets?")
 	}
@@ -119,7 +119,7 @@ func Tree(args model.TaskArgs, vars model.TaskVars) (tr model.TaskResult) {
 			// template?
 			if isText(f.data) {
 				// log.Debug("parsing template", srcPath, "with vars", vars)
-				f.data, err = tplParseBytes(f.data, vars)
+				f.data, err = tplParseBytes(f.data, t.Vars)
 				if err != nil {
 					return fmt.Errorf("tplParseBytes error on %s: %w", srcPath, err)
 				}
@@ -162,7 +162,7 @@ func Tree(args model.TaskArgs, vars model.TaskVars) (tr model.TaskResult) {
 	}
 
 	tr.Output = output
-	tr.Status = success
+	tr.Status = Success
 
 	// remove dupes, todo, should use set
 	slices.Sort(tr.Task.Notify)

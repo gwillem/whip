@@ -5,11 +5,11 @@ import (
 	m "github.com/gwillem/whip/internal/model"
 )
 
-func Shell(args m.TaskArgs, _ model.TaskVars) (tr m.TaskResult) {
-	cmd := []string{"/bin/bash", "-c", args.String(defaultArg)}
+func Shell(t *model.Task) (tr m.TaskResult) {
+	cmd := []string{"/bin/bash", "-c", t.Args.String(defaultArg)}
 	return system(cmd)
 }
 
 func init() {
-	registerRunner("shell", Shell, runnerMeta{})
+	registerRunner("shell", runner{run: Shell})
 }

@@ -1,20 +1,22 @@
-# Chief Whip Devops Automation
+# Chief Whip - simple and fast devops automation
 
 ![order, order!](doc/order-order.webp)
 
-Whip your servers into line. Chief Whip is a _fast_ and _simple_ Ansible replacement optimized for projects with 1 to 50 servers.
+Whip your servers into line. Chief Whip is a _fast_ and _simple_ Ansible replacement optimized for projects with 1 to 20 servers.
 
 # Demo
 
 > [!NOTE]
 > Keep this in mind.
 
-# Objectives
+# Philosophy
+
+How will Chief Whip _stay_ fast and simple? By will only contain features that satisfy 95% of use cases. Convention over configuration.
 
 Fast!
 
 1. Eliminate unnecessary SSH round trips: Ansibles biggest delay is caused by tasks that are sent one by one. Chief Whip bundles tasks into a single job.
-2. Replacing Python with Golang should give another speed boost while generating jobs.
+2. Implemented in Golang instead of Python
 
 Simple!
 
@@ -44,11 +46,9 @@ I really loved Ansible. Compared to the popular configuration management systems
 
 Until version 2 or so. After the RedHat acquisition, Ansible has quickly grown into commercial bloatware. It's funny how RedHat got rid of the old objectives page (Simple, Fast) and replaced it with a corporate bog of marketing fluff. The task parameter documentation is hidden behind compulsory white paper downloads. Core modules have grown to support 20 extra options to support esoteric use cases. And above all, its once legendary speed is gone. Ansible feels sluggish today.
 
-Ansible has morphed from a declarative model to an imperative model, by supporting loops and control flow.
+Ansible has grown too complex, as illustrated by this Hacker News comment:
 
 > Any sufficiently complicated configuration language contains an ad hoc, informally-specified, bug-ridden, slow implementation of a Turing complete programming language. (jasim @ HN)
-
-Fret no more, let's relive the original Ansible experience!
 
 # Other reading
 
@@ -58,8 +58,18 @@ Fret no more, let's relive the original Ansible experience!
 - [Ansible's YAML file is essentially code](https://news.ycombinator.com/item?id=16238005)
 - [Top Ansible tasks](https://mike42.me/blog/2019-01-the-top-100-ansible-modules)
 - [Configuration complexity clock](http://mikehadlow.blogspot.com/2012/05/configuration-complexity-clock.html?m=1)
+- [Original Ansible site: simple and efficient](https://web.archive.org/web/20130314042108/http://www.ansibleworks.com/)
 
 # FAQ
 
-- Why is there an embedded build? To support different architectures between host and client
-- Is Chief Whip designed to be an Ansible replacement (backwards compatible) or to be a better solution to the same problem?
+#### Is Chief Whip designed to be an Ansible replacement (backwards compatible) or to be a better solution to the same problem?
+
+The latter, however we stick to most of Ansible's verbiage to ease a transition.
+
+#### Isn't everybody using Docker, Kubernetes etc these days?
+
+[Nope](https://trends.google.com/trends/explore?date=all&q=ansible).
+
+#### Why is there an embedded build?
+
+To support different architectures between host and client
