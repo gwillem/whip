@@ -15,7 +15,7 @@ type (
 	Job struct {
 		Vars     Vars     `json:"vars,omitempty"`
 		Playbook Playbook `json:"playbook,omitempty"`
-		Assets   *Asset   `json:"assets,omitempty"`
+		// Assets   *Asset   `json:"assets,omitempty"`
 	}
 
 	Vars map[string]any
@@ -61,15 +61,18 @@ type (
 	TaskVars map[string]any
 
 	TaskResult struct {
-		PlayIdx   int           `json:"play_idx,omitempty"`
-		TaskIdx   int           `json:"task_idx,omitempty"` // TODO ugly, should refactor
-		TaskTotal int           `json:"task_total,omitempty"`
-		Host      string        `json:"target,omitempty"`
-		Changed   bool          `json:"changed,omitempty"`
-		Output    string        `json:"output,omitempty"`
-		Status    int           `json:"status_code,omitempty"`
-		Duration  time.Duration `json:"duration,omitempty"`
-		Task      *Task         `json:"task,omitempty"`
+		Host     TargetName      `json:"target,omitempty"`
+		Changed  bool            `json:"changed,omitempty"`
+		Output   string          `json:"output,omitempty"`
+		Status   int             `json:"status_code,omitempty"`
+		Duration time.Duration   `json:"duration,omitempty"`
+		Task     *Task           `json:"task,omitempty"`
+		Notify   map[string]bool `json:"notify,omitempty"`
+	}
+	ReportMsg struct {
+		TaskIdx    int
+		TaskTotal  int
+		TaskResult TaskResult
 	}
 )
 
@@ -88,7 +91,7 @@ func (j *Job) Tasks() []Task {
 }
 
 func (j *Job) String() string {
-	return fmt.Sprintf("Job: %d tasks, %d assets, %d vars", len(j.Tasks()), len(j.Assets.Files), len(j.Vars))
+	return fmt.Sprintf("Job: %d tasks, %d vars", len(j.Tasks()), len(j.Vars))
 }
 
 func (tr TaskResult) String() string {

@@ -44,7 +44,7 @@ type (
 		m      *progress.Model
 	}
 	tuiModel struct {
-		bars map[string]*bar
+		bars map[model.TargetName]*bar
 	}
 )
 
@@ -65,24 +65,25 @@ func (m tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// todo, resize existing bars
 		return m, nil
 
-	case model.TaskResult:
+	case model.ReportMsg:
+		tr := msg.TaskResult
 		// fmt.Println("got task result", msg)
 		perc := float64(msg.TaskIdx) / float64(msg.TaskTotal)
 
-		b := m.bars[msg.Host]
+		b := m.bars[tr.Host]
 		if b == nil {
 			p := progress.New(
 				progress.WithGradient(colorA, colorB),
 				progress.WithWidth(defaultWidth))
 			b = &bar{m: &p}
-			m.bars[msg.Host] = b
+			m.bars[tr.Host] = b
 		}
 
 		b.perc = perc
 		b.total = msg.TaskTotal
 		b.idx = msg.TaskIdx
 
-		if msg.Status != 0 {
+		if tr.Status != 0 {
 			b.status = ERROR
 		} else if perc == 1 {
 			b.status = DONE
@@ -101,7 +102,7 @@ func (m tuiModel) View() string {
 	// fmt.Println("got view")
 	var s string
 
-	targets := []string{}
+	targets := []model.TargetName{}
 	for t := range m.bars {
 		targets = append(targets, t)
 	}
@@ -122,7 +123,7 @@ func (m tuiModel) View() string {
 
 func createTui() *tea.Program {
 	tui := tea.NewProgram(tuiModel{
-		bars: map[string]*bar{},
+		bars: map[model.TargetName]*bar{},
 	})
 
 	go func() {

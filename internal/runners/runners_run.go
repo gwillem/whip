@@ -2,6 +2,8 @@ package runners
 
 import (
 	"fmt"
+	"path/filepath"
+	"runtime"
 	"runtime/debug"
 	"sort"
 	"strings"
@@ -34,7 +36,7 @@ type (
 	runner struct {
 		run      runnerFunc
 		meta     runnerMeta
-		preRun   runnerFunc
+		local    runnerFunc
 		validate validatorFunc
 	}
 )
@@ -65,12 +67,17 @@ func All() []string {
 
 func failure(msg ...any) model.TaskResult {
 	output := ""
+
+	_, file, line, ok := runtime.Caller(1)
+	if ok {
+		output += fmt.Sprintf("%s:%d", filepath.Base(file), line)
+	}
+
 	for _, m := range msg {
 		if _, ok := m.(error); ok {
-			output += ":"
+			output += " ERR"
 		}
-		output += " "
-		output += fmt.Sprintf("%v", m)
+		output += fmt.Sprintf(" %v", m)
 	}
 	output = strings.TrimSpace(output)
 
@@ -88,7 +95,7 @@ func registerRunner(name string, r runner) {
 func PreRun(task *model.Task, playVars model.TaskVars) (tr model.TaskResult) {
 	// fmt.Println("Running", task.Type)
 	runner, ok := runners[task.Runner]
-	if !ok || runner.preRun == nil {
+	if !ok || runner.local == nil {
 		tr.Status = Skipped
 		return tr
 	}
@@ -104,7 +111,7 @@ func PreRun(task *model.Task, playVars model.TaskVars) (tr model.TaskResult) {
 	task.Vars = mergedVars.(map[string]any)
 
 	// todo: merge vars
-	tr = runner.preRun(task)
+	tr = runner.local(task)
 	tr.Task = task
 	return tr
 }

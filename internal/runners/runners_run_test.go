@@ -8,22 +8,24 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestPreRun(t *testing.T) {
+func init() {
 	registerRunner("dummy", runner{
-		preRun: func(t *model.Task) model.TaskResult {
+		local: func(t *model.Task) model.TaskResult {
 			fmt.Println("inside dummy runner")
 			return model.TaskResult{Status: Skipped}
 		},
 	})
+}
 
+func TestPreRun(t *testing.T) {
 	const old = "appel"
 	const new = "banana"
 	task := model.Task{
-		Vars:   model.TaskVars{"fruit": old},
+		Vars:   model.TaskVars{"key": old},
 		Runner: "dummy",
 	}
-	extraVars := map[string]any{"fruit": new}
+	extraVars := map[string]any{"key": new}
 	tr := PreRun(&task, extraVars)
 	require.Equal(t, tr.Status, Skipped)
-	require.Equal(t, new, task.Vars["fruit"])
+	require.Equal(t, new, task.Vars["key"])
 }

@@ -52,22 +52,23 @@
 
 # Todo for MVP / internal use
 
-x bug: \_args get assigned to every task
-
-- [ ] bug: task (pre-) runner should be able to modify their vars, args
-- x secrets (age?)
-  x templates
+- [x] bug: \_args get assigned to every task
+- [x] bug: tree, prefixmap props don't trickle down in map (eg handler for /etc)
+- [x] bug: task (pre-) runner should be able to modify their vars, args
+- [x] secrets (age?)
+- [x] templates
 - local command (go build)
-- task pre-runners? could load files, run local commands etc
-- apt
-  x handlers, notify
-  x files: owner, state, notify
-- lineinfile
-  x files: actual checksum comparison
-  x systemd (service?)
+- [x] task pre-runners? could load files, run local commands etc
+- [ ] apt
+- [x] handlers, notify
+- [x] files: owner, state, notify
+- [ ] lineinfile
+- [x] files: actual checksum comparison
+- [x] systemd (service?)
 
 nice:
 
+- support for ansible vault https://github.com/sosedoff/ansible-vault-go/blob/master/vault.go
 - fix tests
 - tree: move assets from run param to arg param
 - tree sync: use tar or std serialization
@@ -76,3 +77,14 @@ nice:
 - alert on duplicate handlers
   x exit 1 if any tasks errorred?
 - replace Afero with tar for files serialization, so we can infer filemode from the src files
+- set up docs https://squidfunk.github.io/mkdocs-material/setup/adding-a-comment-system/
+
+code smell
+
+- composability: embed "install sansec ssh keys" ?
+- embedded files per task
+- flatten task list per target, kill play, just send list of tasks to deputy
+- simplify tr, tr should not be responsible for counting fi
+- don't send vars to runner, should be interpolated by deputy
+  - how does a template with host facts get processed?
+- need to validate key=val params for the tree module (and others?)

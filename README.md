@@ -59,6 +59,13 @@ Ansible has grown too complex, as illustrated by this Hacker News comment:
 - [Top Ansible tasks](https://mike42.me/blog/2019-01-the-top-100-ansible-modules)
 - [Configuration complexity clock](http://mikehadlow.blogspot.com/2012/05/configuration-complexity-clock.html?m=1)
 - [Original Ansible site: simple and efficient](https://web.archive.org/web/20130314042108/http://www.ansibleworks.com/)
+- [Michael DeHaan announces Jetporch](https://laserllama.substack.com/p/a-new-it-automation-project-moving)
+- [Michael DeHaan discontinnues Jetporch](https://web.archive.org/web/20231230013721/https://jetporch.substack.com/p/discontinuing-jet)
+- Some recent config mgt alternatives:
+  - [JetPorch docs](https://github.com/jetporch/jetporch_docs/blob/main/SUMMARY.md)
+  - [Ploy](https://github.com/davesavic/ploy)
+  - [Bruce](https://github.com/brucedom/bruce)
+  - [mgmt](https://github.com/purpleidea/mgmt/) since 2016, got a complex DSL
 
 # FAQ
 

@@ -12,13 +12,21 @@ import (
 	"syscall"
 
 	log "github.com/gwillem/go-simplelog"
+	"github.com/gwillem/whip/internal/assets"
 	"github.com/gwillem/whip/internal/model"
 	"github.com/gwillem/whip/internal/parser"
 	"github.com/spf13/afero"
 )
 
 func init() {
-	registerRunner("tree", runner{run: Tree})
+	registerRunner("tree", runner{
+		run:   tree,
+		local: treeLocal,
+		meta: runnerMeta{
+			requiredArgs: []string{"src"},
+			optionalArgs: []string{"_assets"},
+		},
+	})
 }
 
 const srcRoot = "/"
@@ -71,7 +79,17 @@ func (pm *prefixMetaMap) getMeta(path string) fileMeta {
 	return finalMeta
 }
 
-func Tree(t *model.Task) (tr model.TaskResult) {
+func treeLocal(t *model.Task) (tr model.TaskResult) {
+	// should load assets (if any) into _assets
+	assets, err := assets.DirToAsset(t.Args.String("src"))
+	if err != nil {
+		return failure("BOOHOO", err)
+	}
+	t.Args["_assets"] = assets
+	return model.TaskResult{Status: Success}
+}
+
+func tree(t *model.Task) (tr model.TaskResult) {
 	// dstRoot is eiter the abs dst or $HOME + dst  or / + dst
 	dstRoot := getDstRoot(t.Args["dst"])
 
@@ -91,10 +109,18 @@ func Tree(t *model.Task) (tr model.TaskResult) {
 		return failure("no assets found")
 	}
 
-	srcFs, ok := t.Args["_assets"].(afero.Fs)
+	rawAssets, ok := t.Args["_assets"].(model.Asset)
 	if !ok {
 		return failure("wrong type of _assets?")
 	}
+
+	srcFs, err := assets.AssetToFS(&rawAssets)
+	if err != nil {
+		return failure("cannot convert assets to fs", err)
+	}
+
+	tr.Notify = make(map[string]bool)
+
 	err = afero.Walk(srcFs, srcRoot, func(srcPath string, srcFi os.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -141,18 +167,13 @@ func Tree(t *model.Task) (tr model.TaskResult) {
 		if err != nil {
 			return fmt.Errorf("ensurePath error on %s: %w", dstPath, err)
 		}
+		status := "skip"
 		if changed {
 			tr.Changed = true
-		}
-		status := "ok"
-		if changed {
 			status = "changed"
-
-			if meta.notify != nil {
-				tr.Task.Notify = append(tr.Task.Notify, meta.notify...)
-				// activate handlers
+			for _, n := range meta.notify {
+				tr.Notify[n] = true
 			}
-
 		}
 		output += fmt.Sprintf("%-7s %s\n", status, dstPath)
 		return nil
@@ -163,11 +184,6 @@ func Tree(t *model.Task) (tr model.TaskResult) {
 
 	tr.Output = output
 	tr.Status = Success
-
-	// remove dupes, todo, should use set
-	slices.Sort(tr.Task.Notify)
-	tr.Task.Notify = slices.Compact(tr.Task.Notify)
-
 	return tr
 }
 
@@ -328,7 +344,7 @@ func ensureFile(f filesObj) (changed bool, err error) {
 
 	// need to write file?
 	if os.IsNotExist(err) || dataDiffers() {
-		log.Debug("data differs", f.path)
+		log.Debug("Data differs", f.path)
 
 		// os.O_CREATE on existing file does not update mode, so need to do that below
 		fh, err := fs.OpenFile(f.path, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, mode)

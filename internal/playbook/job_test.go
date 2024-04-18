@@ -10,7 +10,7 @@ import (
 )
 
 func dummyJob() *model.Job {
-	asset, _ := DirToAsset(testutil.FixturePath("assets/sample"))
+	// asset, _ := assets.DirToAsset(testutil.FixturePath("assets/sample"))
 	return &model.Job{
 		Vars: model.Vars{
 			"foo": "bar",
@@ -23,7 +23,7 @@ func dummyJob() *model.Job {
 				Args:   model.TaskArgs{"cmd": "date"},
 			}},
 		}},
-		Assets: asset,
+		// Assets: asset,
 	}
 }
 

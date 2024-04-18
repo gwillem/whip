@@ -56,10 +56,10 @@ func runWhip(cmd *cobra.Command, args []string) {
 	log.Progress("Loaded playbook with", len(*pb), "plays")
 
 	// load assets TODO move to prerun
-	assets, err := playbook.DirToAsset(defaultAssetPath)
-	if err != nil {
-		log.Warn(err)
-	}
+	// assets, err := playbook.DirToAsset(defaultAssetPath)
+	// if err != nil {
+	// 	log.Warn(err)
+	// }
 
 	// validation... should happen at deputy, because controller doesn't have access
 	// to facts and cannot parse dynamic tasks without them
@@ -89,16 +89,21 @@ func runWhip(cmd *cobra.Command, args []string) {
 			}
 
 			t := jobBook[target]
-			t.Assets = assets
+			// t.Assets = assets
 			t.Playbook = append(t.Playbook, play)
 			jobBook[target] = t
 		}
 	}
 
+	stats := map[model.TargetName]map[string]int{}
+
 	resultChan := make(chan model.TaskResult)
 	wg := sync.WaitGroup{}
 
 	for target, job := range jobBook {
+		// need to save total tasks for progress meter later
+		stats[target] = map[string]int{"total": len(job.Tasks())}
+
 		wg.Add(1)
 		go func(job model.Job, h model.TargetName, r chan<- model.TaskResult) {
 			defer wg.Done()
@@ -112,7 +117,7 @@ func runWhip(cmd *cobra.Command, args []string) {
 		close(resultChan)
 	}()
 
-	reportResults(resultChan, verbosity)
+	reportResults(resultChan, stats, verbosity)
 }
 
 func runPlaybookAtHost(job model.Job, t model.TargetName, results chan<- model.TaskResult) {
@@ -142,7 +147,7 @@ func runPlaybookAtHost(job model.Job, t model.TargetName, results chan<- model.T
 
 	cmd := "PATH=~/.cache/whip:$PATH deputy 2>~/.cache/whip/deputy.err"
 	err = ssh.RunGobStreamer(conn, cmd, &buffer, func(res model.TaskResult) {
-		res.Host = string(t)
+		res.Host = t
 		results <- res
 	})
 	if err != nil {

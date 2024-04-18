@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	defaultAssetPath = "files"
+// defaultAssetPath = "files"
 )
 
 var StringToSliceSep = regexp.MustCompile(`,\s*`)
@@ -47,14 +47,6 @@ func Load(path string) (*model.Playbook, error) {
 	expandPlaybookLoops(pb)
 	return pb, nil
 }
-
-// parses given playbook for asset references, returning a list of unique assets
-// func LoadAssets(pb *model.Playbook) (*model.Asset, error) {
-// 	if _, err := os.Stat(defaultAssetPath); os.IsNotExist(err) {
-// 		return &model.Asset{}, nil
-// 	}
-// 	return DirToAsset(defaultAssetPath)
-// }
 
 func yamlToPlaybook(y any) (*model.Playbook, error) {
 	pb := model.Playbook{}

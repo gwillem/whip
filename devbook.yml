@@ -22,18 +22,16 @@
 
     - name: file sync
       tree:
-        src: fixture/files
+        src: fixture/tree
         dst: /tmp
-        /etc: handler=nginx owner=www-data
+        /etc: notify=nginx owner=www-data
         /etc/nginx/nginx.conf: umask=077 owner=root
       vars:
         server: banaan
 
-    - service: name=cron state=restarted
+    # - service: name=cron state=restarted
 
     - local_action: command hostname
-
-      # - /etc/nginx: mode=0700
 
     # - name: install packages
     #   apt:
@@ -48,10 +46,10 @@
     #   loop:
     #     - a
 
-    - shell: id
+    # - shell: id
 
-    - name: testing vars
-      command: echo {{install.type}} {{plans| join(",")}}
+    # - name: testing vars
+    # command: echo {{install.type}} {{plans| join(",")}}
 
     # - name: induced failure
     #   command: /bin/false
