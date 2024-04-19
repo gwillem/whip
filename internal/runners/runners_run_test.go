@@ -10,7 +10,7 @@ import (
 
 func init() {
 	registerRunner("dummy", runner{
-		local: func(t *model.Task) model.TaskResult {
+		prerun: func(t *model.Task) model.TaskResult {
 			fmt.Println("inside dummy runner")
 			return model.TaskResult{Status: Skipped}
 		},

@@ -20,8 +20,8 @@ import (
 
 func init() {
 	registerRunner("tree", runner{
-		run:   tree,
-		local: treeLocal,
+		run:    tree,
+		prerun: treePrerun,
 		meta: runnerMeta{
 			requiredArgs: []string{"src"},
 			optionalArgs: []string{"_assets"},
@@ -79,7 +79,7 @@ func (pm *prefixMetaMap) getMeta(path string) fileMeta {
 	return finalMeta
 }
 
-func treeLocal(t *model.Task) (tr model.TaskResult) {
+func treePrerun(t *model.Task) (tr model.TaskResult) {
 	// should load assets (if any) into _assets
 	assets, err := assets.DirToAsset(t.Args.String("src"))
 	if err != nil {

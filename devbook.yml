@@ -20,19 +20,21 @@
     #   - abc
     #   - xyz
 
-    - name: file sync
-      tree:
-        src: fixture/tree
-        dst: /tmp
-        /etc: notify=nginx owner=www-data
-        /etc/nginx/nginx.conf: umask=077 owner=root
-      vars:
-        server: banaan
+    # - name: file sync
+    #   tree:
+    #     src: fixture/tree
+    #     dst: /tmp
+    #     /etc: notify=nginx owner=www-data
+    #     /etc/nginx/nginx.conf: umask=077 owner=root
+    #   vars:
+    #     server: banaan
 
     # - service: name=cron state=restarted
 
-    - local_action: command hostname
+    # - local_action: command hostname
 
+    - command: hostname
+      local: true
     # - name: install packages
     #   apt:
     #     state: latest

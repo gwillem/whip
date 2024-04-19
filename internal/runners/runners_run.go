@@ -36,7 +36,7 @@ type (
 	runner struct {
 		run      runnerFunc
 		meta     runnerMeta
-		local    runnerFunc
+		prerun   runnerFunc
 		validate validatorFunc
 	}
 )
@@ -95,7 +95,11 @@ func registerRunner(name string, r runner) {
 func PreRun(task *model.Task, playVars model.TaskVars) (tr model.TaskResult) {
 	// fmt.Println("Running", task.Type)
 	runner, ok := runners[task.Runner]
-	if !ok || runner.local == nil {
+	if !ok {
+		log.Fatal("Runner not found, should have been validated", task.Runner)
+	}
+
+	if runner.prerun == nil {
 		tr.Status = Skipped
 		return tr
 	}
@@ -111,7 +115,7 @@ func PreRun(task *model.Task, playVars model.TaskVars) (tr model.TaskResult) {
 	task.Vars = mergedVars.(map[string]any)
 
 	// todo: merge vars
-	tr = runner.local(task)
+	tr = runner.prerun(task)
 	tr.Task = task
 	return tr
 }
@@ -168,10 +172,6 @@ func Run(task *model.Task, playVars model.TaskVars) (tr model.TaskResult) {
 			task.Args[k] = parsed
 		}
 	}
-
-	// if afs != nil { // todo move to prerunner
-	// 	task.Args["_assets"] = afs
-	// }
 
 	tr = runner.run(task)
 	tr.Duration = time.Since(start)

@@ -38,6 +38,8 @@ Simple!
    - `gather_facts` option but instead lazy loading
    - `become`, no sudo trickery
    - `with_<lookup>`
+   - `delegate_to`
+   - `local_action`
    - variables that can be overridden in 10 places
 
 # But why?

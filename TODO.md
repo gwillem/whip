@@ -42,14 +42,6 @@
 - [ ] add taskrunner syntax validation so we can lint the tasks before actual run
 - [ ] struct based cli arg parsing? such as go-arg or go-flags or kong
 
-# Ideal playbook
-
-- hosts: ubuntu@192.168.64.16
-  tasks:
-  - files: base/host1 - /etc/nginx:
-    handler: nginx
-    owner: root -
-
 # Todo for MVP / internal use
 
 - [x] bug: \_args get assigned to every task
@@ -57,7 +49,7 @@
 - [x] bug: task (pre-) runner should be able to modify their vars, args
 - [x] secrets (age?)
 - [x] templates
-- local command (go build)
+- local command (go build) -- hmmm should get rid of this
 - [x] task pre-runners? could load files, run local commands etc
 - [ ] apt
 - [x] handlers, notify

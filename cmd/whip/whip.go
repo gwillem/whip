@@ -72,7 +72,7 @@ func runWhip(cmd *cobra.Command, args []string) {
 			if tr.Status == runners.Skipped {
 				continue
 			}
-			log.Progress("pre-run", task.Runner, "with status", tr.Output)
+			log.Progress("pre-run", task.Runner, "with status", tr.Status, tr.Output)
 		}
 	}
 

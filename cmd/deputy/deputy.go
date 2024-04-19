@@ -4,7 +4,6 @@ import (
 	"encoding/gob"
 	"os"
 
-	log "github.com/gwillem/go-simplelog"
 	"github.com/gwillem/whip/internal/model"
 	"github.com/gwillem/whip/internal/runners"
 )
@@ -43,9 +42,9 @@ func main() {
 			}
 
 		}
-		if len(handlers) == 0 {
-			log.Debug("No handlers were notified", handlers)
-		}
+		// if len(handlers) == 0 {
+		// log.Debug("No handlers were notified", handlers)
+		// }
 		for _, handler := range play.Handlers {
 			// empty tr in case of unnotified handler
 			tr := model.TaskResult{}
