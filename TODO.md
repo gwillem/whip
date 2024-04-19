@@ -55,7 +55,7 @@
 - [x] creates/validates options ==> unless
 - [x] handlers, notify
 - [x] files: owner, state, notify
-- [ ] lineinfile
+- [x] lineinfile
 - [x] files: actual checksum comparison
 - [x] systemd (service?)
 

@@ -4,6 +4,21 @@
 
 Whip your servers into line. Chief Whip is a _fast_ and _simple_ Ansible replacement optimized for projects with 1 to 20 servers.
 
+# Features
+
+| Works      | Planned            | NOT planned   |
+| ---------- | ------------------ | ------------- |
+| ssh auth   | external inventory | non-linux     |
+| ssh agent  | facts              | sudo / become |
+| apt        | pip / env          | ssh passwords |
+| file/copy  | roles / includes   | local_action  |
+| shell      | rpm, yum, pacman   | with_xxx      |
+| command    | get_url            | delegate_to   |
+| lineinfile | apt_repository     | set_fact      |
+| vars       | user               | assert        |
+| templates  | mysql              | stat          |
+| vault      | postgresql         | debug         |
+
 # Demo
 
 > [!NOTE]
@@ -19,28 +34,6 @@ Fast!
 2. Implemented in Golang instead of Python
 
 Simple!
-
-1. Support for core tasks that cover 98% of use cases (copy files, restart some processes)
-2. Linux servers only
-3. SSH support only
-4. StrictYaml only
-5. Tasks supported:
-   - template
-   - command
-   - shell
-   - copy
-   - file
-   - systemd
-   - package
-   - pip
-6. No more:
-   - support for plain password authentication (key/agent only)
-   - `gather_facts` option but instead lazy loading
-   - `become`, no sudo trickery
-   - `with_<lookup>`
-   - `delegate_to`
-   - `local_action`
-   - variables that can be overridden in 10 places
 
 # But why?
 
