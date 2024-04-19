@@ -12,77 +12,129 @@ https://manpages.ubuntu.com/manpages/xenial/man8/apt.8.html
 package runners
 
 import (
-	"fmt"
-	"os"
+	"os/exec"
+	"strings"
 
+	log "github.com/gwillem/go-simplelog"
 	"github.com/gwillem/whip/internal/model"
-	"github.com/k0kubun/pp"
+	"github.com/gwillem/whip/internal/parser"
+	"golang.org/x/exp/maps"
 )
 
 const (
-	aptBin = "/usr/bin/apt-get"
-
-	aptInstall aptState = iota
-	aptRemove
-	aptPurge
+	aptBin    = "/usr/bin/apt-get"
+	installed = "install"
+	removed   = "remove"
+	purged    = "purge"
 )
 
-type (
-	aptState int
-)
+var aptStateMap = map[string]string{
+	"present": installed,
+	"absent":  removed,
+	"purged":  purged,
+}
 
-func buildAptCmd(args model.TaskArgs) ([]string, error) {
-	pkglist := map[aptState][]string{}
+type aptPkgState map[string]map[string]bool
 
-	var state aptState
-	switch args.String("state") {
-	case "latest", "install":
-		state = aptInstall
-	case "absent":
-		state = aptRemove
-	case "purge":
-		state = aptPurge
-	default:
-		return nil, fmt.Errorf("invalid state: %s", args.String("state"))
+func (aps aptPkgState) add(pkg, state string) {
+	if aps[state] == nil {
+		aps[state] = map[string]bool{}
+	}
+	aps[state][pkg] = true
+}
+
+func (aps aptPkgState) has(pkg, state string) bool {
+	return aps[state][pkg]
+}
+
+func buildCurrent() (aptPkgState, error) {
+	pkglist := aptPkgState{}
+
+	data, err := exec.Command("apt", "list", "--installed").CombinedOutput()
+	if err != nil {
+		return nil, err
 	}
 
-	pkglist[state] = append(pkglist[state], args.StringSlice("name")...)
+	for _, line := range strings.Split(string(data), "\n") {
+		if len(line) == 0 {
+			continue
+		}
+		pkg := strings.Split(line, "/")[0]
+		pkglist.add(pkg, installed)
+	}
+	return pkglist, nil
+}
 
-	modifiers := map[aptState]string{
-		aptInstall: "+",
-		aptRemove:  "-",
-		aptPurge:   "",
+func getState(s string) string {
+	if val := aptStateMap[s]; val != "" {
+		return val
+	}
+	return installed
+}
+
+func buildWanted(args model.TaskArgs) (aptPkgState, error) {
+	pkglist := aptPkgState{}
+	defaultState := getState(args.String("state"))
+	for _, p := range args.StringSlice("pkg") {
+		state := defaultState
+		args := parser.ParseArgString(p)
+		if args["state"] != "" {
+			state = getState(args["state"])
+		}
+		p = args[parser.DefaultArg]
+		pkglist.add(p, state)
+	}
+	return pkglist, nil
+}
+
+func apt(t *model.Task) (tr model.TaskResult) {
+	if !isExecutable(aptBin) {
+		return failure("cannot run", aptBin)
 	}
 
-	pkgs := []string{}
-	for state, names := range pkglist {
-		for _, pkg := range names {
-			pkg += modifiers[state]
-			pkgs = append(pkgs, pkg)
+	current, err := buildCurrent()
+	if err != nil {
+		return failure("cannot get current apt state", err)
+	}
+	wanted, err := buildWanted(t.Args)
+	if err != nil {
+		return failure("cannot get wanted apt state", err)
+	}
+
+	worklist := aptPkgState{}
+	for state, pkgs := range wanted {
+		for p := range pkgs {
+			if state == installed && !current.has(p, state) {
+				worklist.add(p, state)
+			} else if state != installed && current.has(p, installed) {
+				worklist.add(p, state)
+			}
 		}
 	}
 
-	cmd := []string{"sudo", aptBin, "-y", "purge"}
-	cmd = append(cmd, pkgs...)
-	return cmd, nil
-}
+	total := 0
 
-func Apt(t *model.Task) (tr model.TaskResult) {
-	fmt.Fprintln(os.Stderr, "starting apt task", t.Args)
+	for state, pkgs := range worklist {
+		if len(pkgs) == 0 {
+			log.Debug("nothing in state (should not happen!)", state)
+			continue
+		}
+		total += len(pkgs)
+		args := append([]string{state}, maps.Keys(pkgs)...)
+		data, err := exec.Command("apt-mark", args...).CombinedOutput()
+		if err != nil {
+			return failure("cannot mark packages", string(data))
+		}
+		log.Debug("apt-mark", string(data))
+	}
 
-	if !isExecutable(aptBin) {
-		return failure(aptBin + " not found")
+	if total == 0 {
+		return model.TaskResult{Status: Success}
 	}
-	cmd, err := buildAptCmd(t.Args)
-	if err != nil {
-		return failure(err)
-	}
-	fmt.Fprintln(os.Stderr, "got cmd", cmd)
-	tr = system(cmd)
-	pp.Fprintln(os.Stderr, tr)
-	return tr
+
+	return runShell("DEBIAN_FRONTEND=noninteractive apt-get dselect-upgrade -y -q")
 }
 
 func init() {
-	registerRunner("apt", runner{run: Apt})
+	registerRunner("apt", runner{run: apt})
 }

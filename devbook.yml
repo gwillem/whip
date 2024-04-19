@@ -12,6 +12,12 @@
       - tiny
 
   tasks:
+    - apt:
+        pkg:
+          - moreutils
+          - xz-utils
+          - git
+          - atop state=absent
     # - name: install ssh keys
     #   authorized_key:
     #     user: ubuntu
@@ -33,8 +39,12 @@
 
     # - local_action: command hostname
 
-    - command: hostname
-      local: true
+    # - command:
+    #     args: timedatectl set-timezone UTC
+    #     unless: grep UTC /etc/timezone
+
+    # - command:
+    #     args: hostname
     # - name: install packages
     #   apt:
     #     state: latest

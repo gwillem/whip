@@ -19,8 +19,6 @@ const (
 	Success int = iota
 	Failed
 	Skipped
-
-	defaultArg = "_args"
 )
 
 type (

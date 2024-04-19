@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/barkimedes/go-deepcopy"
-	"github.com/charmbracelet/log"
+	log "github.com/gwillem/go-simplelog"
 	"github.com/mitchellh/mapstructure"
 )
 
@@ -95,11 +95,19 @@ func (j *Job) String() string {
 }
 
 func (tr TaskResult) String() string {
-	return fmt.Sprintf("TaskResult %s from %s (%.2f sec)", tr.Task.Runner, tr.Host, tr.Duration.Seconds())
+	runner := ""
+	if tr.Task != nil {
+		runner = tr.Task.Runner
+	}
+
+	return fmt.Sprintf("TaskResult %s from %s (%.2f sec) -- %s:%d", runner, tr.Host, tr.Duration.Seconds())
 }
 
 func (ta TaskArgs) String(s string) string {
-	return ta[s].(string)
+	if arg := ta[s]; arg != nil {
+		return arg.(string)
+	}
+	return ""
 }
 
 func (ta TaskArgs) StringSlice(s string) []string {

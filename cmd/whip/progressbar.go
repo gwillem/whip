@@ -9,6 +9,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/log"
 	"github.com/gwillem/whip/internal/model"
+	"github.com/gwillem/whip/internal/runners"
 )
 
 const (
@@ -83,7 +84,7 @@ func (m tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		b.total = msg.TaskTotal
 		b.idx = msg.TaskIdx
 
-		if tr.Status != 0 {
+		if tr.Status == runners.Failed {
 			b.status = ERROR
 		} else if perc == 1 {
 			b.status = DONE

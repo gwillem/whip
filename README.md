@@ -82,3 +82,9 @@ The latter, however we stick to most of Ansible's verbiage to ease a transition.
 #### Why is there an embedded build?
 
 To support different architectures between host and client
+
+# Changes from Ansible syntax
+
+- tree module with state per line
+- apt module with state per line
+- "unless" for command and shell

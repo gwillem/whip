@@ -40,12 +40,16 @@ func (h verboseHandler) Send(m model.ReportMsg) {
 	tr := m.TaskResult
 
 	switch {
-	case tr.Changed && tr.Status == 0:
+	case tr.Changed && tr.Status == runners.Success:
 		statusColor = yellow
 		status = "changed"
-	case tr.Status != 0:
+	case tr.Status == runners.Failed:
 		statusColor = red
 		status = "error"
+	case tr.Status == runners.Skipped:
+		statusColor = dark
+		status = "skipped"
+
 	}
 
 	// runner := fmt.Sprintf("%-14.14s", r.Task.Runner)
@@ -93,7 +97,7 @@ func reportResults(results <-chan model.TaskResult, stats map[model.TargetName]m
 			TaskTotal:  stats[res.Host]["total"],
 			TaskResult: res,
 		})
-		if res.Status != 0 {
+		if res.Status == runners.Failed {
 			failed = append(failed, res)
 		}
 	}
@@ -102,8 +106,6 @@ func reportResults(results <-chan model.TaskResult, stats map[model.TargetName]m
 	if len(failed) > 0 {
 		fmt.Println()
 		for _, f := range failed {
-			fmt.Println(f)
-
 			for _, line := range strings.Split(strings.TrimSpace(f.Output), "\n") {
 				fmt.Println("  " + red(line))
 			}

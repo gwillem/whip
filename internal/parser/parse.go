@@ -5,6 +5,10 @@ import (
 	"strings"
 )
 
+const (
+	DefaultArg = "args"
+)
+
 // Helper functions for whip + deputy
 
 func ParseArgString(arg string) map[string]string {
@@ -21,7 +25,7 @@ func ParseArgString(arg string) map[string]string {
 		}
 	}
 
-	kv["_args"] = strings.Join(baseArgs, " ")
+	kv[DefaultArg] = strings.Join(baseArgs, " ")
 	return kv
 }
 

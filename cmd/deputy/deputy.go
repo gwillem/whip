@@ -43,11 +43,11 @@ func main() {
 
 		}
 		// if len(handlers) == 0 {
-		// log.Debug("No handlers were notified", handlers)
+		// 	log.Debug("No handlers were notified", handlers)
 		// }
 		for _, handler := range play.Handlers {
 			// empty tr in case of unnotified handler
-			tr := model.TaskResult{}
+			tr := model.TaskResult{Status: runners.Skipped}
 
 			if handlers[handler.Name] {
 				// log.Debug("Running handler", handler)

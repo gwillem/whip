@@ -212,6 +212,9 @@ func Connect(target string) (*Client, error) {
 		Auth:            authMethods,
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 		Timeout:         sshTimeout,
+		Config:          ssh.Config{
+			//			Ciphers: []string{"aes128-ctr", "aes192-ctr", "aes256-ctr", "aes128-gcm@openssh.com", "chacha20-poly1305@openssh.com"},
+		},
 	}
 	addr := fmt.Sprintf("%s:%s", host, port)
 	cl, err := ssh.Dial(tcp, addr, config)

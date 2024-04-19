@@ -23,7 +23,7 @@ func TestLoadPlaybookSimple1(t *testing.T) {
 					Runner: "shell",
 					Name:   "sleep random",
 					Args: model.TaskArgs{
-						"_args": "sleep $[ $RANDOM % 3 ]",
+						"args": "sleep $[ $RANDOM % 3 ]",
 					},
 					Notify: []string{"nginx", "systemd"},
 					Loop:   nil,
@@ -34,7 +34,7 @@ func TestLoadPlaybookSimple1(t *testing.T) {
 					Runner: "command",
 					Name:   "nginx",
 					Args: model.TaskArgs{
-						"_args": "echo restarting nginx",
+						"args": "echo restarting nginx",
 					},
 					Loop: nil,
 				},

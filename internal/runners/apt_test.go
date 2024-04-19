@@ -24,7 +24,7 @@ func Test_buildAptCmd(t *testing.T) {
 		"state": "latest",
 	}
 	want := []string{"/usr/bin/apt-get", "-y", "purge", "foo+", "bar+"}
-	got, err := buildAptCmd(args)
+	got, err := buildWanted(args)
 	assert.NoError(t, err)
 	assert.Equal(t, want, got)
 }

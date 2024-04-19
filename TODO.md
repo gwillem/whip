@@ -49,9 +49,10 @@
 - [x] bug: task (pre-) runner should be able to modify their vars, args
 - [x] secrets (age?)
 - [x] templates
-- local command (go build) -- hmmm should get rid of this
+- [x] local command (go build) -- hmmm should get rid of this
 - [x] task pre-runners? could load files, run local commands etc
-- [ ] apt
+- [x] apt
+- [x] creates/validates options ==> unless
 - [x] handlers, notify
 - [x] files: owner, state, notify
 - [ ] lineinfile

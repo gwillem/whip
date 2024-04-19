@@ -121,8 +121,17 @@ func tplParseBytes(tpl []byte, data map[string]any) ([]byte, error) {
 }
 
 func system(cmd []string) (tr model.TaskResult) {
-	data, err := exec.Command(cmd[0], cmd[1:]...).CombinedOutput()
 	tr.Changed = true
+	if len(cmd) == 0 {
+		return failure("no command")
+	}
+
+	args := []string{}
+	if len(cmd) > 1 {
+		args = cmd[1:]
+	}
+	data, err := exec.Command(cmd[0], args...).CombinedOutput()
+
 	if err == nil {
 		tr.Status = Success
 		tr.Output = string(data)
