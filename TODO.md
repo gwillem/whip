@@ -30,12 +30,12 @@
   - [ ] copy
   - [ ] template
   - [x] authorized_key
-  - [ ] shell
-  - [ ] command
+  - [x] shell
+  - [x] command
   - [ ] template
   - [ ] file
-  - [ ] apt
-  - [ ] systemd
+  - [x] apt
+  - [x] systemd
   - [ ] rsync support (via this? https://github.com/gokrazy/rsync/)
 - [ ] publish on github
 - [x] support vault

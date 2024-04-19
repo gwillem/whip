@@ -46,6 +46,14 @@ func ensureLineInFile(path, line string) (bool, error) {
 		return false, err
 	}
 
+	isDir, err := fsutil.IsDir(path)
+	if err != nil {
+		return false, err
+	}
+	if isDir {
+		return false, fmt.Errorf("path is a directory")
+	}
+
 	if pathExists {
 		fh, err := fs.Open(path)
 		if err != nil {
@@ -61,8 +69,8 @@ func ensureLineInFile(path, line string) (bool, error) {
 			}
 		}
 
-		if err := fh.Close(); err != nil {
-			return false, err
+		if e := fh.Close(); e != nil {
+			return false, e
 		}
 	}
 	// line not found, append it

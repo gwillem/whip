@@ -18,6 +18,11 @@
           - xz-utils
           - git
           - atop state=absent
+
+    - lineinfile:
+        path: /tmp/postfix/main.cf
+        line: "inet_interfaces = 127.0.0.1"
+
     # - name: install ssh keys
     #   authorized_key:
     #     user: ubuntu
