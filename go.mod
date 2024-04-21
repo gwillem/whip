@@ -18,6 +18,7 @@ require (
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/nikolalohinski/gonja v1.5.0
 	github.com/pkg/sftp v1.13.5
+	github.com/sosedoff/ansible-vault-go v0.2.0
 	github.com/spf13/afero v1.9.5
 	github.com/spf13/cobra v1.7.0
 	github.com/stretchr/testify v1.8.2

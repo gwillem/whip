@@ -100,7 +100,8 @@ func (tr TaskResult) String() string {
 		runner = tr.Task.Runner
 	}
 
-	return fmt.Sprintf("TaskResult %s from %s (%.2f sec) -- %s:%d", runner, tr.Host, tr.Duration.Seconds())
+	return fmt.Sprintf("TaskResult %s from %s (%.2f sec)",
+		runner, tr.Host, tr.Duration.Seconds())
 }
 
 func (ta TaskArgs) String(s string) string {

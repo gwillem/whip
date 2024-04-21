@@ -75,7 +75,7 @@ func getState(s string) string {
 func buildWanted(args model.TaskArgs) (aptPkgState, error) {
 	pkglist := aptPkgState{}
 	defaultState := getState(args.String("state"))
-	for _, p := range args.StringSlice("pkg") {
+	for _, p := range args.StringSlice("name") {
 		state := defaultState
 		args := parser.ParseArgString(p)
 		if args["state"] != "" {

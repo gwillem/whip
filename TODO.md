@@ -41,9 +41,30 @@
 - [x] support vault
 - [ ] add taskrunner syntax validation so we can lint the tasks before actual run
 - [ ] struct based cli arg parsing? such as go-arg or go-flags or kong
+- [ ] module auto doc generation
 
 # Todo for MVP / internal use
 
+- [ ] tests for vault
+- [x] tui progress shows DONE when there is an error
+- [ ] rename runner to module
+- [ ] dont pass whole task to runner
+- [ ] add: creates as backwards compat
+- [ ] bug: tree does not work?
+- [ ] args vs \_args
+
+```
+    # - name: inital request of wildcard certificate
+    #   command: "certbot certonly -n --agree-tos --email=info@sansec.io --dns-cloudflare --dns-cloudflare-credentials /etc/certbot/sans.ec.creds -d '*.sans.ec'"
+    #   args:
+    #     creates: /etc/letsencrypt/live/sans.ec/cert.pem
+    #   tags: certbot
+```
+
+- [ ] get_url
+- [ ] apt: state latest?
+- [x] apt: pkg should be "name" ?
+- [ ] tags
 - [x] bug: \_args get assigned to every task
 - [x] bug: tree, prefixmap props don't trickle down in map (eg handler for /etc)
 - [x] bug: task (pre-) runner should be able to modify their vars, args
@@ -61,7 +82,8 @@
 
 nice:
 
-- support for ansible vault https://github.com/sosedoff/ansible-vault-go/blob/master/vault.go
+x support for ansible vault https://github.com/sosedoff/ansible-vault-go/blob/master/vault.go
+
 - fix tests
 - tree: move assets from run param to arg param
 - tree sync: use tar or std serialization

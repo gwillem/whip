@@ -104,15 +104,16 @@ func reportResults(results <-chan model.TaskResult, stats map[model.TargetName]m
 	handler.Quit()
 
 	if len(failed) > 0 {
-		fmt.Println()
+		log.Task("Failed tasks")
 		for _, f := range failed {
 			for _, line := range strings.Split(strings.TrimSpace(f.Output), "\n") {
-				fmt.Println("  " + red(line))
+				log.Progress(fmt.Sprintf("%s %s", f.Host, red(line)))
 			}
 		}
 	}
 
 	if verbosity > 0 {
+		log.Task("Summary")
 		for k, stats := range stats {
 			log.Ok(fmt.Sprint(k, " ", stats))
 		}

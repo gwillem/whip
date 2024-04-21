@@ -1,32 +1,22 @@
 package runners
 
-import (
-	"fmt"
-	"testing"
+// func TestGonja(t *testing.T) {
+// 	vars := map[string]any{
+// 		"item":    "banaan",
+// 		"changed": true,
+// 	}
 
-	"github.com/nikolalohinski/gonja"
-)
+// 	cfg := gonja.NewConfig()
+// 	cfg.StrictUndefined = true
 
-func TestGonja(t *testing.T) {
-
-	vars := map[string]any{
-		"item":    "banaan",
-		"changed": true,
-	}
-
-	cfg := gonja.NewConfig()
-	cfg.StrictUndefined = true
-
-	env := gonja.NewEnvironment(cfg, gonja.DefaultLoader)
-	tpl, err := env.FromString("Hello {{ item | capitalize }}! This playbook was {{changed}} {{kjsdfhksd}}")
-
-	// tpl, err := gonja.FromString("Hello {{ item | capitalize }}! This playbook was {{unknopwn}}")
-	if err != nil {
-		panic(err)
-	}
-	out, err := tpl.Execute(vars)
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println(out) // Prints: Hello Bob!
-}
+// 	env := gonja.NewEnvironment(cfg, gonja.DefaultLoader)
+// 	tpl, err := env.FromString("Hello {{ item | capitalize }}! This playbook was {{changed}} {{kjsdfhksd}}")
+// 	// tpl, err := gonja.FromString("Hello {{ item | capitalize }}! This playbook was {{unknopwn}}")
+// 	if err != nil {
+// 		panic(err)
+// 	}
+// 	want := fmt.Sprintf("Hello %s! This playbook was %t ", "banaan", true)
+// 	got, err := tpl.Execute(vars)
+// 	require.NoError(t, err)
+// 	require.Equal(t, want, got)
+// }

@@ -10,6 +10,7 @@ import (
 
 	"github.com/gwillem/whip/internal/model"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var (
@@ -20,9 +21,12 @@ var (
 
 	testRootUser  = "root"
 	testRootGroup = "sys"
-	testUmask     = os.FileMode(0o22)
-	testHandlerA  = "handlerA"
-	testHandlerC  = "handlerC"
+	testRootUID   = getUID(testRootUser)
+	testRootGID   = getGID(testRootGroup)
+
+	testUmask    = os.FileMode(0o22)
+	testHandlerA = "handlerA"
+	testHandlerC = "handlerC"
 )
 
 func getUser() string {
@@ -75,9 +79,9 @@ func newFileMeta(uid, gid int, umask os.FileMode, notify []string) *fileMeta {
 
 func getDummyTaskArgs() model.TaskArgs {
 	return model.TaskArgs{
-		"/a/b/c": fmt.Sprintf("umask=%d owner=%s group=%s notify=%s", defaultUmask, testRootUser, testRootGroup, testHandlerC),
-		"/a":     fmt.Sprintf("umask=%d owner=%s group=%s notify=%s", defaultUmask, testUser, testGroup, testHandlerA),
-		"/d":     fmt.Sprintf("umask=%d owner=%s group=%s", defaultUmask, testUser, testGroup),
+		"/a/b/c": fmt.Sprintf("umask=%o owner=%s group=%s notify=%s", defaultUmask, testRootUser, testRootGroup, testHandlerC),
+		"/a":     fmt.Sprintf("umask=%o owner=%s group=%s notify=%s", defaultUmask, testUser, testGroup, testHandlerA),
+		"/d":     fmt.Sprintf("umask=%o owner=%s group=%s", defaultUmask, testUser, testGroup),
 	}
 }
 
@@ -98,8 +102,8 @@ func Test_parsePrefixMeta(t *testing.T) {
 					"/d",
 				},
 				metamap: map[string]fileMeta{
-					"/a":     *newFileMeta(testUID, testGID, testUmask, nil),
-					"/a/b/c": *newFileMeta(testUID, testGID, testUmask, nil),
+					"/a":     *newFileMeta(testUID, testGID, testUmask, []string{testHandlerA}),
+					"/a/b/c": *newFileMeta(testRootUID, testRootGID, testUmask, []string{testHandlerC}),
 					"/d":     *newFileMeta(testUID, testGID, testUmask, nil),
 				},
 			},
@@ -119,13 +123,11 @@ func Test_parsePrefixMeta(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := parsePrefixMeta(tt.args)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("parsePrefixMeta() error = %v, wantErr %v", err, tt.wantErr)
+			if !tt.wantErr {
+				require.Equal(t, tt.want, got)
 				return
 			}
-			if !tt.wantErr {
-				assert.Equal(t, tt.want, got)
-			}
+			require.Error(t, err)
 		})
 	}
 }

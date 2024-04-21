@@ -6,7 +6,7 @@ Whip your servers into line. Chief Whip is a _fast_ and _simple_ Ansible replace
 
 # Features
 
-| Works      | Planned            | NOT planned   |
+| Finished   | Planned            | NOT planned\* |
 | ---------- | ------------------ | ------------- |
 | ssh auth   | external inventory | non-linux     |
 | ssh agent  | facts              | sudo / become |
@@ -47,20 +47,18 @@ Ansible has grown too complex, as illustrated by this Hacker News comment:
 
 # Other reading
 
+- [Top Ansible tasks](https://mike42.me/blog/2019-01-the-top-100-ansible-modules)
 - [I'm done with Red Hat](https://www.jeffgeerling.com/blog/2023/im-done-red-hat-enterprise-linux)
 - [Is Ansible turing complete?](https://stackoverflow.com/questions/40127586/is-ansible-turing-complete)
-- [gossh: declarative config management using Go](https://github.com/krilor/gossh)
 - [Ansible's YAML file is essentially code](https://news.ycombinator.com/item?id=16238005)
-- [Top Ansible tasks](https://mike42.me/blog/2019-01-the-top-100-ansible-modules)
 - [Configuration complexity clock](http://mikehadlow.blogspot.com/2012/05/configuration-complexity-clock.html?m=1)
 - [Original Ansible site: simple and efficient](https://web.archive.org/web/20130314042108/http://www.ansibleworks.com/)
-- [Michael DeHaan announces Jetporch](https://laserllama.substack.com/p/a-new-it-automation-project-moving)
-- [Michael DeHaan discontinnues Jetporch](https://web.archive.org/web/20231230013721/https://jetporch.substack.com/p/discontinuing-jet)
 - Some recent config mgt alternatives:
-  - [JetPorch docs](https://github.com/jetporch/jetporch_docs/blob/main/SUMMARY.md)
-  - [Ploy](https://github.com/davesavic/ploy)
-  - [Bruce](https://github.com/brucedom/bruce)
-  - [mgmt](https://github.com/purpleidea/mgmt/) since 2016, got a complex DSL
+  - [gossh: declarative config management using Go](https://github.com/krilor/gossh)
+  - [JetPorch](https://github.com/jetporch/jetporch_docs/blob/main/SUMMARY.md) ([launched](https://laserllama.substack.com/p/a-new-it-automation-project-moving) and [discontinued](https://web.archive.org/web/20231230013721/https://jetporch.substack.com/p/discontinuing-jet))
+  - [Ploy](https://github.com/davesavic/ploy) Jan 2024, not Ansible compatible
+  - [Bruce](https://github.com/brucedom/bruce) since Apr 2023, not Ansible compatible
+  - [mgmt](https://github.com/purpleidea/mgmt/) since 2016, full featured, high complexity, not Ansible compatible
 
 # FAQ
 

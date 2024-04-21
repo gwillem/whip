@@ -23,7 +23,8 @@ func Test_buildAptCmd(t *testing.T) {
 		"name":  []string{"foo", "bar"},
 		"state": "latest",
 	}
-	want := []string{"/usr/bin/apt-get", "-y", "purge", "foo+", "bar+"}
+	// want := aptPkgState(aptPkgState{"install": map[string]bool{"bar": true, "foo": true}})
+	want := aptPkgState{"install": map[string]bool{"bar": true, "foo": true}}
 	got, err := buildWanted(args)
 	assert.NoError(t, err)
 	assert.Equal(t, want, got)

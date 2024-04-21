@@ -1,7 +1,6 @@
 package runners
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/gwillem/whip/internal/model"
@@ -11,7 +10,7 @@ import (
 func init() {
 	registerRunner("dummy", runner{
 		prerun: func(t *model.Task) model.TaskResult {
-			fmt.Println("inside dummy runner")
+			// fmt.Println("inside dummy runner")
 			return model.TaskResult{Status: Skipped}
 		},
 	})

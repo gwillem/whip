@@ -1,7 +1,7 @@
 ---
 - hosts:
-    - root@192.168.64.16
-    # - ubuntu@192.168.64.17
+    # - root@192.168.64.16
+    - root@192.168.64.17
   vars:
     install:
       path: /data
@@ -12,16 +12,15 @@
       - tiny
 
   tasks:
+    - lineinfile:
+        path: /tmp/postfix/main.cf
+        line: "inet_interfaces = 127.0.0.1"
     - apt:
-        pkg:
+        name:
           - moreutils
           - xz-utils
           - git
           - atop state=absent
-
-    - lineinfile:
-        path: /tmp/postfix/main.cf
-        line: "inet_interfaces = 127.0.0.1"
 
     # - name: install ssh keys
     #   authorized_key:

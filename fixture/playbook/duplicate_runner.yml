@@ -6,10 +6,5 @@
 
   tasks:
     - name: install ssh keys
-      authorized_key:
-        user: ubuntu
-        key: "{{item}}"
+      command: main runner
       shell: this is a duplicate runner
-      loop:
-      - abc
-      - xyz

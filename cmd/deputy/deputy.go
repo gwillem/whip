@@ -9,8 +9,10 @@ import (
 )
 
 func main() {
-	job := getJobFromStdin()
+	runJob(getJobFromStdin())
+}
 
+func runJob(job *model.Job) {
 	// send task results back to whip
 	encoder := gob.NewEncoder(os.Stdout)
 
@@ -28,7 +30,7 @@ func main() {
 			}
 
 			if tr.Status != 0 {
-				break
+				return
 			}
 
 			if tr.Changed {
@@ -60,7 +62,7 @@ func main() {
 				panic(err)
 			}
 			if tr.Status != 0 {
-				break
+				return
 			}
 		}
 	}

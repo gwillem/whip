@@ -15,15 +15,5 @@
         }
       ]
     }
-  ],
-  "assets": {
-    "name": "/Users/willem/git/whip/fixture/assets/sample",
-    "files": [
-      {
-        "path": "/etc/nginx/nginx.conf",
-        "data": "aHR0cCB7CiAgICBzZXJ2ZXIgewogICAgICAgIGxpc3RlbiA4MDsKICAgICAgICByb290IC92YXIvd3d3L2h0bWw7CiAgICB9Cn0=",
-        "mode": 420
-      }
-    ]
-  }
+  ]
 }

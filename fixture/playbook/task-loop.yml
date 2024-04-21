@@ -6,7 +6,7 @@
 
   tasks:
     - name: install ssh keys
-      authorized_key:
+      command:
         user: ubuntu
         key: "{{item}}"
       loop:

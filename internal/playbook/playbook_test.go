@@ -5,9 +5,9 @@ import (
 
 	"github.com/gwillem/whip/internal/model"
 	tu "github.com/gwillem/whip/internal/testutil"
-	"github.com/k0kubun/pp"
 	"github.com/mitchellh/mapstructure"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestLoadPlaybookSimple1(t *testing.T) {
@@ -57,7 +57,7 @@ func TestExpandTaskLoops(t *testing.T) {
 			},
 			Tasks: []model.Task{
 				{
-					Runner: "authorized_key",
+					Runner: "command",
 					Name:   "install ssh keys",
 					Args: model.TaskArgs{
 						"key":  "{{item}}",
@@ -70,7 +70,7 @@ func TestExpandTaskLoops(t *testing.T) {
 					Notify: []string{},
 				},
 				{
-					Runner: "authorized_key",
+					Runner: "command",
 					Name:   "install ssh keys",
 					Args: model.TaskArgs{
 						"key":  "{{item}}",
@@ -89,13 +89,13 @@ func TestExpandTaskLoops(t *testing.T) {
 }
 
 func TestFilesWithMeta(t *testing.T) {
-	pb, err := Load(tu.FixturePath("playbook/tree.yml"))
-	assert.NoError(t, err)
-	pp.Println(pb)
+	_, err := Load(tu.FixturePath("playbook/tree.yml"))
+	require.NoError(t, err)
 }
 
 func TestDuplicateRunner(t *testing.T) {
 	_, err := Load(tu.FixturePath("playbook/duplicate_runner.yml"))
+	require.Error(t, err)
 	var e *mapstructure.Error
 	assert.ErrorAs(t, err, &e)
 }
