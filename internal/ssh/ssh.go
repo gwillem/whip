@@ -204,7 +204,7 @@ func Connect(target string) (*Client, error) {
 	}
 
 	if len(authMethods) == 0 {
-		log.Fatal("No auth methods available")
+		log.Fatal("No SSH auth methods available. Is your agent running?")
 	}
 
 	config := &ssh.ClientConfig{
@@ -212,9 +212,10 @@ func Connect(target string) (*Client, error) {
 		Auth:            authMethods,
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 		Timeout:         sshTimeout,
-		Config:          ssh.Config{
-			//			Ciphers: []string{"aes128-ctr", "aes192-ctr", "aes256-ctr", "aes128-gcm@openssh.com", "chacha20-poly1305@openssh.com"},
-		},
+		// these ciphers were supposedly faster but I didn't measure any difference
+		// Config:          ssh.Config{
+		//			Ciphers: []string{"aes128-ctr", "aes192-ctr", "aes256-ctr", "aes128-gcm@openssh.com", "chacha20-poly1305@openssh.com"},
+		// },
 	}
 	addr := fmt.Sprintf("%s:%s", host, port)
 	cl, err := ssh.Dial(tcp, addr, config)

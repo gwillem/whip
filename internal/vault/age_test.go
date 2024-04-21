@@ -11,6 +11,12 @@ import (
 
 const ageTestKey = "AGE-SECRET-KEY-1ATU93PUH73GSD6UXHVU4GYQ2JKM5SJ0SNUH8UWPGCQ0HWYUEL5WQRVYT4V"
 
+var ageTestVault = &ageVault{}
+
+func init() {
+	_ = ageTestVault.loadKey(ageTestKey)
+}
+
 func Test_OpenRegular(t *testing.T) {
 	fh, err := Open(testutil.FixturePath("vault/plaintext"))
 	require.NoError(t, err)
@@ -21,6 +27,12 @@ func Test_OpenRegular(t *testing.T) {
 }
 
 func Test_OpenAge(t *testing.T) {
+	require.NoError(t, ageTestVault.loadKey(ageTestKey))
+	oldAll := allVaulters
+	defer func() {
+		allVaulters = oldAll
+	}()
+	allVaulters = []Vaulter{ageTestVault}
 	fh, err := Open(testutil.FixturePath("vault/sample.age"))
 	require.NoError(t, err)
 	data, err := io.ReadAll(fh)

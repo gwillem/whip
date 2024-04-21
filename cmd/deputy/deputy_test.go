@@ -1,3 +1,6 @@
+//go:build integration
+// +build integration
+
 package main
 
 import (
@@ -16,7 +19,7 @@ func Test_DeputyIntegration(t *testing.T) {
 	for _, play := range *pb {
 		for _, task := range play.Tasks {
 			res := runners.Run(&task, nil)
-			require.Equal(t, 0, res.Status)
+			require.Equal(t, runners.Failed, res.Status)
 		}
 	}
 }

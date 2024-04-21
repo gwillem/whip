@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"testing"
 
+	log "github.com/gwillem/go-simplelog"
 	"github.com/gwillem/whip/internal/model"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -52,7 +53,7 @@ func getGroup() string {
 func getUID(usr string) int {
 	u, err := user.Lookup(usr)
 	if err != nil {
-		panic(err)
+		log.Fatal(fmt.Errorf("failure looking up user %s: %w", u, err))
 	}
 	uid, err := strconv.Atoi(u.Uid)
 	if err != nil {
@@ -64,7 +65,7 @@ func getUID(usr string) int {
 func getGID(grp string) int {
 	g, err := user.LookupGroup(grp)
 	if err != nil {
-		panic(err)
+		log.Fatal(fmt.Errorf("failure looking up group %s: %w", g, err))
 	}
 	gid, err := strconv.Atoi(g.Gid)
 	if err != nil {
