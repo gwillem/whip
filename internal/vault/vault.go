@@ -6,21 +6,26 @@ import (
 	"io"
 	"os"
 	"os/exec"
-
-	"filippo.io/age"
 )
 
-const defaultEditor = "vim"
-
-// headerGPG = []byte{0x85, 0x01, 0x8C, 0x03, 0x93, 0xE5, 0x4C, 0x74, 0x67, 0x58, 0x3E, 0x45}
-var headerAge = []byte{
-	0x61, 0x67, 0x65, 0x2d, 0x65, 0x6e, 0x63, 0x72,
-	0x79, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x6f,
-	0x72, 0x67, 0x2f, 0x76, 0x31,
+type Vaulter interface {
+	Encrypt(in io.Reader, out io.Writer) error
+	Decrypt(in io.Reader) (io.Reader, error)
+	Magic() []byte
+	Ready() bool
 }
 
-var ageID *age.X25519Identity
+var (
+	allVaulters = []Vaulter{&ageVault{}, &ansibleVault{}}
+	magicSize   = findMagicSize()
+)
 
+const (
+	defaultEditor = "vim"
+)
+
+// readCloserWrapper wraps a reader and a closer, so a decrypter reader can be
+// used as os.File
 type readCloserWrapper struct {
 	io.Reader
 	fh io.Closer
@@ -39,14 +44,16 @@ func ReadFile(path string) ([]byte, error) {
 	return io.ReadAll(fh)
 }
 
+// Open opens a file and decrypts it if it is encrypted. If it is not encrypted,
+// it returns the original file. If no valid decryptor is found, it returns an
+// error.
 func Open(path string) (io.ReadCloser, error) {
 	fh, err := os.Open(path)
 	if err != nil {
 		return nil, err
 	}
 
-	buffer := make([]byte, len(headerAge))
-
+	buffer := make([]byte, magicSize)
 	if _, e := io.ReadFull(fh, buffer); e != nil {
 		if e != io.ErrUnexpectedEOF && e != io.EOF {
 			return nil, fmt.Errorf("non-eof error %w", e)
@@ -58,94 +65,36 @@ func Open(path string) (io.ReadCloser, error) {
 		return nil, fmt.Errorf("seek error %w", e2)
 	}
 
-	// non encrypted file
-	if !bytes.Equal(headerAge, buffer) {
+	// compare with magics
+	vault, err := findVaulter(buffer)
+	if err != nil { // non encrypted or non-supported
 		return fh, nil
 	}
-
-	return decrypt(fh)
-	// return runCommand("gpg", "-qd", path)
-}
-
-func decrypt(fh io.ReadCloser) (io.ReadCloser, error) {
-	id, err := getID()
+	r, err := vault.Decrypt(fh)
 	if err != nil {
 		return nil, err
 	}
-	decryptor, err := age.Decrypt(fh, id)
-	if err != nil {
-		return nil, err
-	}
-
-	return &readCloserWrapper{Reader: decryptor, fh: fh}, nil
+	return &readCloserWrapper{r, fh}, nil
 }
 
-func encrypt(in io.Reader, out io.Writer) error {
-	id, err := getID()
-	if err != nil {
-		return err
+func findVaulter(buffer []byte) (Vaulter, error) {
+	for _, v := range allVaulters {
+		if bytes.HasPrefix(buffer, v.Magic()) {
+			return v, nil
+		}
 	}
-	rcpt := id.Recipient()
-	encryptor, err := age.Encrypt(out, rcpt)
-	if err != nil {
-		return fmt.Errorf("encryptor err %w", err)
-	}
-	defer encryptor.Close()
-	_, err = io.Copy(encryptor, in)
-	if err != nil {
-		return fmt.Errorf("cannot copy to encryptor: %w", err)
-	}
-
-	err = encryptor.Close()
-	if err != nil {
-		return fmt.Errorf("cannot close encryptor %w", err)
-	}
-	return nil
+	return nil, fmt.Errorf("no valid encryption method found")
 }
 
-/*
-
-# public key: age1lquxy2rqn77fahedz50kdmy2vg4ex09umqys6fxl526c5wjh6flq7elfdm
-AGE-SECRET-KEY-1X9QJ6JCA6T7YPLN8QNDN9SVCLV89V2CL9Q75M0JESHW8YPJNU5FQ9UMU54
-
-echo hoi | gpg -e -r info@sansec.io -a --trust-model=always
-
-*/
-
-// runCommand executes the specified command with given arguments and returns its stdout as an os.File
-// func runCommand(name string, args ...string) (*os.File, error) {
-// 	// Create a pipe
-// 	r, w, err := os.Pipe()
-// 	if err != nil {
-// 		return nil, err
-// 	}
-
-// 	// Set up the command that will write to the write-end of our pipe
-// 	cmd := exec.Command(name, args...)
-// 	cmd.Stdout = w
-// 	cmd.Stderr = os.Stderr
-
-// 	// Start the command
-// 	if err := cmd.Start(); err != nil {
-// 		w.Close()
-// 		r.Close()
-// 		return nil, err
-// 	}
-
-// 	// Close the write end of the pipe in the current goroutine after command starts
-// 	go func() {
-// 		defer w.Close()
-// 		cmd.Wait()
-// 	}()
-
-// 	// Return the read end of the pipe
-// 	return r, nil
-// }
-
+// LaunchEditor opens a file in the editor. If the file is encrypted, it
+// temporarily decrypts. After the $EDITOR terminates, it encrypts the file with
+// the first available encryptor.
 func LaunchEditor(path string) error {
-	// key loaded?
-	if _, err := getID(); err != nil {
-		return err
+	if len(readyVaulters()) == 0 {
+		key := (&ageVault{}).genkey()
+		return fmt.Errorf("no valid encryption method found, "+
+			"set WHIP_KEY or ANSIBLE_VAULT_PASSWORD\n"+
+			"for example, export WHIP_KEY=\"%s\"", key)
 	}
 
 	// decode orig or start empty
@@ -180,7 +129,7 @@ func LaunchEditor(path string) error {
 	}
 
 	// start the editing magic!
-	cmd := exec.Command(getEditor(), tmp.Name())
+	cmd := exec.Command("/bin/sh", "-c", getEditor()+" "+tmp.Name())
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -201,38 +150,33 @@ func LaunchEditor(path string) error {
 		return err
 	}
 	defer out.Close()
-	return encrypt(in, out)
+	return readyVaulters()[0].Encrypt(in, out) // take first valid
 }
-
-func getID() (id *age.X25519Identity, err error) {
-	if ageID != nil {
-		return ageID, nil
-	}
-
-	keyStr := os.Getenv("WHIP_KEY")
-
-	if keyStr != "" {
-		if err := loadID(keyStr); err != nil {
-			return nil, err
-		}
-		return ageID, nil
-	}
-
-	id, _ = age.GenerateX25519Identity()
-	return nil, fmt.Errorf("no $WHIP_KEY set, here's a new one: %s", id)
-}
-
-func loadID(key string) (err error) {
-	ageID, err = age.ParseX25519Identity(key)
-	return err
-}
-
-// todo? wrapper to decrypt whip.gpg
 
 func getEditor() string {
 	editor := os.Getenv("EDITOR")
 	if editor == "" {
-		return defaultEditor
+		editor = defaultEditor
 	}
 	return editor
+}
+
+func findMagicSize() int {
+	max := 0
+	for _, v := range allVaulters {
+		if len(v.Magic()) > max {
+			max = len(v.Magic())
+		}
+	}
+	return max
+}
+
+func readyVaulters() []Vaulter {
+	ready := make([]Vaulter, 0)
+	for _, v := range allVaulters {
+		if v.Ready() {
+			ready = append(ready, v)
+		}
+	}
+	return ready
 }
