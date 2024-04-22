@@ -3,9 +3,10 @@
   tasks:
     - name: sleep random
       shell: sleep $[ $RANDOM % 3 ]
-      args:
-        unless: /bin/true
       notify: nginx, systemd
+    - command: update-locale a=b
+      args:
+        unless: echo $LANG | grep C.UTF-8
   handlers:
     - name: nginx
       command: echo restarting nginx

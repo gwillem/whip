@@ -34,7 +34,7 @@ func runJob(job *model.Job) {
 				panic(err)
 			}
 
-			if tr.Status != 0 {
+			if tr.Status == runners.Failed {
 				return
 			}
 
@@ -61,12 +61,14 @@ func runJob(job *model.Job) {
 				tr = runners.Run(&handler, play.Vars)
 			}
 			tr.Task = &handler
-			tr.Task.Runner = "handler:" + handler.Runner // todo fixme
+			if tr.Task.Runner != "" {
+				tr.Task.Runner = "handler:" + handler.Runner // todo fixme
+			}
 			delete(tr.Task.Args, "_assets")
 			if err := encoder.Encode(tr); err != nil {
 				panic(err)
 			}
-			if tr.Status != 0 {
+			if tr.Status == runners.Failed {
 				return
 			}
 		}

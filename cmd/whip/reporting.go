@@ -54,9 +54,17 @@ func (h verboseHandler) Send(m model.ReportMsg) {
 
 	// runner := fmt.Sprintf("%-14.14s", r.Task.Runner)
 	runner := tr.Task.Runner
-	taskSummary := fmt.Sprintf("%s %s", statusColor(runner), tr.Task.Args)
+	if runner == "" {
+		return
+	}
+	args := ""
+	if len(tr.Task.Args) > 0 {
+		args = fmt.Sprintf("%s", tr.Task.Args)
+	}
+	trimmedArgs := trimDotDot(args, 60-len(runner))
+	taskSummary := fmt.Sprintf("%s %s", statusColor(runner), trimmedArgs)
 
-	log.Progress(fmt.Sprintf("%s %s (%.2fs %s)", tr.Host, taskSummary, tr.Duration.Seconds(), status))
+	log.Progress(fmt.Sprintf("%s %s (%.1fs %s)", tr.Host, taskSummary, tr.Duration.Seconds(), status))
 	// fmt.Printf("<%s>\n", r.Output)
 	if len(tr.Output) > 0 {
 		for _, line := range strings.Split(strings.TrimSpace(tr.Output), "\n") {
@@ -66,6 +74,13 @@ func (h verboseHandler) Send(m model.ReportMsg) {
 	// fmt.Println(r.Output)
 }
 func (h verboseHandler) Quit() {}
+
+func trimDotDot(s string, lim int) string {
+	if len(s) > lim {
+		return s[:lim-3] + "..."
+	}
+	return s + strings.Repeat(" ", lim-len(s))
+}
 
 func reportResults(results <-chan model.TaskResult, stats map[model.TargetName]map[string]int, verbosity int) {
 	var handler resultHandler = verboseHandler{}

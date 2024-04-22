@@ -23,11 +23,17 @@ func TestLoadPlaybookSimple1(t *testing.T) {
 					Runner: "shell",
 					Name:   "sleep random",
 					Args: model.TaskArgs{
-						"_args":  "sleep $[ $RANDOM % 3 ]",
-						"unless": "/bin/true",
+						"_args": "sleep $[ $RANDOM % 3 ]",
 					},
 					Notify: []string{"nginx", "systemd"},
 					Loop:   nil,
+				},
+				{
+					Runner: "command",
+					Args: model.TaskArgs{
+						"_args":  "update-locale a=b",
+						"unless": "echo $LANG | grep C.UTF-8",
+					},
 				},
 			},
 			Handlers: []model.Task{

@@ -28,6 +28,8 @@ const (
 var deputies embed.FS
 
 func runWhip(cmd *cobra.Command, args []string) {
+	whipStartTime := time.Now()
+
 	verbosity, err := cmd.Flags().GetCount("verbose")
 	if err != nil {
 		log.Error(err)
@@ -110,7 +112,7 @@ func runWhip(cmd *cobra.Command, args []string) {
 
 	for target, job := range jobBook {
 		// need to save total tasks for progress meter later
-		stats[target] = map[string]int{"total": len(job.Tasks())}
+		stats[target] = map[string]int{"total": len(job.Tasks()) + 2} // +1 for loading the deputy
 
 		wg.Add(1)
 		go func(job model.Job, h model.TargetName, r chan<- model.TaskResult) {
@@ -126,13 +128,23 @@ func runWhip(cmd *cobra.Command, args []string) {
 	}()
 
 	reportResults(resultChan, stats, verbosity)
+	log.Ok(fmt.Sprintf("Finished whip in %.1fs", time.Since(whipStartTime).Seconds()))
 }
 
 func runPlaybookAtHost(job model.Job, t model.TargetName, results chan<- model.TaskResult) {
+	runStart := time.Now()
 	if len(job.Playbook) == 0 {
 		log.Fatal("no plays to run at target", t)
 	}
 	log.Task("Running play at target:", t, "with", len(job.Playbook), "plays")
+
+	// show that we are starting
+	results <- model.TaskResult{
+		Host:   t,
+		Task:   &model.Task{Runner: ""},
+		Output: "Starting",
+	}
+
 	conn, err := ssh.Connect(string(t))
 	if err != nil {
 		log.Error(err)
@@ -144,7 +156,12 @@ func runPlaybookAtHost(job model.Job, t model.TargetName, results chan<- model.T
 		log.Error(err)
 		return
 	}
-	log.Debug("Connected and ready at", t)
+	results <- model.TaskResult{
+		Host:     t,
+		Task:     &model.Task{Runner: "loader"},
+		Output:   "Loaded Deputy",
+		Duration: time.Since(runStart),
+	}
 
 	var buffer bytes.Buffer
 	if err := gob.NewEncoder(&buffer).Encode(job); err != nil {

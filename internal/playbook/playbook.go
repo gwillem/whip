@@ -86,7 +86,7 @@ func parseTasksFunc() mapstructure.DecodeHookFunc {
 		}
 
 		task := data.(map[string]any)
-		var specificArgs map[string]any
+		specificArgs := map[string]any{}
 
 		// parse runner argument
 		for k, v := range task {
@@ -104,7 +104,7 @@ func parseTasksFunc() mapstructure.DecodeHookFunc {
 			// this is the value of the runner argument, so "shell: echo hello"
 			switch v := v.(type) {
 			case string:
-				specificArgs = parser.ParseArgString(v)
+				specificArgs[parser.DefaultArg] = v // was: parser.ParseArgString(v)
 			case map[string]any:
 				specificArgs = v
 			default:

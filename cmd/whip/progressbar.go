@@ -86,7 +86,7 @@ func (m tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		if tr.Status == runners.Failed {
 			b.status = ERROR
-		} else if perc == 1 {
+		} else if perc >= 1 {
 			b.status = DONE
 		} else {
 			b.status = BUSY
