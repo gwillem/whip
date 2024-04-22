@@ -24,7 +24,6 @@ func init() {
 
 func runCommand(cmd []string, unlessCmd string) (tr model.TaskResult) {
 	if unlessCmd != "" {
-		// exec "unless" command, return ok if exit status == 0
 		if _, err := exec.Command("/bin/sh", "-c", unlessCmd).CombinedOutput(); err == nil {
 			return model.TaskResult{Status: Success}
 		}

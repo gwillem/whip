@@ -23,7 +23,8 @@ func TestLoadPlaybookSimple1(t *testing.T) {
 					Runner: "shell",
 					Name:   "sleep random",
 					Args: model.TaskArgs{
-						"args": "sleep $[ $RANDOM % 3 ]",
+						"_args":  "sleep $[ $RANDOM % 3 ]",
+						"unless": "/bin/true",
 					},
 					Notify: []string{"nginx", "systemd"},
 					Loop:   nil,
@@ -34,7 +35,7 @@ func TestLoadPlaybookSimple1(t *testing.T) {
 					Runner: "command",
 					Name:   "nginx",
 					Args: model.TaskArgs{
-						"args": "echo restarting nginx",
+						"_args": "echo restarting nginx",
 					},
 					Loop: nil,
 				},
@@ -48,7 +49,7 @@ func TestLoadPlaybookSimple1(t *testing.T) {
 }
 
 func TestExpandTaskLoops(t *testing.T) {
-	pb, err := Load(tu.FixturePath("playbook/task-loop.yml"))
+	pb, err := Load(tu.FixturePath("playbook/task_loop.yml"))
 	assert.NoError(t, err)
 	want := &model.Playbook{
 		model.Play{
@@ -107,4 +108,12 @@ func TestTaskArgList(t *testing.T) {
 	task := (*pb)[0].Tasks[0]
 
 	assert.ElementsMatch(t, task.Args.StringSlice("name"), []string{"gunicorn", "nginx"})
+}
+
+func TestTaskArgs(t *testing.T) {
+	pb, err := Load(tu.FixturePath("playbook/task_args.yml"))
+	require.NoError(t, err)
+	play := (*pb)[0]
+	require.Equal(t, "/bin/true", play.Tasks[0].Args.String("unless"))
+	require.Equal(t, "echo hi", play.Tasks[0].Args.String("_args"))
 }

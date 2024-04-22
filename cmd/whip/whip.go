@@ -5,6 +5,8 @@ import (
 	"embed"
 	"encoding/gob"
 	"fmt"
+	"os"
+	"path/filepath"
 	"sync"
 	"time"
 
@@ -54,6 +56,12 @@ func runWhip(cmd *cobra.Command, args []string) {
 	}
 
 	log.Progress("Loaded playbook with", len(*pb), "plays")
+
+	// change working dir to playbook parent
+	// this is where we will look for assets
+	if err := os.Chdir(filepath.Dir(args[0])); err != nil {
+		log.Fatal(err)
+	}
 
 	// load assets TODO move to prerun
 	// assets, err := playbook.DirToAsset(defaultAssetPath)
@@ -144,8 +152,7 @@ func runPlaybookAtHost(job model.Job, t model.TargetName, results chan<- model.T
 		return
 
 	}
-
-	cmd := "PATH=~/.cache/whip:$PATH deputy 2>~/.cache/whip/deputy.err"
+	cmd := "sudo $HOME/.cache/whip/deputy 2>$HOME/.cache/whip/deputy.err"
 	err = ssh.RunGobStreamer(conn, cmd, &buffer, func(res model.TaskResult) {
 		res.Host = t
 		results <- res

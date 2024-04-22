@@ -1,6 +1,6 @@
 #!/bin/bash
 
-targets="linux,arm64 darwin,arm64" # linux,arm64
+targets="linux,arm64 linux,amd64 darwin,arm64" # linux,arm64
 
 for cmd in deputy whip; do
     for x in $targets; do

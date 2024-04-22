@@ -51,6 +51,16 @@
 - [ ] dont pass whole task to runner
 - [ ] add: creates as backwards compat
 - [ ] bug: tree does not work?
+- [ ] better warning for unvalidated runner:
+
+```
+    - name: install root bashrc
+      copy: src=files/root/bashrc dest=/root/.bashrc
+gives
+0.000 XXX Runner not found, should have been validated
+
+```
+
 - [ ] args vs \_args
 
 ```

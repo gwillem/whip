@@ -3,13 +3,18 @@ package main
 import (
 	"encoding/gob"
 	"os"
+	"time"
 
+	log "github.com/gwillem/go-simplelog"
 	"github.com/gwillem/whip/internal/model"
 	"github.com/gwillem/whip/internal/runners"
 )
 
 func main() {
+	start := time.Now()
+	log.Task("Running deputy at", time.Now().UTC().Format(time.RFC3339))
 	runJob(getJobFromStdin())
+	log.Ok("Finished deputy (" + time.Since(start).Round(time.Millisecond).String() + ")")
 }
 
 func runJob(job *model.Job) {

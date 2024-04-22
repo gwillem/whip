@@ -78,10 +78,11 @@ func buildWanted(args model.TaskArgs) (aptPkgState, error) {
 	for _, p := range args.StringSlice("name") {
 		state := defaultState
 		args := parser.ParseArgString(p)
-		if args["state"] != "" {
-			state = getState(args["state"])
+		s := args.String("state")
+		if s != "" {
+			state = getState(state)
 		}
-		p = args[parser.DefaultArg]
+		// p = args.StringSlice(parser.DefaultArg)
 		pkglist.add(p, state)
 	}
 	return pkglist, nil

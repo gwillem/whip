@@ -1,0 +1,6 @@
+- hosts: myhost
+  tasks:
+    - shell: echo hi
+      args:
+        unless: /bin/true
+      kwakaloe: njippie

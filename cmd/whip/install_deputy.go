@@ -27,6 +27,7 @@ func ensureDeputy(c *ssh.Client) error {
 	osarg := strings.ToLower(lines[0])
 	osarg = strings.ReplaceAll(osarg, " ", "-")
 	osarg = strings.ReplaceAll(osarg, "aarch64", "arm64")
+	osarg = strings.ReplaceAll(osarg, "x86_64", "amd64")
 
 	remoteSha := strings.TrimSpace(lines[1])
 

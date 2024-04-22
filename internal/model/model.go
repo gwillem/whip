@@ -11,6 +11,10 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
+func init() {
+	gob.Register(Asset{})
+}
+
 type (
 	Job struct {
 		Vars     Vars     `json:"vars,omitempty"`

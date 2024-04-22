@@ -1,7 +1,6 @@
 package assets
 
 import (
-	"encoding/gob"
 	"os"
 	"path/filepath"
 
@@ -9,10 +8,6 @@ import (
 	"github.com/gwillem/whip/internal/vault"
 	"github.com/spf13/afero"
 )
-
-func init() {
-	gob.Register(model.Asset{})
-}
 
 func DirToAsset(root string) (*model.Asset, error) {
 	asset := model.Asset{Name: root}

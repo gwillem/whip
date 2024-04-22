@@ -1,18 +1,21 @@
 package parser
 
 import (
+	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/gwillem/whip/internal/model"
 )
 
 const (
-	DefaultArg = "args"
+	DefaultArg = "_args"
 )
 
 // Helper functions for whip + deputy
 
-func ParseArgString(arg string) map[string]string {
-	kv := map[string]string{}
+func ParseArgString(arg string) model.TaskArgs {
+	kv := map[string]any{}
 
 	baseArgs := []string{}
 	for _, t := range strings.Split(arg, " ") {
@@ -34,4 +37,10 @@ func unquote(s string) string {
 		return n
 	}
 	return s
+}
+
+var commaSep = regexp.MustCompile(`,\s*`)
+
+func StringToSlice(s string) []string {
+	return commaSep.Split(s, -1)
 }

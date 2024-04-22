@@ -80,9 +80,11 @@ func (pm *prefixMetaMap) getMeta(path string) fileMeta {
 
 func treePrerun(t *model.Task) (tr model.TaskResult) {
 	// should load assets (if any) into _assets
-	assets, err := assets.DirToAsset(t.Args.String("src"))
+	// pp.Println(t)
+	path := t.Args.String("src")
+	assets, err := assets.DirToAsset(path)
 	if err != nil {
-		return failure("BOOHOO", err)
+		return failure("BOOHOO", fmt.Errorf("assets loader on path %s: %s", path, err))
 	}
 	t.Args["_assets"] = assets
 	return model.TaskResult{Status: Success}
@@ -219,20 +221,22 @@ func parsePrefixMeta(args model.TaskArgs) (*prefixMetaMap, error) {
 		attrs := parser.ParseArgString(argStr)
 
 		fm := fileMeta{}
-		if attrs["umask"] != "" {
-			ui, err := strconv.ParseInt(attrs["umask"], 8, 32)
+		if attrs.String("umask") != "" {
+			ui, err := strconv.ParseInt(attrs.String("umask"), 8, 32)
 			if err != nil {
-				return nil, fmt.Errorf("cannot parse octal umask %s", attrs["umask"])
+				return nil, fmt.Errorf("cannot parse octal umask %s", attrs.String("umask"))
 			}
 			fm.umask = os.FileMode(ui)
 		}
 
 		var uid, gid int
 
-		if attrs["owner"] != "" {
-			owner, err := osUser.Lookup(attrs["owner"])
+		username := attrs.String("owner")
+
+		if username != "" {
+			owner, err := osUser.Lookup(username)
 			if err != nil {
-				return nil, fmt.Errorf("cannot find user %s", attrs["owner"])
+				return nil, fmt.Errorf("cannot find user %s", username)
 			}
 			uid, err = strconv.Atoi(owner.Uid)
 			if err != nil {
@@ -240,10 +244,10 @@ func parsePrefixMeta(args model.TaskArgs) (*prefixMetaMap, error) {
 			}
 		}
 
-		if attrs["group"] != "" {
-			group, err := osUser.LookupGroup(attrs["group"])
+		if attrs.String("group") != "" {
+			group, err := osUser.LookupGroup(attrs.String("group"))
 			if err != nil {
-				return nil, fmt.Errorf("cannot find group %s", attrs["group"])
+				return nil, fmt.Errorf("cannot find group %s", attrs.String("group"))
 			}
 
 			gid, err = strconv.Atoi(group.Gid)
@@ -252,8 +256,8 @@ func parsePrefixMeta(args model.TaskArgs) (*prefixMetaMap, error) {
 			}
 		}
 
-		if attrs["notify"] != "" {
-			fm.notify = strings.Split(attrs["notify"], ",") // TODO generalize
+		if attrs.String("notify") != "" {
+			fm.notify = parser.StringToSlice(attrs.String("notify"))
 		}
 
 		fm.uid = &uid

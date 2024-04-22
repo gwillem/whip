@@ -35,7 +35,7 @@ func Load(path string) (*model.Playbook, error) {
 
 	pb, err := yamlToPlaybook(anyMap)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("yaml error: %w", err)
 	}
 
 	for _, pb := range *pb {
@@ -84,25 +84,49 @@ func parseTasksFunc() mapstructure.DecodeHookFunc {
 		if f != reflect.TypeOf(map[string]any{}) {
 			return nil, fmt.Errorf("expected map[string]any{}, got %v", f)
 		}
-		for k, v := range data.(map[string]any) {
-			if slices.Contains(runners.All(), k) {
-				delete(data.(map[string]any), k)
 
-				if data.(map[string]any)["runner"] != nil {
-					return nil, fmt.Errorf("single task cannot have multiple runners (%s and %s)", data.(map[string]any)["runner"], k)
-				}
+		task := data.(map[string]any)
+		var specificArgs map[string]any
 
-				data.(map[string]any)["runner"] = k
-				switch v.(type) {
-				case string:
-					data.(map[string]any)["args"] = parser.ParseArgString(v.(string))
-				case map[string]any:
-					data.(map[string]any)["args"] = v
-				default:
-					return nil, fmt.Errorf("unexpected type for task arg: %v", v)
-				}
+		// parse runner argument
+		for k, v := range task {
+			if !slices.Contains(runners.All(), k) {
 				continue
 			}
+
+			if task["runner"] != nil {
+				return nil, fmt.Errorf("single task cannot have multiple runners (%s and %s)", task["runner"], k)
+			}
+
+			delete(task, k)
+			task["runner"] = k
+
+			// this is the value of the runner argument, so "shell: echo hello"
+			switch v := v.(type) {
+			case string:
+				specificArgs = parser.ParseArgString(v)
+			case map[string]any:
+				specificArgs = v
+			default:
+				return nil, fmt.Errorf("unexpected type for task arg: %v", v)
+			}
+			continue
+		}
+
+		// fmt.Println("now merge specificArgs into task.args", specificArgs, task["args"])
+
+		switch v := task["args"].(type) {
+		case string:
+			specificArgs["oldArgs"] = v
+			task["args"] = specificArgs
+		case map[string]any:
+			for k, v2 := range specificArgs {
+				v[k] = v2
+			}
+		case nil:
+			task["args"] = specificArgs
+		default:
+			return nil, fmt.Errorf("unexpected type for task arg: %v", v)
 		}
 		return data, nil
 	}

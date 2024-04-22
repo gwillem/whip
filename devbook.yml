@@ -1,7 +1,7 @@
 ---
 - hosts:
-    - root@192.168.64.16
-    - root@192.168.64.17
+    - ubuntu@192.168.64.16
+    # - root@192.168.64.17
   vars:
     install:
       path: /data

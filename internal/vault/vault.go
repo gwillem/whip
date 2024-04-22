@@ -6,6 +6,9 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"reflect"
+
+	log "github.com/gwillem/go-simplelog"
 )
 
 type Vaulter interface {
@@ -80,6 +83,7 @@ func Open(path string) (io.ReadCloser, error) {
 func findVaulter(buffer []byte) (Vaulter, error) {
 	for _, v := range allVaulters {
 		if bytes.HasPrefix(buffer, v.Magic()) {
+			log.Debug("Found encrypted file:", reflect.TypeOf(v).Name())
 			return v, nil
 		}
 	}

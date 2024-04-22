@@ -3,6 +3,8 @@
   tasks:
     - name: sleep random
       shell: sleep $[ $RANDOM % 3 ]
+      args:
+        unless: /bin/true
       notify: nginx, systemd
   handlers:
     - name: nginx
