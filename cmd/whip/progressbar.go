@@ -15,8 +15,8 @@ import (
 const (
 	padding      = "  "
 	defaultWidth = 60
-	colorA       = "#5A56E0"
-	colorB       = "#EE6FF8"
+	colorA       = "#002200"
+	colorB       = "#87D800" // done green
 )
 
 var (

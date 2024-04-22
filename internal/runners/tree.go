@@ -220,11 +220,11 @@ func parsePrefixMeta(args model.TaskArgs) (*prefixMetaMap, error) {
 
 		fm := fileMeta{}
 		if attrs["umask"] != "" {
-			if ui, err := strconv.ParseInt(attrs["umask"], 8, 32); err != nil {
+			ui, err := strconv.ParseInt(attrs["umask"], 8, 32)
+			if err != nil {
 				return nil, fmt.Errorf("cannot parse octal umask %s", attrs["umask"])
-			} else {
-				fm.umask = os.FileMode(ui)
 			}
+			fm.umask = os.FileMode(ui)
 		}
 
 		var uid, gid int
