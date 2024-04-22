@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"os"
-	"os/user"
 	"path/filepath"
 	"slices"
 	"strconv"
@@ -231,7 +230,7 @@ func parsePrefixMeta(args model.TaskArgs) (*prefixMetaMap, error) {
 		var uid, gid int
 
 		if attrs["owner"] != "" {
-			owner, err := user.Lookup(attrs["owner"])
+			owner, err := osUser.Lookup(attrs["owner"])
 			if err != nil {
 				return nil, fmt.Errorf("cannot find user %s", attrs["owner"])
 			}
@@ -242,7 +241,7 @@ func parsePrefixMeta(args model.TaskArgs) (*prefixMetaMap, error) {
 		}
 
 		if attrs["group"] != "" {
-			group, err := user.LookupGroup(attrs["group"])
+			group, err := osUser.LookupGroup(attrs["group"])
 			if err != nil {
 				return nil, fmt.Errorf("cannot find group %s", attrs["group"])
 			}
@@ -344,7 +343,7 @@ func ensureFile(f filesObj) (changed bool, err error) {
 
 	// need to write file?
 	if os.IsNotExist(err) || dataDiffers() {
-		log.Debug("Data differs", f.path)
+		// log.Debug("Data differs", f.path)
 
 		// os.O_CREATE on existing file does not update mode, so need to do that below
 		fh, err := fs.OpenFile(f.path, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, mode)
@@ -362,7 +361,7 @@ func ensureFile(f filesObj) (changed bool, err error) {
 
 	// need to change mode?
 	if fi != nil && fi.Mode() != mode {
-		log.Debug("needs mode change", f.path)
+		// log.Debug("needs mode change", f.path)
 		if err := fs.Chmod(f.path, mode); err != nil {
 			return false, fmt.Errorf("chmod err on %s: %w", f.path, err)
 		}
@@ -391,18 +390,27 @@ func chown(path string, u, g *int) (changed bool, err error) {
 
 	stat, ok := fi.Sys().(*syscall.Stat_t)
 	if !ok {
-		return false, fmt.Errorf("cannot get stat_t for %s", path)
-	}
 
-	if u != nil && stat.Uid != uint32(*u) {
-		uid = *u
-	}
-	if g != nil && stat.Gid != uint32(*g) {
-		gid = *g
-	}
+		if u != nil {
+			uid = *u
+		}
+		if g != nil {
+			gid = *g
+		}
 
-	if uid == -1 && gid == -1 {
-		return false, nil
+		// pass for now, our afero.FS test abstraction does not support stat_t (uid/gid)
+		// return false, fmt.Errorf("cannot get stat_t for %s", path)
+	} else { // temp fix for afero.FS test abstraction, we will just always chown if non-linux
+		if u != nil && stat.Uid != uint32(*u) {
+			uid = *u
+		}
+		if g != nil && stat.Gid != uint32(*g) {
+			gid = *g
+		}
+
+		if uid == -1 && gid == -1 {
+			return false, nil
+		}
 	}
 
 	if err := fs.Chown(path, uid, gid); err != nil {

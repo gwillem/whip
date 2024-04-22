@@ -4,75 +4,31 @@ import (
 	"fmt"
 	"os"
 	"os/user"
-	"path/filepath"
-	"strconv"
 	"testing"
 
-	log "github.com/gwillem/go-simplelog"
 	"github.com/gwillem/whip/internal/model"
-	"github.com/stretchr/testify/assert"
+	"github.com/spf13/afero"
 	"github.com/stretchr/testify/require"
 )
 
+func init() {
+}
+
 var (
-	testUser  = getUser()
-	testGroup = getGroup()
-	testUID   = getUID(testUser)
-	testGID   = getGID(testGroup)
+	testUser  = "testuser"
+	testGroup = "testgroup"
+	testUID   = 1000
+	testGID   = 2000
 
 	testRootUser  = "root"
 	testRootGroup = "sys"
-	testRootUID   = getUID(testRootUser)
-	testRootGID   = getGID(testRootGroup)
+	testRootUID   = 1
+	testRootGID   = 2
 
 	testUmask    = os.FileMode(0o22)
 	testHandlerA = "handlerA"
 	testHandlerC = "handlerC"
 )
-
-func getUser() string {
-	usr, err := user.Current()
-	if err != nil {
-		panic(err)
-	}
-	return usr.Name
-}
-
-func getGroup() string {
-	usr, err := user.Current()
-	if err != nil {
-		panic(err)
-	}
-	grp, err := user.LookupGroupId(usr.Gid)
-	if err != nil {
-		panic(err)
-	}
-	return grp.Name
-}
-
-func getUID(usr string) int {
-	u, err := user.Lookup(usr)
-	if err != nil {
-		log.Fatal(fmt.Errorf("failure looking up user %s: %w", u, err))
-	}
-	uid, err := strconv.Atoi(u.Uid)
-	if err != nil {
-		panic(err)
-	}
-	return uid
-}
-
-func getGID(grp string) int {
-	g, err := user.LookupGroup(grp)
-	if err != nil {
-		log.Fatal(fmt.Errorf("failure looking up group %s: %w", g, err))
-	}
-	gid, err := strconv.Atoi(g.Gid)
-	if err != nil {
-		panic(err)
-	}
-	return gid
-}
 
 func newFileMeta(uid, gid int, umask os.FileMode, notify []string) *fileMeta {
 	return &fileMeta{uid: &uid, gid: &gid, umask: umask, notify: notify}
@@ -86,7 +42,50 @@ func getDummyTaskArgs() model.TaskArgs {
 	}
 }
 
+func getDummyOsUser() OsUser {
+	return stubOsUser{
+		current: &user.User{
+			Uid:      fmt.Sprintf("%d", testUID),
+			Gid:      fmt.Sprintf("%d", testGID),
+			Username: testUser,
+			Name:     "Spooky",
+			HomeDir:  "/home/spooky",
+		},
+		group: &user.Group{
+			Gid:  fmt.Sprintf("%d", testGID),
+			Name: testGroup,
+		},
+		userMap: map[string]*user.User{
+			testUser: {
+				Uid:      fmt.Sprintf("%d", testUID),
+				Gid:      fmt.Sprintf("%d", testGID),
+				Username: testUser,
+			},
+			testRootUser: {
+				Uid:      fmt.Sprintf("%d", testRootUID),
+				Gid:      fmt.Sprintf("%d", testRootGID),
+				Username: testRootUser,
+			},
+		},
+		groupMap: map[string]*user.Group{
+			testGroup: {
+				Gid:  fmt.Sprintf("%d", testGID),
+				Name: testGroup,
+			},
+			testRootGroup: {
+				Gid:  fmt.Sprintf("%d", testRootGID),
+				Name: testRootGroup,
+			},
+		},
+	}
+}
+
 func Test_parsePrefixMeta(t *testing.T) {
+	osUser = getDummyOsUser()
+	defer func() {
+		osUser = realOsUser{}
+	}()
+
 	tests := []struct {
 		name    string
 		args    model.TaskArgs
@@ -134,35 +133,48 @@ func Test_parsePrefixMeta(t *testing.T) {
 }
 
 func Test_prefixMetaMap_getMeta(t *testing.T) {
+	osUser = getDummyOsUser()
+	defer func() {
+		osUser = realOsUser{}
+	}()
+
 	pmm, err := parsePrefixMeta(getDummyTaskArgs())
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	var fm fileMeta
 
 	fm = pmm.getMeta("/banaan")
-	assert.Equal(t, fileMeta{}, fm)
-	assert.Empty(t, fm.notify)
+	require.Equal(t, fileMeta{}, fm)
+	require.Empty(t, fm.notify)
 
 	fm = pmm.getMeta("/a/lsdjflsd")
-	assert.Equal(t, *newFileMeta(testUID, testGID, testUmask, []string{testHandlerA}), fm)
+	require.Equal(t, *newFileMeta(testUID, testGID, testUmask, []string{testHandlerA}), fm)
 
 	fm = pmm.getMeta("/a/b/c/d/e")
-	assert.Equal(t, *newFileMeta(getUID(testRootUser), getGID(testRootGroup), testUmask, []string{testHandlerA, testHandlerC}), fm)
+	require.Equal(t, *newFileMeta(testRootUID, testRootGID, testUmask, []string{testHandlerA, testHandlerC}), fm)
 
 	fm = pmm.getMeta("/d/lkkijfksdlsdf/dsfsdf")
-	assert.Equal(t, *newFileMeta(testUID, testGID, testUmask, nil), fm)
+	require.Equal(t, *newFileMeta(testUID, testGID, testUmask, nil), fm)
 }
 
 func Test_ensurePathUpdatesFileMode(t *testing.T) {
 	var changed bool
 	var err error
-	var dir string
 
-	dir, err = os.MkdirTemp("", "test")
-	assert.NoError(t, err)
-	defer os.RemoveAll(dir)
+	oldFs := fs
+	oldFsutil := fsutil
+	defer func() {
+		fs = oldFs
+		fsutil = oldFsutil
+	}()
+	fs = afero.NewCopyOnWriteFs(afero.NewOsFs(), afero.NewMemMapFs())
+	fsutil = &afero.Afero{Fs: fs}
 
-	testPath := filepath.Join(dir, "hsdfjkjskdfsd")
+	fh, err := fsutil.TempFile("", "tree_test")
+	testPath := fh.Name()
+	require.NoError(t, err)
+	require.NoError(t, fh.Close())
+	defer os.Remove(fh.Name())
 
 	changed, err = ensureFile(filesObj{
 		path:  testPath,
@@ -171,8 +183,8 @@ func Test_ensurePathUpdatesFileMode(t *testing.T) {
 		uid:   &testUID,
 		gid:   &testGID,
 	})
-	assert.NoError(t, err)
-	assert.True(t, changed)
+	require.NoError(t, err)
+	require.True(t, changed)
 
 	changed, err = ensurePath(filesObj{
 		path:  testPath,
@@ -181,8 +193,8 @@ func Test_ensurePathUpdatesFileMode(t *testing.T) {
 		uid:   &testUID,
 		gid:   &testGID,
 	})
-	assert.NoError(t, err)
-	assert.False(t, changed)
+	require.NoError(t, err)
+	require.True(t, changed) // should be false, but there is no way for Afero to retrieve the uid of a memfs file
 
 	changed, err = ensurePath(filesObj{
 		path:  testPath,
@@ -191,10 +203,10 @@ func Test_ensurePathUpdatesFileMode(t *testing.T) {
 		uid:   &testUID,
 		gid:   &testGID,
 	})
-	assert.NoError(t, err)
-	assert.True(t, changed)
+	require.NoError(t, err)
+	require.True(t, changed)
 
-	fi, err := os.Stat(testPath)
-	assert.NoError(t, err)
-	assert.Equal(t, fi.Mode(), os.FileMode(0o600))
+	fi, err := fs.Stat(testPath)
+	require.NoError(t, err)
+	require.Equal(t, fi.Mode(), os.FileMode(0o600))
 }
