@@ -57,10 +57,7 @@ func (h verboseHandler) Send(m model.ReportMsg) {
 	if runner == "" {
 		return
 	}
-	args := ""
-	if len(tr.Task.Args) > 0 {
-		args = fmt.Sprintf("%s", tr.Task.Args)
-	}
+	args := tr.Task.Args.ToString()
 	trimmedArgs := trimDotDot(args, 60-len(runner))
 	taskSummary := fmt.Sprintf("%s %s", statusColor(runner), trimmedArgs)
 

@@ -49,9 +49,6 @@ func runJob(job *model.Job) {
 			}
 
 		}
-		// if len(handlers) == 0 {
-		// 	log.Debug("No handlers were notified", handlers)
-		// }
 		for _, handler := range play.Handlers {
 			// empty tr in case of unnotified handler
 			tr := model.TaskResult{Status: runners.Skipped}

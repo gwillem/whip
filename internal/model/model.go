@@ -41,6 +41,7 @@ type (
 		Vars      map[string]any `json:"vars,omitempty"`
 		Tasks     []Task         `json:"tasks,omitempty"`
 		Handlers  []Task         `json:"handlers,omitempty"`
+		PreRun    string         `json:"prerun,omitempty"`
 	}
 	TargetName string
 	Target     struct {
@@ -111,6 +112,16 @@ func (tr TaskResult) String() string {
 func (ta TaskArgs) String(s string) string {
 	if arg := ta[s]; arg != nil {
 		return arg.(string)
+	}
+	return ""
+}
+
+func (ta TaskArgs) ToString() string {
+	if len(ta) > 1 {
+		return fmt.Sprintf("%s", map[string]any(ta))
+	}
+	for _, v := range ta {
+		return fmt.Sprintf("%s", v)
 	}
 	return ""
 }

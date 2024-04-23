@@ -1,11 +1,19 @@
 package vault
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"os"
+	"os/exec"
 
 	"filippo.io/age"
+	log "github.com/gwillem/go-simplelog"
+)
+
+const (
+	ageEnv       = "WHIP_KEY"
+	ageEnvScript = "secret.sh"
 )
 
 // headerGPG = []byte{0x85, 0x01, 0x8C, 0x03, 0x93, 0xE5, 0x4C, 0x74, 0x67, 0x58, 0x3E, 0x45}
@@ -67,7 +75,14 @@ func (v *ageVault) getID() (id *age.X25519Identity, err error) {
 	if v.id != nil {
 		return v.id, nil
 	}
-	keyStr := os.Getenv("WHIP_KEY")
+	keyStr := os.Getenv(ageEnv)
+	if keyStr == "" {
+		keyStr, err = readFromScript(ageEnvScript)
+		if err != nil {
+			log.Error(err)
+			return nil, err
+		}
+	}
 	if keyStr != "" {
 		v.id, err = age.ParseX25519Identity(keyStr)
 		if err != nil {
@@ -75,8 +90,9 @@ func (v *ageVault) getID() (id *age.X25519Identity, err error) {
 		}
 		return v.id, nil
 	}
+
 	id, _ = age.GenerateX25519Identity()
-	return nil, fmt.Errorf("no $WHIP_KEY set, here's a new one: %s", id)
+	return nil, fmt.Errorf("no $%s set, here's a new one: %s", ageEnv, id)
 }
 
 func (v *ageVault) Ready() bool {
@@ -87,4 +103,23 @@ func (v *ageVault) Ready() bool {
 func (v *ageVault) genkey() string {
 	id, _ := age.GenerateX25519Identity()
 	return id.String()
+}
+
+func readFromScript(path string) (string, error) {
+	fi, err := os.Stat(path)
+	if err == nil && !fi.IsDir() {
+		if fi.Mode()&os.ModePerm&0o100 == 0 {
+			fmt.Println("oops", fi.Mode())
+			return "", fmt.Errorf("script %s is not executable", path)
+		}
+
+		data, err := exec.Command("./" + path).CombinedOutput()
+		data = bytes.TrimSpace(data)
+		// fmt.Printf("got '%s'\n", string(data))
+		if err != nil {
+			return "", err
+		}
+		return string(data), nil
+	}
+	return "", nil
 }

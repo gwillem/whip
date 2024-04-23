@@ -78,12 +78,10 @@ func buildWanted(args model.TaskArgs) (aptPkgState, error) {
 	for _, p := range args.StringSlice("name") {
 		state := defaultState
 		args := parser.ParseArgString(p)
-		s := args.String("state")
-		if s != "" {
-			state = getState(state)
+		if s := args.String("state"); s != "" {
+			state = getState(s)
 		}
-		// p = args.StringSlice(parser.DefaultArg)
-		pkglist.add(p, state)
+		pkglist.add(args.String(parser.DefaultArg), state)
 	}
 	return pkglist, nil
 }
@@ -122,9 +120,10 @@ func apt(t *model.Task) (tr model.TaskResult) {
 		}
 		total += len(pkgs)
 		args := append([]string{state}, maps.Keys(pkgs)...)
+		log.Debug("running apt-mark with", args)
 		data, err := exec.Command("apt-mark", args...).CombinedOutput()
 		if err != nil {
-			return failure("cannot mark packages", string(data))
+			return failure("cannot mark packages\n" + string(data))
 		}
 		log.Debug("apt-mark", string(data))
 	}

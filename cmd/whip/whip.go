@@ -6,6 +6,7 @@ import (
 	"encoding/gob"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"sync"
 	"time"
@@ -28,6 +29,19 @@ const (
 var deputies embed.FS
 
 func runWhip(cmd *cobra.Command, args []string) {
+	if len(args) == 0 {
+		log.Fatal("No playbook specified")
+	}
+	playbookPath := args[0]
+
+	// change working dir to playbook parent
+	// this is where we will look for assets
+	if err := os.Chdir(filepath.Dir(playbookPath)); err != nil {
+		log.Fatal(err)
+	}
+
+	playbookPath = filepath.Base(playbookPath)
+
 	whipStartTime := time.Now()
 
 	verbosity, err := cmd.Flags().GetCount("verbose")
@@ -51,19 +65,13 @@ func runWhip(cmd *cobra.Command, args []string) {
 	files, _ := deputies.ReadDir("deputies")
 	log.Task("Starting whip", buildversion.String(), "with", len(files), "embedded deputies")
 
-	pb, err := playbook.Load(args[0])
+	pb, err := playbook.Load(playbookPath)
 	if err != nil {
 		log.Error(err)
 		return
 	}
 
 	log.Progress("Loaded playbook with", len(*pb), "plays")
-
-	// change working dir to playbook parent
-	// this is where we will look for assets
-	if err := os.Chdir(filepath.Dir(args[0])); err != nil {
-		log.Fatal(err)
-	}
 
 	// load assets TODO move to prerun
 	// assets, err := playbook.DirToAsset(defaultAssetPath)
@@ -77,6 +85,15 @@ func runWhip(cmd *cobra.Command, args []string) {
 	// prerun!
 	log.Task("Running any pre-run tasks on controller")
 	for _, play := range *pb {
+
+		if play.PreRun != "" {
+			log.Progress("Running play pre-run")
+			data, err := exec.Command("/bin/sh", "-c", play.PreRun).CombinedOutput()
+			if err != nil {
+				log.Fatal(err, string(data))
+			}
+		}
+
 		for _, task := range play.Tasks {
 			tr := runners.PreRun(&task, play.Vars)
 			if tr.Status == runners.Skipped {
@@ -158,7 +175,7 @@ func runPlaybookAtHost(job model.Job, t model.TargetName, results chan<- model.T
 	}
 	results <- model.TaskResult{
 		Host:     t,
-		Task:     &model.Task{Runner: "loader"},
+		Task:     &model.Task{Runner: "connect"},
 		Output:   "Loaded Deputy",
 		Duration: time.Since(runStart),
 	}

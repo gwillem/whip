@@ -16,7 +16,7 @@ func getURL(t *model.Task) (tr model.TaskResult) {
 	dest := t.Args.String("dest")
 
 	if url == "" || dest == "" {
-		return failure("line and dest are required arguments")
+		return failure("url and dest are required arguments")
 	}
 
 	hash, _ := getFileChecksum(fs, dest) // could not exist yet

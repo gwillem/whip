@@ -21,6 +21,7 @@
           - xz-utils
           - git
           - atop state=absent
+          - mlocate state=absent
     - get_url: url=https://google.com/robots.txt dest=/tmp/google/robots.txt
 
     # - name: install ssh keys

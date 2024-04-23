@@ -104,7 +104,8 @@ func parseTasksFunc() mapstructure.DecodeHookFunc {
 			// this is the value of the runner argument, so "shell: echo hello"
 			switch v := v.(type) {
 			case string:
-				specificArgs[parser.DefaultArg] = v // was: parser.ParseArgString(v)
+				// specificArgs[parser.DefaultArg] = v // no x=y pairs
+				specificArgs = parser.ParseArgString(v)
 			case map[string]any:
 				specificArgs = v
 			default:

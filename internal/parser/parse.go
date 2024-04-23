@@ -13,7 +13,7 @@ const (
 )
 
 // Helper functions for whip + deputy
-
+// todo, should take quotes into account, plus only take simple x=y pairs
 func ParseArgString(arg string) model.TaskArgs {
 	kv := map[string]any{}
 

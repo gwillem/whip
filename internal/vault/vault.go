@@ -6,9 +6,8 @@ import (
 	"io"
 	"os"
 	"os/exec"
-	"reflect"
 
-	log "github.com/gwillem/go-simplelog"
+	"github.com/spf13/afero"
 )
 
 type Vaulter interface {
@@ -21,6 +20,8 @@ type Vaulter interface {
 var (
 	allVaulters = []Vaulter{&ageVault{}, &ansibleVault{}}
 	magicSize   = findMagicSize()
+	fs          = afero.NewOsFs()
+	fsutil      = afero.Afero{Fs: fs}
 )
 
 const (
@@ -80,10 +81,29 @@ func Open(path string) (io.ReadCloser, error) {
 	return &readCloserWrapper{r, fh}, nil
 }
 
+func isEncrypted(path string, v Vaulter) (bool, error) {
+	fh, err := os.Open(path)
+	if err != nil {
+		return false, nil
+	}
+	defer fh.Close()
+
+	buffer := make([]byte, len(v.Magic()))
+	if _, e := io.ReadFull(fh, buffer); e != nil {
+		if e != io.ErrUnexpectedEOF && e != io.EOF {
+			return false, fmt.Errorf("non-eof error %w", e)
+		}
+	}
+	if _, e2 := fh.Seek(0, io.SeekStart); e2 != nil {
+		return false, fmt.Errorf("seek error %w", e2)
+	}
+	return bytes.Equal(buffer, v.Magic()), nil
+}
+
 func findVaulter(buffer []byte) (Vaulter, error) {
 	for _, v := range allVaulters {
 		if bytes.HasPrefix(buffer, v.Magic()) {
-			log.Debug("Found encrypted file:", reflect.TypeOf(v).Name())
+			// log.Debug("Found encrypted file:", reflect.TypeOf(v).Name())
 			return v, nil
 		}
 	}

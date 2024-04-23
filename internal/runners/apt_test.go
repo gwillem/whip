@@ -20,11 +20,14 @@ import (
 
 func Test_buildAptCmd(t *testing.T) {
 	args := model.TaskArgs{
-		"name":  []string{"foo", "bar"},
+		"name":  []string{"foo", "bar", "mlocate state=absent"},
 		"state": "latest",
 	}
 	// want := aptPkgState(aptPkgState{"install": map[string]bool{"bar": true, "foo": true}})
-	want := aptPkgState{"install": map[string]bool{"bar": true, "foo": true}}
+	want := aptPkgState{
+		"install": map[string]bool{"bar": true, "foo": true},
+		"remove":  map[string]bool{"mlocate": true},
+	}
 	got, err := buildWanted(args)
 	assert.NoError(t, err)
 	assert.Equal(t, want, got)

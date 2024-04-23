@@ -28,7 +28,6 @@
 - [x] support handlers
 - [ ] implement basic runners https://mike42.me/blog/2019-01-the-top-100-ansible-modules
   - [ ] copy
-  - [ ] template
   - [x] authorized_key
   - [x] shell
   - [x] command
@@ -45,12 +44,12 @@
 
 # Todo for MVP / internal use
 
-- [ ] tests for vault
+- [ ] Play.PreRun shell command
+- [x] tests for vault
 - [x] tui progress shows DONE when there is an error
 - [ ] rename runner to module
 - [ ] dont pass whole task to runner
 - [ ] add: creates as backwards compat
-- [ ] bug: tree does not work?
 - [ ] better warning for unvalidated runner:
 
 ```
@@ -61,18 +60,8 @@ gives
 
 ```
 
-- [ ] args vs \_args
-
-```
-    # - name: inital request of wildcard certificate
-    #   command: "certbot certonly -n --agree-tos --email=info@sansec.io --dns-cloudflare --dns-cloudflare-credentials /etc/certbot/sans.ec.creds -d '*.sans.ec'"
-    #   args:
-    #     creates: /etc/letsencrypt/live/sans.ec/cert.pem
-    #   tags: certbot
-```
-
-- [ ] get_url
-- [ ] apt: state latest?
+- [x] get_url
+- [x] apt: state latest?
 - [x] apt: pkg should be "name" ?
 - [ ] tags
 - [x] bug: \_args get assigned to every task
@@ -94,13 +83,9 @@ nice:
 
 x support for ansible vault https://github.com/sosedoff/ansible-vault-go/blob/master/vault.go
 
-- fix tests
-- tree: move assets from run param to arg param
 - tree sync: use tar or std serialization
-  x use gob instead of json for cmd streaming
 - validate handler names
 - alert on duplicate handlers
-  x exit 1 if any tasks errorred?
 - replace Afero with tar for files serialization, so we can infer filemode from the src files
 - set up docs https://squidfunk.github.io/mkdocs-material/setup/adding-a-comment-system/
 
@@ -109,7 +94,6 @@ code smell
 - composability: embed "install sansec ssh keys" ?
 - embedded files per task
 - flatten task list per target, kill play, just send list of tasks to deputy
-- simplify tr, tr should not be responsible for counting fi
 - don't send vars to runner, should be interpolated by deputy
   - how does a template with host facts get processed?
 - need to validate key=val params for the tree module (and others?)

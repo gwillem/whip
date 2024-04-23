@@ -19,7 +19,7 @@ It aims to be stand-in replacement for Ansible for 90% of use cases.`,
 		Args:              cobra.ExactArgs(1),
 		Run:               runWhip,
 	}
-	vaultCmd = &cobra.Command{
+	vaultEditCmd = &cobra.Command{
 		Use:   "edit",
 		Short: "Encrypt and decrypt secrets",
 		Args:  cobra.ExactArgs(1),
@@ -29,10 +29,20 @@ It aims to be stand-in replacement for Ansible for 90% of use cases.`,
 			}
 		},
 	}
+	vaultConvertCmd = &cobra.Command{
+		Use:   "convert",
+		Short: "Convert secrets from Ansible Vault to Whip (Age)",
+		Args:  cobra.ExactArgs(1),
+		Run: func(_ *cobra.Command, args []string) {
+			if err := vault.ConvertAnsibleToWhip(args[0]); err != nil {
+				log.Fatal(err)
+			}
+		},
+	}
 )
 
 func init() {
-	rootCmd.AddCommand(vaultCmd)
+	rootCmd.AddCommand(vaultEditCmd, vaultConvertCmd)
 	rootCmd.CompletionOptions.HiddenDefaultCmd = true
 	rootCmd.PersistentFlags().CountP("verbose", "v", "verbose output")
 }
