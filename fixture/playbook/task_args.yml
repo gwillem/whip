@@ -4,3 +4,6 @@
       args:
         unless: /bin/true
       kwakaloe: njippie
+    - command:
+        args: hostname
+        unless: /bin/false

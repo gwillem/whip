@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"regexp"
 
-	"github.com/charmbracelet/log"
+	log "github.com/gwillem/go-simplelog"
 	"github.com/gwillem/whip/internal/model"
 	"github.com/gwillem/whip/internal/parser"
 	"github.com/gwillem/whip/internal/runners"
@@ -38,11 +38,11 @@ func Load(path string) (*model.Playbook, error) {
 		return nil, fmt.Errorf("yaml error: %w", err)
 	}
 
-	for _, pb := range *pb {
-		for _, t := range pb.Hosts {
-			log.Debug("Found playbook target:", t)
-		}
-	}
+	// for _, pb := range *pb {
+	// 	for _, t := range pb.Hosts {
+	// 		// log.Debug("Found playbook target:", t)
+	// 	}
+	// }
 
 	expandPlaybookLoops(pb)
 	return pb, nil
@@ -72,7 +72,9 @@ func yamlToPlaybook(y any) (*model.Playbook, error) {
 		return nil, err
 	}
 
-	log.Debug("Unused fields from playbook source:", md.Unused)
+	if len(md.Unused) > 0 {
+		log.Warn("Unused fields from playbook source:", md.Unused)
+	}
 	return &pb, nil
 }
 

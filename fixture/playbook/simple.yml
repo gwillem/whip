@@ -4,8 +4,8 @@
     - name: sleep random
       shell: sleep $[ $RANDOM % 3 ]
       notify: nginx, systemd
-    - command: update-locale a=b
-      args:
+    - command:
+        _args: update-locale a=b
         unless: echo $LANG | grep C.UTF-8
   handlers:
     - name: nginx

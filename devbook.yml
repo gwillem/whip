@@ -2,6 +2,7 @@
 - hosts:
     - ubuntu@192.168.64.16
     # - root@192.168.64.17
+  become: root
   vars:
     install:
       path: /data
@@ -12,17 +13,18 @@
       - tiny
 
   tasks:
-    - lineinfile:
-        path: /tmp/postfix/main.cf
-        line: "inet_interfaces = 127.0.0.1"
-    - apt:
-        name:
-          - moreutils
-          - xz-utils
-          - git
-          - atop state=absent
-          - mlocate state=absent
-    - get_url: url=https://google.com/robots.txt dest=/tmp/google/robots.txt
+    # - lineinfile:
+    #     path: /tmp/postfix/main.cf
+    #     line: "inet_interfaces = 127.0.0.1"
+    # - apt:
+    #     name:
+    #       - moreutils
+    #       - xz-utils
+    #       - git
+    #       - atop state=absent
+    #       - mlocate state=absent
+    # - get_url: url=https://google.com/robots.txt dest=/tmp/google/robots.txt
+    - command: "echo hoera a=b"
 
     # - name: install ssh keys
     #   authorized_key:
@@ -64,7 +66,7 @@
     #   loop:
     #     - a
 
-    - shell: id
+    # - shell: id
 
     # - name: testing vars
     # command: echo {{install.type}} {{plans| join(",")}}
@@ -72,11 +74,11 @@
     # - name: induced failure
     #   command: /bin/false
 
-    - name: sleep a bit
-      command: echo hoi
+    # - name: sleep a bit
+    #   command: echo hoi
 
-    - name: sleep a bit
-      command: echo hoi
+    # - name: sleep a bit
+    #   command: echo hoi
 
     # - name: sleep a bit
     #   command: /bin/true
@@ -84,6 +86,6 @@
     #   synchronize:
     #     src: "x"
     #     dest: "y"
-  handlers:
-    - name: nginx
-      shell: echo restarting nginx
+  # handlers:
+  #   - name: nginx
+  #     shell: echo restarting nginx

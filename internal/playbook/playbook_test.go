@@ -3,6 +3,7 @@ package playbook
 import (
 	"testing"
 
+	log "github.com/gwillem/go-simplelog"
 	"github.com/gwillem/whip/internal/model"
 	tu "github.com/gwillem/whip/internal/testutil"
 	"github.com/mitchellh/mapstructure"
@@ -55,6 +56,7 @@ func TestLoadPlaybookSimple1(t *testing.T) {
 }
 
 func TestExpandTaskLoops(t *testing.T) {
+	defer log.Silence(log.Silence(true))
 	pb, err := Load(tu.FixturePath("playbook/task_loop.yml"))
 	assert.NoError(t, err)
 	want := &model.Playbook{
@@ -117,6 +119,8 @@ func TestTaskArgList(t *testing.T) {
 }
 
 func TestTaskArgs(t *testing.T) {
+	defer log.Silence(log.Silence(true))
+
 	pb, err := Load(tu.FixturePath("playbook/task_args.yml"))
 	require.NoError(t, err)
 	play := (*pb)[0]
