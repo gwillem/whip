@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"github.com/karrick/gobls"
+	// "github.com/klauspost/compress/zstd"
 	"github.com/pkg/sftp"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/crypto/ssh/agent"

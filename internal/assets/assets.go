@@ -1,6 +1,7 @@
 package assets
 
 import (
+	"io"
 	"os"
 	"path/filepath"
 
@@ -55,4 +56,23 @@ func AssetToFS(asset *model.Asset) (afero.Fs, error) {
 
 	}
 	return fs, nil
+}
+
+type ReadCounter struct {
+	r io.Reader
+	n int64
+}
+
+func NewReadCounter(r io.Reader) *ReadCounter {
+	return &ReadCounter{r: r}
+}
+
+func (rc *ReadCounter) Read(p []byte) (n int, err error) {
+	n, err = rc.r.Read(p)
+	rc.n += int64(n)
+	return
+}
+
+func (rc *ReadCounter) Count() int64 {
+	return rc.n
 }

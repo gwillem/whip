@@ -1,10 +1,10 @@
 package main
 
 import (
-	"bytes"
 	"embed"
 	"encoding/gob"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -13,6 +13,7 @@ import (
 
 	"github.com/gwillem/go-buildversion"
 	log "github.com/gwillem/go-simplelog"
+	"github.com/gwillem/whip/internal/assets"
 	"github.com/gwillem/whip/internal/model"
 	"github.com/gwillem/whip/internal/playbook"
 	"github.com/gwillem/whip/internal/runners"
@@ -180,20 +181,39 @@ func runPlaybookAtHost(job model.Job, t model.TargetName, results chan<- model.T
 		Duration: time.Since(runStart),
 	}
 
-	var buffer bytes.Buffer
-	if err := gob.NewEncoder(&buffer).Encode(job); err != nil {
-		log.Fatal("gob encode err", err)
-		return
+	// chain gob encoder and zstd compressor
+	gobRd, gobWr := io.Pipe()
+	go func() {
+		if err := gob.NewEncoder(gobWr).Encode(job); err != nil {
+			log.Fatal("gob encode err", err)
+		}
+		gobWr.Close()
+	}()
 
-	}
-	cmd := "sudo $HOME/.cache/whip/deputy 2>$HOME/.cache/whip/deputy.err"
-	err = ssh.RunGobStreamer(conn, cmd, &buffer, func(res model.TaskResult) {
+	zstdRd, zstdWr := io.Pipe()
+	go func() {
+		err := assets.Compress(gobRd, zstdWr)
+		zstdWr.CloseWithError(err)
+	}()
+
+	cmd := "sudo $HOME/.cache/whip/deputy 2>$HOME/.cache/whip/whip.err"
+	err = ssh.RunGobStreamer(conn, cmd, zstdRd, func(res model.TaskResult) {
 		res.Host = t
 		results <- res
 	})
 	if err != nil {
-		log.Fatal("Deputy error, see ~/.cache/whip/deputy.err at", t, err)
-		return
+		// should show red ERROR but doesnot work.. concurrency issue?
+		// results <- model.TaskResult{Status: runners.Failed, Host: t, Output: err.Error()}
+		log.Fatal("Deputy error, see ~/.cache/whip/whip.err at", t, err)
+	}
+	if e := conn.Close(); e != nil {
+		log.Error(e)
+	}
+	if e := zstdRd.Close(); e != nil {
+		log.Error(e)
+	}
+	if e := gobRd.Close(); e != nil {
+		log.Error(e)
 	}
 }
 

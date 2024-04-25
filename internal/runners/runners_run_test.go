@@ -16,7 +16,7 @@ func init() {
 	})
 }
 
-func TestPreRun(t *testing.T) {
+func Test_PreRun(t *testing.T) {
 	const old = "appel"
 	const new = "banana"
 	task := model.Task{

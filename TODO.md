@@ -44,6 +44,7 @@
 
 # Todo for MVP / internal use
 
+- [ ] compress gob stream https://kopia.io/docs/advanced/compression/ zstd?
 - [ ] Play.PreRun shell command
 - [x] tests for vault
 - [x] tui progress shows DONE when there is an error

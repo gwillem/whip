@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestTaskArgsStringSlice(t *testing.T) {
+func Test_TaskArgsStringSlice(t *testing.T) {
 	ta := TaskArgs{"names": []any{"bar", "baz"}}
 	got := ta.StringSlice("names")[0]
 	assert.Equal(t, "bar", got)

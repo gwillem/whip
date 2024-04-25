@@ -10,7 +10,7 @@ require (
 	github.com/charmbracelet/lipgloss v0.7.1
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510
 	github.com/gwillem/go-buildversion v0.0.0-20230402114832-b1addefa8764
-	github.com/gwillem/go-simplelog v0.3.2-0.20240416140709-da7b4f7d631f
+	github.com/gwillem/go-simplelog v0.3.2-0.20240425201514-40a6b7d1bcbb
 	github.com/gwillem/urlfilecache v0.0.0-20230402105623-8ef3b7b67c13
 	github.com/ieee0824/go-deepmerge v0.0.0-20170912170951-7ec7dbbd5a1f
 	github.com/karrick/gobls v1.3.5
@@ -64,4 +64,4 @@ require (
 	golang.org/x/text v0.9.0 // indirect
 )
 
-// replace github.com/gwillem/go-simplelog => ../go-simplelog
+//replace github.com/gwillem/go-simplelog => ../go-simplelog

@@ -2,10 +2,13 @@ package main
 
 import (
 	"encoding/gob"
+	"fmt"
+	"io"
 	"os"
 	"time"
 
 	log "github.com/gwillem/go-simplelog"
+	"github.com/gwillem/whip/internal/assets"
 	"github.com/gwillem/whip/internal/model"
 	"github.com/gwillem/whip/internal/runners"
 )
@@ -73,10 +76,25 @@ func runJob(job *model.Job) {
 }
 
 func getJobFromStdin() *model.Job {
-	decoder := gob.NewDecoder(os.Stdin)
+	stdinReader := assets.NewReadCounter(os.Stdin)
+	pr, pw := io.Pipe()
+	go func() {
+		if e := assets.Decompress(stdinReader, pw); e != nil { // was: os.Stdin
+			log.Errorf("error decompressing: %w", e)
+		}
+		pw.Close()
+	}()
+
+	decompressedReader := assets.NewReadCounter(pr)
+
+	decoder := gob.NewDecoder(decompressedReader) // was: pr
 	job := &model.Job{}
 	if err := decoder.Decode(job); err != nil {
-		panic(err)
+		log.Errorf("gob decode: %w", err)
 	}
+
+	ratio := fmt.Sprintf("%.0f%%", 100*float64(stdinReader.Count())/float64(decompressedReader.Count()))
+	log.Debug("Compesssed size/ratio:", stdinReader.Count(), ratio)
+
 	return job
 }

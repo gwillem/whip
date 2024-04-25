@@ -34,14 +34,19 @@
     #   - abc
     #   - xyz
 
-    # - name: file sync
-    #   tree:
-    #     src: fixture/tree
-    #     dst: /tmp
-    #     /etc: notify=nginx owner=www-data
-    #     /etc/nginx/nginx.conf: umask=077 owner=root
-    #   vars:
-    #     server: banaan
+    - name: file sync
+      tree:
+        src: fixture/tree
+        dst: /tmp
+        /etc: notify=nginx owner=www-data
+        /etc/nginx/nginx.conf: umask=077 owner=root
+      vars:
+        server: banaan
+
+    - name: big file sync
+      tree:
+        src: build
+        dst: /tmp
 
     # - service: name=cron state=restarted
 

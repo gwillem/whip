@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestLoadPlaybookSimple1(t *testing.T) {
+func Test_LoadPlaybookSimple1(t *testing.T) {
 	pb, err := Load(tu.FixturePath("playbook/simple.yml"))
 	assert.NoError(t, err)
 	want := &model.Playbook{
@@ -55,7 +55,7 @@ func TestLoadPlaybookSimple1(t *testing.T) {
 	assert.Len(t, *pb, 1)
 }
 
-func TestExpandTaskLoops(t *testing.T) {
+func Test_ExpandTaskLoops(t *testing.T) {
 	defer log.Silence(log.Silence(true))
 	pb, err := Load(tu.FixturePath("playbook/task_loop.yml"))
 	assert.NoError(t, err)
@@ -97,19 +97,19 @@ func TestExpandTaskLoops(t *testing.T) {
 	assert.Equal(t, want, pb)
 }
 
-func TestFilesWithMeta(t *testing.T) {
+func Test_FilesWithMeta(t *testing.T) {
 	_, err := Load(tu.FixturePath("playbook/tree.yml"))
 	require.NoError(t, err)
 }
 
-func TestDuplicateRunner(t *testing.T) {
+func Test_DuplicateRunner(t *testing.T) {
 	_, err := Load(tu.FixturePath("playbook/duplicate_runner.yml"))
 	require.Error(t, err)
 	var e *mapstructure.Error
 	assert.ErrorAs(t, err, &e)
 }
 
-func TestTaskArgList(t *testing.T) {
+func Test_TaskArgList(t *testing.T) {
 	pb, err := Load(tu.FixturePath("playbook/apt.yml"))
 	assert.NoError(t, err)
 
@@ -118,7 +118,7 @@ func TestTaskArgList(t *testing.T) {
 	assert.ElementsMatch(t, task.Args.StringSlice("name"), []string{"gunicorn", "nginx"})
 }
 
-func TestTaskArgs(t *testing.T) {
+func Test_TaskArgs(t *testing.T) {
 	defer log.Silence(log.Silence(true))
 
 	pb, err := Load(tu.FixturePath("playbook/task_args.yml"))

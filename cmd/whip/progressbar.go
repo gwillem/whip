@@ -100,7 +100,6 @@ func (m tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m tuiModel) View() string {
-	// fmt.Println("got view")
 	var s string
 
 	targets := []model.TargetName{}
