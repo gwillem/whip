@@ -14,6 +14,7 @@ import (
 	"github.com/gwillem/go-buildversion"
 	log "github.com/gwillem/go-simplelog"
 	"github.com/gwillem/whip/internal/assets"
+	"github.com/gwillem/whip/internal/fsutil"
 	"github.com/gwillem/whip/internal/model"
 	"github.com/gwillem/whip/internal/playbook"
 	"github.com/gwillem/whip/internal/runners"
@@ -22,8 +23,9 @@ import (
 )
 
 const (
-	deputyPath       = ".cache/whip/deputy"
-	defaultAssetPath = "files"
+	deputyPath          = ".cache/whip/deputy"
+	defaultAssetPath    = "files"
+	defaultPlaybookPath = ".whip/playbook.yml"
 )
 
 //go:embed deputies
@@ -31,11 +33,11 @@ var deputies embed.FS
 
 func runWhip(cmd *cobra.Command, args []string) {
 	var playbookPath string
-	if len(args) == 0 {
-		// Look for ".whip/playbook.yml" in current and parent directories
-		playbookPath = findPlaybookPath()
-	} else {
+	if len(args) > 0 {
 		playbookPath = args[0]
+	} else {
+		// Look for ".whip/playbook.yml" in current and parent directories
+		playbookPath = fsutil.FindAncestorPath(defaultPlaybookPath)
 	}
 
 	if playbookPath == "" {
@@ -154,21 +156,6 @@ func runWhip(cmd *cobra.Command, args []string) {
 
 	reportResults(resultChan, stats, verbosity)
 	log.Ok(fmt.Sprintf("Finished whip in %.1fs", time.Since(whipStartTime).Seconds()))
-}
-
-func findPlaybookPath() string {
-	dir, _ := os.Getwd()
-	for {
-		path := filepath.Join(dir, ".whip", "playbook.yml")
-		if _, err := os.Stat(path); err == nil {
-			return path
-		}
-		parent := filepath.Dir(dir)
-		if parent == dir {
-			return ""
-		}
-		dir = parent
-	}
 }
 
 func runPlaybookAtHost(job model.Job, t model.TargetName, results chan<- model.TaskResult) {

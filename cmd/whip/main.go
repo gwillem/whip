@@ -1,8 +1,10 @@
 package main
 
 import (
+	"fmt"
 	"os"
 
+	"github.com/gwillem/go-buildversion"
 	log "github.com/gwillem/go-simplelog"
 
 	"github.com/gwillem/whip/internal/vault"
@@ -39,10 +41,17 @@ It aims to be stand-in replacement for Ansible for 90% of use cases.`,
 			}
 		},
 	}
+	versionCmd = &cobra.Command{
+		Use:   "version",
+		Short: "Print the version number of Whip",
+		Run: func(_ *cobra.Command, _ []string) {
+			fmt.Println("whip", buildversion.String())
+		},
+	}
 )
 
 func init() {
-	rootCmd.AddCommand(vaultEditCmd, vaultConvertCmd)
+	rootCmd.AddCommand(vaultEditCmd, vaultConvertCmd, versionCmd)
 	rootCmd.CompletionOptions.HiddenDefaultCmd = true
 	rootCmd.PersistentFlags().CountP("verbose", "v", "verbose output")
 }

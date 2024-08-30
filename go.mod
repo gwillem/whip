@@ -14,6 +14,7 @@ require (
 	github.com/gwillem/urlfilecache v0.0.0-20230402105623-8ef3b7b67c13
 	github.com/ieee0824/go-deepmerge v0.0.0-20170912170951-7ec7dbbd5a1f
 	github.com/karrick/gobls v1.3.5
+	github.com/klauspost/compress v1.17.8
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/nikolalohinski/gonja v1.5.0
 	github.com/pkg/sftp v1.13.5
@@ -37,7 +38,6 @@ require (
 	github.com/goph/emperror v0.17.1 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
-	github.com/klauspost/compress v1.17.8 // indirect
 	github.com/konsorten/go-windows-terminal-sequences v1.0.1 // indirect
 	github.com/kr/fs v0.1.0 // indirect
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect

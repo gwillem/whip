@@ -19,6 +19,13 @@ Whip your servers into line. Chief Whip is a _fast_ and _simple_ Ansible replace
 | templates  | mysql              | stat          |
 | vault      | postgresql         | debug         |
 
+# Install
+
+```
+# for now
+curl -fsSL https://sansec.io/downloads/darwin-arm64/whip -O ~/bin/whip
+```
+
 # Demo
 
 > [!NOTE]
@@ -26,20 +33,17 @@ Whip your servers into line. Chief Whip is a _fast_ and _simple_ Ansible replace
 
 # Philosophy
 
-How will Chief Whip _stay_ fast and simple? By will only contain features that satisfy 95% of use cases. Convention over configuration.
+How will Chief Whip _stay_ fast and simple?
 
-Fast!
+Simple ==> Only build features that satisfy 95% of use cases. Convention over configuration. Support top used modules only.
 
-1. Eliminate unnecessary SSH round trips: Ansibles biggest delay is caused by tasks that are sent one by one. Chief Whip bundles tasks into a single job.
-2. Implemented in Golang instead of Python
-
-Simple!
+Fast ==> Eliminate unnecessary SSH round trips: Ansibles biggest delay is caused by tasks that are sent one by one. Chief Whip bundles tasks into a single job. Also, Chief Whip is written in Golang which runs faster than Python.
 
 # But why?
 
-I really loved Ansible. Compared to the popular configuration management systems at the time (Puppet, Chef, CFEngine), it was a breeze of fresh air. Simple configuration files, easy to learn, effective documentation, simple push architecture. My team used it to manage some 2k+ servers without a fuss.
+Curiously, Ansible also started out as fast and simple. Compared to the popular configuration management systems at the time (Puppet, Chef, CFEngine), it was a breeze of fresh air. Simple configuration files, easy to learn, effective documentation, simple push architecture. My team used it to manage some 2k+ servers without a fuss.
 
-Until version 2 or so. After the RedHat acquisition, Ansible has quickly grown into commercial bloatware. It's funny how RedHat got rid of the old objectives page (Simple, Fast) and replaced it with a corporate bog of marketing fluff. The task parameter documentation is hidden behind compulsory white paper downloads. Core modules have grown to support 20 extra options to support esoteric use cases. And above all, its once legendary speed is gone. Ansible feels sluggish today.
+Until version 2 or so. After the RedHat acquisition, Ansible grew into commercial bloatware. RedHat got rid of the old objectives page (Simple, Fast) and replaced it with corporate marketing fluff. The task parameter documentation is hidden behind white paper downloads. Core modules have grown to support 20 extra options to support esoteric use cases. And above all, its once legendary speed is gone. Ansible feels sluggish today.
 
 Ansible has grown too complex, as illustrated by this Hacker News comment:
 
@@ -66,7 +70,7 @@ Ansible has grown too complex, as illustrated by this Hacker News comment:
 
 The latter, however we stick to most of Ansible's verbiage to ease a transition.
 
-#### Isn't everybody using Docker, Kubernetes etc these days?
+#### Isn't everybody using Docker, Kubernetes and Kamal etc these days?
 
 [Nope](https://trends.google.com/trends/explore?date=all&q=ansible).
 

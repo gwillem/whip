@@ -21,7 +21,7 @@ var (
 	allVaulters = []Vaulter{&ageVault{}, &ansibleVault{}}
 	magicSize   = findMagicSize()
 	fs          = afero.NewOsFs()
-	fsutil      = afero.Afero{Fs: fs}
+	afs         = afero.Afero{Fs: fs}
 )
 
 const (

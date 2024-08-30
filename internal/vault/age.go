@@ -9,11 +9,12 @@ import (
 
 	"filippo.io/age"
 	log "github.com/gwillem/go-simplelog"
+	"github.com/gwillem/whip/internal/fsutil"
 )
 
 const (
 	ageEnv       = "WHIP_KEY"
-	ageEnvScript = "whip-secret"
+	ageEnvScript = ".whip/secret.sh"
 )
 
 // headerGPG = []byte{0x85, 0x01, 0x8C, 0x03, 0x93, 0xE5, 0x4C, 0x74, 0x67, 0x58, 0x3E, 0x45}
@@ -77,10 +78,13 @@ func (v *ageVault) getID() (id *age.X25519Identity, err error) {
 	}
 	keyStr := os.Getenv(ageEnv)
 	if keyStr == "" {
-		keyStr, err = readFromScript(ageEnvScript)
-		if err != nil {
-			log.Error(err)
-			return nil, err
+		if sp := fsutil.FindAncestorPath(ageEnvScript); sp != "" {
+			log.Debug("Using script", sp, "to generate vault key")
+			keyStr, err = readFromScript(sp)
+			if err != nil {
+				log.Error(err)
+				return nil, err
+			}
 		}
 	}
 	if keyStr != "" {
@@ -92,7 +96,7 @@ func (v *ageVault) getID() (id *age.X25519Identity, err error) {
 	}
 
 	id, _ = age.GenerateX25519Identity()
-	return nil, fmt.Errorf("no $%s set, here's a new one: %s", ageEnv, id)
+	return nil, fmt.Errorf("no $%s set, here's a new one: %s\n(or create .whip/secret.sh to generate it dynamically)", ageEnv, id)
 }
 
 func (v *ageVault) Ready() bool {
@@ -113,7 +117,7 @@ func readFromScript(path string) (string, error) {
 			return "", fmt.Errorf("script %s is not executable", path)
 		}
 
-		data, err := exec.Command("./" + path).CombinedOutput()
+		data, err := exec.Command(path).CombinedOutput()
 		data = bytes.TrimSpace(data)
 		// fmt.Printf("got '%s'\n", string(data))
 		if err != nil {

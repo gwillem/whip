@@ -23,7 +23,7 @@ func ConvertAnsibleToWhip(root string) error {
 	counter := 0
 
 	// walk over the root and find ansible encrypted files
-	err := fsutil.Walk(root, func(path string, info os.FileInfo, err error) error {
+	err := afs.Walk(root, func(path string, info os.FileInfo, err error) error {
 		if err != nil || info.IsDir() {
 			return err
 		}
