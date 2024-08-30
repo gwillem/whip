@@ -23,9 +23,10 @@ for cmd in deputy whip; do
         env GOOS=$os GOARCH=$arch go build -ldflags="-s -w" -o $dst/$cmd ./cmd/$cmd
 
         if [ "$cmd-$os" = "deputy-linux" ]; then
-            cp $dst/$cmd cmd/whip/deputies/$os-$arch
+             cp $dst/$cmd cmd/whip/deputies/$os-$arch
+            # sha256sum $dst/$cmd > cmd/whip/deputies/$os-$arch/$cmd.sha256
+            # gzip --best --stdout $dst/$cmd > cmd/whip/deputies/$os-$arch
         fi
 
     done
 done
-

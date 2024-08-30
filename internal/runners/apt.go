@@ -26,6 +26,7 @@ const (
 	installed = "install"
 	removed   = "remove"
 	purged    = "purge"
+	dpkgOpt   = `-o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold"`
 )
 
 var aptStateMap = map[string]string{
@@ -132,7 +133,7 @@ func apt(t *model.Task) (tr model.TaskResult) {
 		return model.TaskResult{Status: Success}
 	}
 
-	return runShell("DEBIAN_FRONTEND=noninteractive apt-get dselect-upgrade -y -q")
+	return runShell("DEBIAN_FRONTEND=noninteractive apt-get dselect-upgrade -y -q " + dpkgOpt)
 }
 
 func init() {

@@ -44,8 +44,10 @@
 
 # Todo for MVP / internal use
 
-- [ ] compress gob stream https://kopia.io/docs/advanced/compression/ zstd?
-- [ ] Play.PreRun shell command
+- [ ] bug: - root@5.161.111.214 E: dpkg was interrupted, you must manually run 'sudo dpkg --configure -a' to correct the problem.
+
+- [x] compress gob stream https://kopia.io/docs/advanced/compression/ zstd?
+- [x] Play.PreRun shell command
 - [x] tests for vault
 - [x] tui progress shows DONE when there is an error
 - [ ] rename runner to module
@@ -79,22 +81,14 @@ gives
 - [x] lineinfile
 - [x] files: actual checksum comparison
 - [x] systemd (service?)
-
-nice:
-
-x support for ansible vault https://github.com/sosedoff/ansible-vault-go/blob/master/vault.go
-
-- tree sync: use tar or std serialization
 - validate handler names
 - alert on duplicate handlers
 - replace Afero with tar for files serialization, so we can infer filemode from the src files
 - set up docs https://squidfunk.github.io/mkdocs-material/setup/adding-a-comment-system/
 
-code smell
+Quality improvements:
 
 - composability: embed "install sansec ssh keys" ?
 - embedded files per task
 - flatten task list per target, kill play, just send list of tasks to deputy
-- don't send vars to runner, should be interpolated by deputy
-  - how does a template with host facts get processed?
 - need to validate key=val params for the tree module (and others?)
