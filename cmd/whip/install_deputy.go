@@ -24,16 +24,16 @@ func ensureDeputy(c *ssh.Client) error {
 		return fmt.Errorf("unexpected output from uname: %s", uname)
 	}
 
-	osarg := strings.ToLower(lines[0])
-	osarg = strings.ReplaceAll(osarg, " ", "-")
-	osarg = strings.ReplaceAll(osarg, "aarch64", "arm64")
-	osarg = strings.ReplaceAll(osarg, "x86_64", "amd64")
+	osarch := strings.ToLower(lines[0])
+	osarch = strings.ReplaceAll(osarch, " ", "-")
+	osarch = strings.ReplaceAll(osarch, "aarch64", "arm64")
+	osarch = strings.ReplaceAll(osarch, "x86_64", "amd64")
 
 	remoteSha := strings.TrimSpace(lines[1])
 
-	myDep, err := deputies.ReadFile("deputies/" + osarg)
+	myDep, err := deputies.ReadFile("deputies/" + osarch)
 	if err != nil {
-		return fmt.Errorf("could not read deputy for %s: %s", osarg, err)
+		return fmt.Errorf("could not read deputy for %s: %s", osarch, err)
 	}
 
 	localSha := fmt.Sprintf("%x", sha256.Sum256(myDep))

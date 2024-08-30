@@ -30,10 +30,17 @@ const (
 var deputies embed.FS
 
 func runWhip(cmd *cobra.Command, args []string) {
+	var playbookPath string
 	if len(args) == 0 {
-		log.Fatal("No playbook specified")
+		// Look for ".whip/playbook.yml" in current and parent directories
+		playbookPath = findPlaybookPath()
+	} else {
+		playbookPath = args[0]
 	}
-	playbookPath := args[0]
+
+	if playbookPath == "" {
+		log.Fatal("No playbook supplied and no playbook.yml found in current or parent directories")
+	}
 
 	// change working dir to playbook parent
 	// this is where we will look for assets
@@ -147,6 +154,21 @@ func runWhip(cmd *cobra.Command, args []string) {
 
 	reportResults(resultChan, stats, verbosity)
 	log.Ok(fmt.Sprintf("Finished whip in %.1fs", time.Since(whipStartTime).Seconds()))
+}
+
+func findPlaybookPath() string {
+	dir, _ := os.Getwd()
+	for {
+		path := filepath.Join(dir, ".whip", "playbook.yml")
+		if _, err := os.Stat(path); err == nil {
+			return path
+		}
+		parent := filepath.Dir(dir)
+		if parent == dir {
+			return ""
+		}
+		dir = parent
+	}
 }
 
 func runPlaybookAtHost(job model.Job, t model.TargetName, results chan<- model.TaskResult) {
