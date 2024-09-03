@@ -1,8 +1,8 @@
-# Chief Whip - simple and fast devops automation
+# whip - simple and fast devops automation
 
 ![order, order!](doc/order-order.webp)
 
-Whip your servers into line. Chief Whip is a _fast_ and _simple_ Ansible replacement optimized for projects with 1 to 20 servers.
+Whip your servers into line. A _fast_ and _simple_ Ansible replacement optimized for projects with 1 to 20 servers.
 
 # Features
 
@@ -22,8 +22,9 @@ Whip your servers into line. Chief Whip is a _fast_ and _simple_ Ansible replace
 # Install
 
 ```
-# for now
-curl -fsSL https://sansec.io/downloads/darwin-arm64/whip -O ~/bin/whip
+base=https://github.com/gwillem/whip/releases/latest/download/whip
+curl -L $base-$(uname -s)-$(uname -m) -o whip && chmod +x whip
+whip --help
 ```
 
 # Demo
@@ -33,11 +34,11 @@ curl -fsSL https://sansec.io/downloads/darwin-arm64/whip -O ~/bin/whip
 
 # Philosophy
 
-How will Chief Whip _stay_ fast and simple?
+How will Whip _stay_ fast and simple?
 
-Simple ==> Only build features that satisfy 95% of use cases. Convention over configuration. Support top used modules only.
+Only build features that satisfy 95% of use cases. Convention over configuration. Support top used modules only. Only support Linux servers and Linux/Mac clients.
 
-Fast ==> Eliminate unnecessary SSH round trips: Ansibles biggest delay is caused by tasks that are sent one by one. Chief Whip bundles tasks into a single job. Also, Chief Whip is written in Golang which runs faster than Python.
+Eliminate unnecessary SSH round trips: Ansibles biggest delay is caused by tasks that are sent one by one. Whip bundles tasks into a single job.
 
 # But why?
 
@@ -66,7 +67,7 @@ Ansible has grown too complex, as illustrated by this Hacker News comment:
 
 # FAQ
 
-#### Is Chief Whip designed to be an Ansible replacement (backwards compatible) or to be a better solution to the same problem?
+#### Is Whip designed to be an Ansible replacement (backwards compatible) or to be a better solution to the same problem?
 
 The latter, however we stick to most of Ansible's verbiage to ease a transition.
 
