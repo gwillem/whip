@@ -79,7 +79,7 @@ func (v *ageVault) getID() (id *age.X25519Identity, err error) {
 	keyStr := os.Getenv(ageEnv)
 	if keyStr == "" {
 		if sp := fsutil.FindAncestorPath(ageEnvScript); sp != "" {
-			log.Debug("Using script", sp, "to generate vault key")
+			log.Debug("Getting vault key from", sp)
 			keyStr, err = readFromScript(sp)
 			if err != nil {
 				log.Error(err)

@@ -63,3 +63,10 @@ func Test_OpenEmptyFile(t *testing.T) {
 	require.Empty(t, data)
 	fh.Close()
 }
+
+func Test_readFromScript(t *testing.T) {
+	got, err := readFromScript("bogus script")
+	require.Empty(t, got)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "bogus script")
+}

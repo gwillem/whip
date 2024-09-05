@@ -16,18 +16,15 @@ func DirToAsset(root string) (*model.Asset, error) {
 		if err != nil {
 			return err
 		}
-		if info.IsDir() {
-			return nil
-		}
-		data, err := vault.ReadFile(path)
-		if err != nil {
-			return err
-		}
-
 		relPath := path[len(root):]
+		var data []byte
 
-		// log.Debug("Adding relpath", relPath)
-
+		if !info.IsDir() {
+			data, err = vault.ReadFile(path)
+			if err != nil {
+				return err
+			}
+		}
 		asset.Files = append(asset.Files, model.File{Path: relPath, Data: data, Mode: info.Mode()})
 		return nil
 	})
