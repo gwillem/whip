@@ -91,7 +91,6 @@ func registerRunner(name string, r runner) {
 }
 
 func PreRun(task *model.Task, playVars model.TaskVars) (tr model.TaskResult) {
-	// fmt.Println("Running", task.Type)
 	runner, ok := runners[task.Runner]
 	if !ok {
 		log.Fatal("Runner not found, should have been validated", task.Runner)
@@ -139,7 +138,6 @@ func Run(task *model.Task, playVars model.TaskVars) (tr model.TaskResult) {
 		}
 	}()
 
-	// fmt.Println("Running", task.Type)
 	runner, ok := runners[task.Runner]
 	if !ok {
 		return fail("No runner found for task '" + task.Runner + "'") // todo, is empty for unknown runners
