@@ -332,14 +332,15 @@ func ensureFile(f filesObj) (changed bool, err error) {
 	// need to write file?
 	if os.IsNotExist(err) || dataDiffers() {
 		// Create a temporary file in the same directory
-		tempFile, err := os.CreateTemp(filepath.Dir(f.path), "temp_*")
+
+		tempFile, err := fsutil.TempFile(filepath.Dir(f.path), "temp_*")
 		if err != nil {
 			return false, fmt.Errorf("create temp file error for %s: %w", f.path, err)
 		}
 		tempPath := tempFile.Name()
 		defer func() {
 			_ = tempFile.Close()
-			_ = os.Remove(tempPath)
+			_ = fs.Remove(tempPath)
 		}()
 
 		// Write data to the temporary file
@@ -352,12 +353,12 @@ func ensureFile(f filesObj) (changed bool, err error) {
 			return false, fmt.Errorf("error closing temp file for %s: %w", f.path, err)
 		}
 
-		if os.Chmod(tempPath, f.mode) != nil {
+		if fs.Chmod(tempPath, f.mode) != nil {
 			return false, fmt.Errorf("chmod error on temp file %s for %s: %w", tempPath, f.path, err)
 		}
 
 		// Perform the atomic rename
-		err = os.Rename(tempPath, f.path)
+		err = fs.Rename(tempPath, f.path)
 		if err != nil {
 			return false, fmt.Errorf("rename error from temp %s to %s: %w", tempPath, f.path, err)
 		}
@@ -367,6 +368,7 @@ func ensureFile(f filesObj) (changed bool, err error) {
 
 	// need to change mode in case the file existed
 	if fi != nil && fi.Mode() != f.mode {
+		log.Debug("changing mode to", f.mode)
 		if err := fs.Chmod(f.path, f.mode); err != nil {
 			return false, fmt.Errorf("chmod err on %s: %w", f.path, err)
 		}

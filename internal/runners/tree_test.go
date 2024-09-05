@@ -11,9 +11,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func init() {
-}
-
 var (
 	testUser  = "testuser"
 	testGroup = "testgroup"
@@ -35,9 +32,9 @@ func newFileMeta(uid, gid int, notify []string) *fileMeta {
 
 func getDummyTaskArgs() model.TaskArgs {
 	return model.TaskArgs{
-		"/a/b/c": fmt.Sprintf("umask=%o owner=%s group=%s notify=%s", testRootUser, testRootGroup, testHandlerC),
-		"/a":     fmt.Sprintf("umask=%o owner=%s group=%s notify=%s", testUser, testGroup, testHandlerA),
-		"/d":     fmt.Sprintf("umask=%o owner=%s group=%s", testUser, testGroup),
+		"/a/b/c": fmt.Sprintf("owner=%s group=%s notify=%s", testRootUser, testRootGroup, testHandlerC),
+		"/a":     fmt.Sprintf("owner=%s group=%s notify=%s", testUser, testGroup, testHandlerA),
+		"/d":     fmt.Sprintf("owner=%s group=%s", testUser, testGroup),
 	}
 }
 
@@ -175,34 +172,25 @@ func Test_ensurePathUpdatesFileMode(t *testing.T) {
 	require.NoError(t, fh.Close())
 	defer os.Remove(fh.Name())
 
-	changed, err = ensureFile(filesObj{
+	dummyID := 0
+
+	testFile := filesObj{
 		path: testPath,
 		data: []byte("hoi"),
-		uid:  &testUID,
-		gid:  &testGID,
-	})
+		mode: 0o631,
+		uid:  &dummyID,
+		gid:  &dummyID,
+	}
+
+	changed, err = ensureFile(testFile)
 	require.NoError(t, err)
 	require.True(t, changed)
 
-	changed, err = ensurePath(filesObj{
-		path: testPath,
-		data: []byte("hoi"),
-		uid:  &testUID,
-		gid:  &testGID,
-	})
+	changed, err = ensurePath(testFile)
 	require.NoError(t, err)
 	require.True(t, changed) // should be false, but there is no way for Afero to retrieve the uid of a memfs file
 
-	changed, err = ensurePath(filesObj{
-		path: testPath,
-		data: []byte("hoi"),
-		uid:  &testUID,
-		gid:  &testGID,
-	})
-	require.NoError(t, err)
-	require.True(t, changed)
-
 	fi, err := fs.Stat(testPath)
 	require.NoError(t, err)
-	require.Equal(t, fi.Mode(), os.FileMode(0o600))
+	require.Equal(t, fi.Mode(), os.FileMode(0o631))
 }
