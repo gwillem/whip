@@ -51,6 +51,7 @@ type filesObj struct {
 	path  string
 	data  []byte
 	isDir bool
+	mode  os.FileMode
 	umask os.FileMode
 	uid   *int
 	gid   *int
@@ -134,6 +135,7 @@ func tree(t *model.Task) (tr model.TaskResult) {
 		f := filesObj{
 			path:  dstPath,
 			isDir: srcFi.IsDir(),
+			mode:  srcFi.Mode().Perm(),
 			umask: defaultUmask,
 		}
 
@@ -342,30 +344,53 @@ func ensureFile(f filesObj) (changed bool, err error) {
 	}
 
 	if fi != nil && fi.IsDir() {
-		return false, fmt.Errorf("cannot overwrite path %s with file", f.path)
+		return false, fmt.Errorf("cannot overwrite dir %s with file", f.path)
+	}
+
+	// register delta mode, because we lose old mode during write
+	if fi != nil && fi.Mode() != mode {
+		changed = true
 	}
 
 	// need to write file?
 	if os.IsNotExist(err) || dataDiffers() {
-		// log.Debug("Data differs", f.path)
-
-		// os.O_CREATE on existing file does not update mode, so need to do that below
-		fh, err := fs.OpenFile(f.path, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, mode)
+		// Create a temporary file in the same directory
+		tempFile, err := os.CreateTemp(filepath.Dir(f.path), "temp_*")
 		if err != nil {
-			return false, fmt.Errorf("open error on %s: %w", f.path, err)
+			return false, fmt.Errorf("create temp file error for %s: %w", f.path, err)
 		}
-		defer fh.Close()
+		tempPath := tempFile.Name()
+		defer func() {
+			_ = tempFile.Close()
+			_ = os.Remove(tempPath)
+		}()
 
-		_, err = fh.Write(f.data)
+		// Write data to the temporary file
+		_, err = tempFile.Write(f.data)
 		if err != nil {
-			return false, fmt.Errorf("write error on %s: %w", f.path, err)
+			return false, fmt.Errorf("write error to temp file %s for %s: %w", tempPath, f.path, err)
 		}
+
+		if tempFile.Close() != nil {
+			return false, fmt.Errorf("error closing temp file for %s: %w", f.path, err)
+		}
+
+		if os.Chmod(tempPath, mode) != nil {
+			return false, fmt.Errorf("chmod error on temp file %s for %s: %w", tempPath, f.path, err)
+		}
+
+		// Perform the atomic rename
+		err = os.Rename(tempPath, f.path)
+		if err != nil {
+			return false, fmt.Errorf("rename error from temp %s to %s: %w", tempPath, f.path, err)
+		}
+
 		changed = true
 	}
 
-	// need to change mode?
+	// need to change mode in case the file existed
 	if fi != nil && fi.Mode() != mode {
-		// log.Debug("needs mode change", f.path)
+		log.Debug("needs mode change", f.path)
 		if err := fs.Chmod(f.path, mode); err != nil {
 			return false, fmt.Errorf("chmod err on %s: %w", f.path, err)
 		}
