@@ -4,6 +4,18 @@
 
 Whip your servers into line. A _fast_ and _simple_ Ansible replacement optimized for projects with 1 to 20 servers.
 
+# Install
+
+```
+base=https://github.com/gwillem/whip/releases/latest/download/whip
+curl -L $base-$(uname -s)-$(uname -m) -o whip && chmod +x whip
+```
+
+# Demo
+
+> [!NOTE]
+> Keep this in mind.
+
 # Features
 
 | Finished   | Planned            | NOT planned\* |
@@ -19,19 +31,6 @@ Whip your servers into line. A _fast_ and _simple_ Ansible replacement optimized
 | templates  | mysql              | stat          |
 | vault      | postgresql         | debug         |
 
-# Install
-
-```
-base=https://github.com/gwillem/whip/releases/latest/download/whip
-curl -L $base-$(uname -s)-$(uname -m) -o whip && chmod +x whip
-whip --help
-```
-
-# Demo
-
-> [!NOTE]
-> Keep this in mind.
-
 # Philosophy
 
 How will Whip _stay_ fast and simple?
@@ -42,7 +41,7 @@ Eliminate unnecessary SSH round trips: Ansibles biggest delay is caused by tasks
 
 # But why?
 
-Curiously, Ansible also started out as fast and simple. Compared to the popular configuration management systems at the time (Puppet, Chef, CFEngine), it was a breeze of fresh air. Simple configuration files, easy to learn, effective documentation, simple push architecture. My team used it to manage some 2k+ servers without a fuss.
+Ansible started out as fast and simple too. Compared to the popular configuration management systems at the time (Puppet, Chef, CFEngine), it was a breeze of fresh air. Simple configuration files, easy to learn, effective documentation, simple push architecture.
 
 Until version 2 or so. After the RedHat acquisition, Ansible grew into commercial bloatware. RedHat got rid of the old objectives page (Simple, Fast) and replaced it with corporate marketing fluff. The task parameter documentation is hidden behind white paper downloads. Core modules have grown to support 20 extra options to support esoteric use cases. And above all, its once legendary speed is gone. Ansible feels sluggish today.
 

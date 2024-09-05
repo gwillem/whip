@@ -25,20 +25,19 @@ var (
 	testRootUID   = 1
 	testRootGID   = 2
 
-	testUmask    = os.FileMode(0o22)
 	testHandlerA = "handlerA"
 	testHandlerC = "handlerC"
 )
 
-func newFileMeta(uid, gid int, umask os.FileMode, notify []string) *fileMeta {
-	return &fileMeta{uid: &uid, gid: &gid, umask: umask, notify: notify}
+func newFileMeta(uid, gid int, notify []string) *fileMeta {
+	return &fileMeta{uid: &uid, gid: &gid, notify: notify}
 }
 
 func getDummyTaskArgs() model.TaskArgs {
 	return model.TaskArgs{
-		"/a/b/c": fmt.Sprintf("umask=%o owner=%s group=%s notify=%s", defaultUmask, testRootUser, testRootGroup, testHandlerC),
-		"/a":     fmt.Sprintf("umask=%o owner=%s group=%s notify=%s", defaultUmask, testUser, testGroup, testHandlerA),
-		"/d":     fmt.Sprintf("umask=%o owner=%s group=%s", defaultUmask, testUser, testGroup),
+		"/a/b/c": fmt.Sprintf("umask=%o owner=%s group=%s notify=%s", testRootUser, testRootGroup, testHandlerC),
+		"/a":     fmt.Sprintf("umask=%o owner=%s group=%s notify=%s", testUser, testGroup, testHandlerA),
+		"/d":     fmt.Sprintf("umask=%o owner=%s group=%s", testUser, testGroup),
 	}
 }
 
@@ -102,9 +101,9 @@ func Test_parsePrefixMeta(t *testing.T) {
 					"/d",
 				},
 				metamap: map[string]fileMeta{
-					"/a":     *newFileMeta(testUID, testGID, testUmask, []string{testHandlerA}),
-					"/a/b/c": *newFileMeta(testRootUID, testRootGID, testUmask, []string{testHandlerC}),
-					"/d":     *newFileMeta(testUID, testGID, testUmask, nil),
+					"/a":     *newFileMeta(testUID, testGID, []string{testHandlerA}),
+					"/a/b/c": *newFileMeta(testRootUID, testRootGID, []string{testHandlerC}),
+					"/d":     *newFileMeta(testUID, testGID, nil),
 				},
 			},
 			wantErr: false,
@@ -148,13 +147,13 @@ func Test_prefixMetaMap_getMeta(t *testing.T) {
 	require.Empty(t, fm.notify)
 
 	fm = pmm.getMeta("/a/lsdjflsd")
-	require.Equal(t, *newFileMeta(testUID, testGID, testUmask, []string{testHandlerA}), fm)
+	require.Equal(t, *newFileMeta(testUID, testGID, []string{testHandlerA}), fm)
 
 	fm = pmm.getMeta("/a/b/c/d/e")
-	require.Equal(t, *newFileMeta(testRootUID, testRootGID, testUmask, []string{testHandlerA, testHandlerC}), fm)
+	require.Equal(t, *newFileMeta(testRootUID, testRootGID, []string{testHandlerA, testHandlerC}), fm)
 
 	fm = pmm.getMeta("/d/lkkijfksdlsdf/dsfsdf")
-	require.Equal(t, *newFileMeta(testUID, testGID, testUmask, nil), fm)
+	require.Equal(t, *newFileMeta(testUID, testGID, nil), fm)
 }
 
 func Test_ensurePathUpdatesFileMode(t *testing.T) {
@@ -177,31 +176,28 @@ func Test_ensurePathUpdatesFileMode(t *testing.T) {
 	defer os.Remove(fh.Name())
 
 	changed, err = ensureFile(filesObj{
-		path:  testPath,
-		data:  []byte("hoi"),
-		umask: os.FileMode(0o22),
-		uid:   &testUID,
-		gid:   &testGID,
+		path: testPath,
+		data: []byte("hoi"),
+		uid:  &testUID,
+		gid:  &testGID,
 	})
 	require.NoError(t, err)
 	require.True(t, changed)
 
 	changed, err = ensurePath(filesObj{
-		path:  testPath,
-		data:  []byte("hoi"),
-		umask: os.FileMode(0o22),
-		uid:   &testUID,
-		gid:   &testGID,
+		path: testPath,
+		data: []byte("hoi"),
+		uid:  &testUID,
+		gid:  &testGID,
 	})
 	require.NoError(t, err)
 	require.True(t, changed) // should be false, but there is no way for Afero to retrieve the uid of a memfs file
 
 	changed, err = ensurePath(filesObj{
-		path:  testPath,
-		data:  []byte("hoi"),
-		umask: os.FileMode(0o77),
-		uid:   &testUID,
-		gid:   &testGID,
+		path: testPath,
+		data: []byte("hoi"),
+		uid:  &testUID,
+		gid:  &testGID,
 	})
 	require.NoError(t, err)
 	require.True(t, changed)

@@ -30,16 +30,9 @@ func init() {
 
 const srcRoot = "/"
 
-var (
-	defaultUmask    = os.FileMode(0o022)
-	defaultDirMode  = os.FileMode(0o777)
-	defaultFileMode = os.FileMode(0o666)
-)
-
 type fileMeta struct {
 	uid    *int
 	gid    *int
-	umask  os.FileMode
 	notify []string
 }
 type prefixMetaMap struct {
@@ -52,7 +45,6 @@ type filesObj struct {
 	data  []byte
 	isDir bool
 	mode  os.FileMode
-	umask os.FileMode
 	uid   *int
 	gid   *int
 }
@@ -67,9 +59,6 @@ func (pm *prefixMetaMap) getMeta(path string) fileMeta {
 			}
 			if meta.gid != nil {
 				finalMeta.gid = meta.gid
-			}
-			if meta.umask > 0 {
-				finalMeta.umask = meta.umask
 			}
 			if meta.notify != nil {
 				finalMeta.notify = append(finalMeta.notify, meta.notify...)
@@ -135,8 +124,7 @@ func tree(t *model.Task) (tr model.TaskResult) {
 		f := filesObj{
 			path:  dstPath,
 			isDir: srcFi.IsDir(),
-			mode:  srcFi.Mode().Perm(),
-			umask: defaultUmask,
+			mode:  srcFi.Mode(),
 		}
 
 		if !f.isDir {
@@ -158,9 +146,6 @@ func tree(t *model.Task) (tr model.TaskResult) {
 
 		// update srcFs[srcPath] and srcFi with prefix meta, if any
 		meta := pm.getMeta(srcPath)
-		if meta.umask > 0 {
-			f.umask = meta.umask
-		}
 		f.uid = meta.uid
 		f.gid = meta.gid
 
@@ -223,13 +208,6 @@ func parsePrefixMeta(args model.TaskArgs) (*prefixMetaMap, error) {
 		attrs := parser.ParseArgString(argStr)
 
 		fm := fileMeta{}
-		if attrs.String("umask") != "" {
-			ui, err := strconv.ParseInt(attrs.String("umask"), 8, 32)
-			if err != nil {
-				return nil, fmt.Errorf("cannot parse octal umask %s", attrs.String("umask"))
-			}
-			fm.umask = os.FileMode(ui)
-		}
 
 		var uid, gid int
 
@@ -290,7 +268,7 @@ func ensureDir(f filesObj) (changed bool, err error) {
 
 	fi, err := os.Stat(f.path)
 
-	mode := defaultDirMode &^ f.umask
+	mode := f.mode
 	if err != nil && os.IsNotExist(err) {
 		// create dir
 		if err := fs.Mkdir(f.path, mode); err != nil {
@@ -305,7 +283,7 @@ func ensureDir(f filesObj) (changed bool, err error) {
 		return false, fmt.Errorf("cannot overwrite non-dir %s with dir", f.path)
 	}
 	if fi != nil && fi.Mode()&os.ModePerm != mode {
-		log.Debug("changing mode", uint32(fi.Mode()), "to", mode)
+		log.Debug("changing mode", fi.Mode().String(), "to", mode.String())
 		if err := fs.Chmod(f.path, mode); err != nil {
 			return false, err
 		}
@@ -324,8 +302,6 @@ func ensureFile(f filesObj) (changed bool, err error) {
 	if f.isDir {
 		return false, fmt.Errorf("ensureFile called on dir? %s", f.path)
 	}
-	mode := defaultFileMode &^ f.umask
-
 	fi, err := fs.Stat(f.path)
 	if err != nil && !os.IsNotExist(err) {
 		return false, fmt.Errorf("read error on %s: %w", f.path, err)
@@ -348,7 +324,8 @@ func ensureFile(f filesObj) (changed bool, err error) {
 	}
 
 	// register delta mode, because we lose old mode during write
-	if fi != nil && fi.Mode() != mode {
+	if fi != nil && fi.Mode() != f.mode {
+		log.Debug("needs mode change from", fi.Mode().String(), "to", f.mode.String(), "for", f.path)
 		changed = true
 	}
 
@@ -375,7 +352,7 @@ func ensureFile(f filesObj) (changed bool, err error) {
 			return false, fmt.Errorf("error closing temp file for %s: %w", f.path, err)
 		}
 
-		if os.Chmod(tempPath, mode) != nil {
+		if os.Chmod(tempPath, f.mode) != nil {
 			return false, fmt.Errorf("chmod error on temp file %s for %s: %w", tempPath, f.path, err)
 		}
 
@@ -389,9 +366,8 @@ func ensureFile(f filesObj) (changed bool, err error) {
 	}
 
 	// need to change mode in case the file existed
-	if fi != nil && fi.Mode() != mode {
-		log.Debug("needs mode change", f.path)
-		if err := fs.Chmod(f.path, mode); err != nil {
+	if fi != nil && fi.Mode() != f.mode {
+		if err := fs.Chmod(f.path, f.mode); err != nil {
 			return false, fmt.Errorf("chmod err on %s: %w", f.path, err)
 		}
 		changed = true
