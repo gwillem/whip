@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"github.com/karrick/gobls"
+
 	// "github.com/klauspost/compress/zstd"
 	"github.com/pkg/sftp"
 	"golang.org/x/crypto/ssh"
@@ -186,26 +187,28 @@ func Connect(target string) (*Client, error) {
 
 	authMethods := []ssh.AuthMethod{}
 
-	// Try default key file?
-	if key, err := os.ReadFile(defaultKeyFile); err == nil {
-		signer, err := ssh.ParsePrivateKey(key)
-		if err == nil {
-			// fmt.Println("Adding default key auth")
-			authMethods = append(authMethods, ssh.PublicKeys(signer))
-		}
-	}
-
 	// Try agent?
 	if os.Getenv(agentSock) != "" {
 		if agentConn, err := net.Dial("unix", os.Getenv(agentSock)); err == nil {
 			// fmt.Println("Adding agent auth")
 			authMethod := ssh.PublicKeysCallback(agent.NewClient(agentConn).Signers)
 			authMethods = append(authMethods, authMethod)
+		} else {
+			return nil, fmt.Errorf("Failed to connect to SSH agent %v: %w", agentSock, err)
 		}
 	}
 
+	// Try default key file?
+	if key, err := os.ReadFile(defaultKeyFile); err == nil {
+		signer, err := ssh.ParsePrivateKey(key)
+		if err != nil {
+			return nil, fmt.Errorf("Could not parse private key %v: %w", defaultKeyFile, err)
+		}
+		authMethods = append(authMethods, ssh.PublicKeys(signer))
+	}
+
 	if len(authMethods) == 0 {
-		log.Fatal("No SSH auth methods available. Is your agent running?")
+		return nil, fmt.Errorf("No SSH auth methods available. Is your agent running?")
 	}
 
 	config := &ssh.ClientConfig{
