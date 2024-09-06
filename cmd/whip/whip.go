@@ -11,7 +11,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gwillem/go-buildversion"
 	log "github.com/gwillem/go-simplelog"
 	"github.com/gwillem/whip/internal/assets"
 	"github.com/gwillem/whip/internal/fsutil"
@@ -30,6 +29,8 @@ const (
 
 //go:embed deputies
 var deputies embed.FS
+
+var buildVersion = "unknown"
 
 func runWhip(cmd *cobra.Command, args []string) {
 	var playbookPath string
@@ -73,7 +74,7 @@ func runWhip(cmd *cobra.Command, args []string) {
 	}
 
 	files, _ := deputies.ReadDir("deputies")
-	log.Task("Starting whip", buildversion.String(), "with", len(files), "embedded deputies")
+	log.Task("Starting whip", buildVersion, "with", len(files), "embedded deputies")
 
 	pb, err := playbook.Load(playbookPath)
 	if err != nil {

@@ -155,8 +155,6 @@ github.com/googleapis/gax-go/v2 v2.0.5/go.mod h1:DWXyrwAJ9X0FpwwEdw+IPEYBICEFu5m
 github.com/googleapis/google-cloud-go-testing v0.0.0-20200911160855-bcd43fbb19e8/go.mod h1:dvDLG8qkwmyD9a/MJJN3XJcT3xFxOKAvTZGvuZmac9g=
 github.com/goph/emperror v0.17.1 h1:6lOybhIvG/BB6VGoWfdv30FVZeZFBBZ9VvgzGXLVkyY=
 github.com/goph/emperror v0.17.1/go.mod h1:+ZbQ+fUNO/6FNiUo0ujtMjhgad9Xa6fQL9KhH4LNHic=
-github.com/gwillem/go-buildversion v0.0.0-20230402114832-b1addefa8764 h1:GL/gS9rv5F1oBgQwbT+pl0HefNbDZLjbcWmDNT/pUOU=
-github.com/gwillem/go-buildversion v0.0.0-20230402114832-b1addefa8764/go.mod h1:yf2A6rXn1ptErQTutA0vpEDZJG6E0b/aUnMnXelY5tU=
 github.com/gwillem/go-simplelog v0.3.2-0.20240425201514-40a6b7d1bcbb h1:Ofmn80/bLvFG9NGVj4sdUVC+n69V/hxPg1UaLuiJPfA=
 github.com/gwillem/go-simplelog v0.3.2-0.20240425201514-40a6b7d1bcbb/go.mod h1:VzaKnjEPW0JUVseBHP2c4w1kOxMG+TZXLeuT3xWpnbA=
 github.com/gwillem/urlfilecache v0.0.0-20230402105623-8ef3b7b67c13 h1:Kuu6BZRS1uaSatweU/S5pWKkwt+QFCMb2QjJrWcvTWA=

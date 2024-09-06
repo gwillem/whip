@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/gwillem/go-buildversion"
 	log "github.com/gwillem/go-simplelog"
 
+	"github.com/gwillem/whip/internal/update"
 	"github.com/gwillem/whip/internal/vault"
 	"github.com/spf13/cobra"
 )
@@ -44,13 +44,22 @@ var (
 		Use:   "version",
 		Short: "Print the version number of Whip",
 		Run: func(_ *cobra.Command, _ []string) {
-			fmt.Println("whip", buildversion.String())
+			fmt.Println("whip", buildVersion)
+		},
+	}
+	updateCmd = &cobra.Command{
+		Use:   "update",
+		Short: "Update Whip to the latest version",
+		Run: func(_ *cobra.Command, _ []string) {
+			if err := update.Run(buildVersion); err != nil {
+				log.Fatal(err)
+			}
 		},
 	}
 )
 
 func init() {
-	rootCmd.AddCommand(vaultEditCmd, vaultConvertCmd, versionCmd)
+	rootCmd.AddCommand(vaultEditCmd, vaultConvertCmd, versionCmd, updateCmd)
 	rootCmd.CompletionOptions.HiddenDefaultCmd = true
 	rootCmd.PersistentFlags().CountP("verbose", "v", "verbose output")
 }

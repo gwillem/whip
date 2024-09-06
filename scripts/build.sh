@@ -1,5 +1,7 @@
 #!/bin/bash
 
+git fetch --tags
+
 build_for_target() {
     local cmd="$1"
     local os="$2"
@@ -9,7 +11,7 @@ build_for_target() {
     mkdir -p $dst
     echo $dst/$cmd ..
 
-    env GOOS=$os GOARCH=$arch go build -ldflags="-s -w" -o $dst/$cmd ./cmd/$cmd
+    env GOOS=$os GOARCH=$arch go build -ldflags="-s -w -X main.buildVersion=$VERSION" -o $dst/$cmd ./cmd/$cmd
 
     if [ "$cmd-$os" = "deputy-linux" ]; then
         mkdir -p cmd/whip/deputies
