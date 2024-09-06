@@ -1,5 +1,7 @@
 # Todo
 
+- [x] xz deputy on the line
+- [x] self update
 - [x] deputy can execute simple "command" task
 - [x] chief connects to target
 - [x] chief loads playbook into job

@@ -2,15 +2,19 @@ package update
 
 import (
 	"bytes"
+	"compress/gzip"
 	"crypto/sha256"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"syscall"
 )
+
+const baseURL = "https://github.com/gwillem/whip/releases/latest/download/whip"
 
 func getUnameOsArch() (string, string) {
 	var unameS, unameM string
@@ -42,7 +46,12 @@ func Run(oldver string) error {
 		return fmt.Errorf("failed to get current executable path: %w", err)
 	}
 
-	baseURL := "https://github.com/gwillem/whip/releases/latest/download/whip"
+	// Resolve symlinks in currentExe
+	currentExe, err = filepath.EvalSymlinks(currentExe)
+	if err != nil {
+		return fmt.Errorf("failed to resolve symlinks for current executable: %w", err)
+	}
+
 	unameS, unameM := getUnameOsArch()
 	downloadURL := fmt.Sprintf("%s-%s-%s.gz", baseURL, unameS, unameM)
 
@@ -57,7 +66,6 @@ func Run(oldver string) error {
 		return fmt.Errorf("failed to create request: %w", err)
 	}
 	if oldETag != "" {
-		fmt.Println("oldETag", oldETag)
 		req.Header.Set("If-None-Match", oldETag)
 	}
 
@@ -67,6 +75,10 @@ func Run(oldver string) error {
 		return fmt.Errorf("failed to download new version: %w", err)
 	}
 	defer resp.Body.Close()
+
+	if err := storeETag(resp.Header.Get("ETag")); err != nil {
+		return fmt.Errorf("failed to store ETag: %w", err)
+	}
 
 	if resp.StatusCode == http.StatusNotModified {
 		fmt.Println("Already up to date")
@@ -84,10 +96,16 @@ func Run(oldver string) error {
 	}
 	defer os.Remove(tempFile.Name())
 
-	// Write the downloaded content to the temporary file
-	_, err = io.Copy(tempFile, resp.Body)
+	// Decompress and write the downloaded content to the temporary file
+	gzipReader, err := gzip.NewReader(resp.Body)
 	if err != nil {
-		return fmt.Errorf("failed to write downloaded content: %w", err)
+		return fmt.Errorf("failed to create gzip reader: %w", err)
+	}
+	defer gzipReader.Close()
+
+	_, err = io.Copy(tempFile, gzipReader)
+	if err != nil {
+		return fmt.Errorf("failed to write decompressed content: %w", err)
 	}
 	tempFile.Close()
 
@@ -103,32 +121,30 @@ func Run(oldver string) error {
 		return fmt.Errorf("failed to set permissions on temporary file: %w", err)
 	}
 
-	fmt.Println("new etag:", resp.Header.Get("ETag"))
-	if err := storeETag(resp.Header.Get("ETag")); err != nil {
-		return fmt.Errorf("failed to store ETag: %w", err)
-	}
-
 	// Compare the files
-	if !filesAreIdentical(currentExe, tempFile.Name()) {
-		// Replace the current executable with the new one
-		err = os.Rename(tempFile.Name(), currentExe)
-		if err != nil {
-			return fmt.Errorf("failed to replace current executable: %w", err)
-		}
-
-		// Replace the current process with the new version
-		fmt.Printf("whip %s ==> ", oldver)
-		err = syscall.Exec(currentExe, []string{currentExe, "version"}, os.Environ())
-		if err != nil {
-			return fmt.Errorf("failed to execute new version: %w", err)
-		}
-		// The code below this point will not be executed if the Exec call is successful
+	if filesAreIdentical(currentExe, tempFile.Name()) {
+		fmt.Println("Already up to date.")
+		return nil
 	}
 
-	// Files are identical, no update needed
-	fmt.Println("Already up to date.")
+	// test new executable
+	if err := exec.Command(tempFile.Name(), "version").Run(); err != nil {
+		return fmt.Errorf("new version failed to run: %w", err)
+	}
 
-	return nil
+	// Replace the current executable with the new one
+	err = os.Rename(tempFile.Name(), currentExe)
+	if err != nil {
+		return fmt.Errorf("failed to replace current executable: %w", err)
+	}
+
+	// Replace the current process with the new version
+	fmt.Printf("whip %s ==> ", oldver)
+	err = syscall.Exec(currentExe, []string{currentExe, "version"}, os.Environ())
+	if err != nil {
+		return fmt.Errorf("failed to execute new version: %w", err)
+	}
+	return nil // never reached
 }
 
 func filesAreIdentical(file1, file2 string) bool {
@@ -185,6 +201,7 @@ func fetchETag() (string, error) {
 		return "", fmt.Errorf("failed to get user cache directory: %w", err)
 	}
 	etagFile := filepath.Join(cacheDir, "whip", "update-etag")
+	fmt.Println("etagFile", etagFile)
 	etag, err := os.ReadFile(etagFile)
 	if err != nil {
 		if os.IsNotExist(err) {
