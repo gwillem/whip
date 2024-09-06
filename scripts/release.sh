@@ -22,13 +22,15 @@ fi
 
 ./scripts/buildall.sh
 
-gh release create $version --notes "binary release" build/github/*
+gzip -9fk build/*/whip
+
+gh release create $version --generate-notes build/github/*
 # Pull new tags after creating release
 git fetch --tags
 
 cat <<EOM
 
 base=https://github.com/gwillem/whip/releases/latest/download/whip
-curl -L $base-$(uname -s)-$(uname -m) -o whip && chmod +x whip
+curl -L $base-$(uname -s)-$(uname -m).gz|gzip -d>whip&&chmod +x whip
 
 EOM
