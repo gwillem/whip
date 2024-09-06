@@ -1,7 +1,6 @@
 package main
 
 import (
-	"crypto/sha256"
 	"fmt"
 	"strings"
 
@@ -36,7 +35,11 @@ func ensureDeputy(c *ssh.Client) error {
 		return fmt.Errorf("could not read deputy for %s: %s", osarch, err)
 	}
 
-	localSha := fmt.Sprintf("%x", sha256.Sum256(myDep))
+	localShaBytes, err := deputies.ReadFile("deputies/" + osarch + ".sha256")
+	if err != nil {
+		return fmt.Errorf("could not read deputy SHA256 for %s: %s", osarch, err)
+	}
+	localSha := strings.TrimSpace(string(localShaBytes))
 
 	// log.Debugf("local/remote sha:\n\t%s\n\t%s", localSha, remoteSha)
 
@@ -46,7 +49,7 @@ func ensureDeputy(c *ssh.Client) error {
 	}
 
 	// log.Debug("uploading deputy for ", osarg)
-	if err := c.UploadBytes(myDep, deputyPath, 0o755); err != nil {
+	if err := c.UploadBytesXZ(myDep, deputyPath, 0o755); err != nil {
 		return fmt.Errorf("Could not upload deputy: %s", err)
 	}
 

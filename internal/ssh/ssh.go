@@ -141,6 +141,18 @@ func (c *Client) UploadBytes(data []byte, remote string, perm os.FileMode) error
 	return remoteFile.Chmod(perm)
 }
 
+func (c *Client) UploadBytesXZ(data []byte, remote string, perm os.FileMode) error {
+	session, err := c.cl.NewSession()
+	if err != nil {
+		return err
+	}
+	defer session.Close()
+	session.Stdin = bytes.NewReader(data)
+	tempFile := fmt.Sprintf("%s.tmp", remote)
+	cmd := fmt.Sprintf("xz -d > %s && chmod %o %s && mv -f %s %s", tempFile, perm, tempFile, tempFile, remote)
+	return session.Run(cmd)
+}
+
 func (c *Client) UploadFile(local, remote string) error {
 	client, err := sftp.NewClient(c.cl)
 	if err != nil {

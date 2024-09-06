@@ -13,10 +13,9 @@ import (
 
 var (
 	rootCmd = &cobra.Command{
-		Use:   "whip [playbook]",
-		Short: "A fast and simple configuration manager",
-		Long: `Whip is a fast and simple configuration manager.
-It aims to be stand-in replacement for Ansible for 90% of use cases.`,
+		Use:               "whip [playbook]",
+		Short:             "A fast and simple configuration manager",
+		Long:              `A fast and simple configuration manager. Like a bloat-free Ansible.`,
 		CompletionOptions: cobra.CompletionOptions{HiddenDefaultCmd: true},
 		Args:              cobra.MaximumNArgs(1),
 		Run:               runWhip,
