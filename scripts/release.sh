@@ -20,6 +20,8 @@ else
     version=$1
 fi
 
+export version
+
 ./scripts/buildall.sh
 
 gzip -9fk build/*/whip
@@ -28,7 +30,7 @@ gh release create $version --generate-notes build/github/*
 # Pull new tags after creating release
 git fetch --tags
 
-cat <<EOM
+cat <<'EOM'
 
 base=https://github.com/gwillem/whip/releases/latest/download/whip
 curl -L $base-$(uname -s)-$(uname -m).gz|gzip -d>whip&&chmod +x whip
