@@ -201,7 +201,6 @@ func fetchETag() (string, error) {
 		return "", fmt.Errorf("failed to get user cache directory: %w", err)
 	}
 	etagFile := filepath.Join(cacheDir, "whip", "update-etag")
-	fmt.Println("etagFile", etagFile)
 	etag, err := os.ReadFile(etagFile)
 	if err != nil {
 		if os.IsNotExist(err) {
