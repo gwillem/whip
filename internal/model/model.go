@@ -41,7 +41,7 @@ type (
 		Vars      map[string]any `json:"vars,omitempty"`
 		Tasks     []Task         `json:"tasks,omitempty"`
 		Handlers  []Task         `json:"handlers,omitempty"`
-		PreRun    string         `json:"prerun,omitempty"`
+		PreRun    []string       `json:"prerun,omitempty"`
 	}
 	TargetName string
 	Target     struct {

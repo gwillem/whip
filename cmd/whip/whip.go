@@ -33,17 +33,10 @@ var deputies embed.FS
 var buildVersion = "unknown"
 
 func runWhip(cmd *cobra.Command, args []string) {
-	var playbookPath string
-	if len(args) > 0 {
-		playbookPath = args[0]
-	} else {
-		// Look for ".whip/playbook.yml" in current and parent directories
-		playbookPath = fsutil.FindAncestorPath(defaultPlaybookPath)
-	}
-
-	if playbookPath == "" {
-		log.Fatal("No playbook supplied and no playbook.yml found in current or parent directories")
-	}
+	whipStartTime := time.Now()
+	verbosity := setVerbosityLevel(cmd)
+	log.Task("Starting whip", buildVersion)
+	playbookPath := getPlaybookPath(args)
 
 	// change working dir to playbook parent
 	// this is where we will look for assets
@@ -52,30 +45,6 @@ func runWhip(cmd *cobra.Command, args []string) {
 	}
 
 	playbookPath = filepath.Base(playbookPath)
-
-	whipStartTime := time.Now()
-
-	verbosity, err := cmd.Flags().GetCount("verbose")
-	if err != nil {
-		log.Error(err)
-	}
-
-	// fmt.Println("verbosity level is", verbosity)
-	log.SetLevel(log.LevelError)
-	if verbosity > 0 {
-		log.SetLevel(log.LevelTask)
-	}
-
-	if verbosity > 1 {
-		log.SetLevel(log.LevelDebug)
-	}
-	if verbosity > 2 {
-		log.SetPrefixer(&durationPrefixer{})
-	}
-
-	files, _ := deputies.ReadDir("deputies")
-	log.Task("Starting whip", buildVersion, "with", len(files), "embedded deputies")
-
 	pb, err := playbook.Load(playbookPath)
 	if err != nil {
 		log.Error(err)
@@ -84,54 +53,15 @@ func runWhip(cmd *cobra.Command, args []string) {
 
 	log.Progress("Loaded playbook with", len(*pb), "plays")
 
-	// load assets TODO move to prerun
-	// assets, err := playbook.DirToAsset(defaultAssetPath)
-	// if err != nil {
-	// 	log.Warn(err)
-	// }
-
 	// validation... should happen at deputy, because controller doesn't have access
 	// to facts and cannot parse dynamic tasks without them
 
-	// prerun!
-	log.Task("Running any pre-run tasks on controller")
-	for _, play := range *pb {
+	runPreRunTasks(pb)
 
-		if play.PreRun != "" {
-			log.Progress("Running play pre-run")
-			data, err := exec.Command("/bin/sh", "-c", play.PreRun).CombinedOutput()
-			if err != nil {
-				log.Fatal(err, string(data))
-			}
-		}
-
-		for _, task := range play.Tasks {
-			tr := runners.PreRun(&task, play.Vars)
-			if tr.Status == runners.Skipped {
-				continue
-			}
-			log.Progress("Pre-run", task.Runner, "with status", tr.Status, tr.Output)
-		}
-	}
-
-	// load external vars?
+	// TODO load external vars
 
 	// Create jobbook to map plays to targets
-	jobBook := map[model.TargetName]model.Job{}
-	for i, play := range *pb {
-		log.Progress("Processing play", i, "with", len(play.Hosts), "hosts")
-		for _, target := range play.Hosts {
-
-			if _, ok := jobBook[target]; !ok {
-				jobBook[target] = model.Job{}
-			}
-
-			t := jobBook[target]
-			// t.Assets = assets
-			t.Playbook = append(t.Playbook, play)
-			jobBook[target] = t
-		}
-	}
+	jobBook := createJobBook(pb)
 
 	stats := map[model.TargetName]map[string]int{}
 
@@ -238,4 +168,80 @@ func (p *durationPrefixer) Prefix() string {
 	}
 	p.last = time.Now()
 	return dark(fmt.Sprintf("%.3f", delta.Seconds()))
+}
+
+func runPreRunTasks(pb *model.Playbook) {
+	log.Task("Running pre-run tasks on controller")
+	for _, play := range *pb {
+		if len(play.PreRun) > 0 {
+			for _, cmd := range play.PreRun {
+				data, err := exec.Command("/bin/sh", "-c", cmd).CombinedOutput()
+				if err != nil {
+					log.Fatal(cmd+":", err, "\n"+string(data))
+				}
+				log.Ok(cmd)
+			}
+		}
+
+		for _, task := range play.Tasks {
+			tr := runners.PreRun(&task, play.Vars)
+			if tr.Status == runners.Skipped {
+				continue
+			}
+			log.Progress("Pre-run", task.Runner, "with status", tr.Status, tr.Output)
+		}
+	}
+}
+
+// Function to create jobBook from playbook
+func createJobBook(pb *model.Playbook) map[model.TargetName]model.Job {
+	jobBook := map[model.TargetName]model.Job{}
+	for i, play := range *pb {
+		log.Progress("Processing play", i, "with", len(play.Hosts), "hosts")
+		for _, target := range play.Hosts {
+			if _, ok := jobBook[target]; !ok {
+				jobBook[target] = model.Job{}
+			}
+			t := jobBook[target]
+			// t.Assets = assets
+			t.Playbook = append(t.Playbook, play)
+			jobBook[target] = t
+		}
+	}
+	return jobBook
+}
+
+func setVerbosityLevel(cmd *cobra.Command) int {
+	verbosity, err := cmd.Flags().GetCount("verbose")
+	if err != nil {
+		log.Error(err)
+	}
+
+	log.SetLevel(log.LevelError)
+	if verbosity > 0 {
+		log.SetLevel(log.LevelTask)
+	}
+
+	if verbosity > 1 {
+		log.SetLevel(log.LevelDebug)
+	}
+	if verbosity > 2 {
+		log.SetPrefixer(&durationPrefixer{})
+	}
+	return verbosity
+}
+
+func getPlaybookPath(args []string) string {
+	var playbookPath string
+	if len(args) > 0 {
+		playbookPath = args[0]
+	} else {
+		// Look for ".whip/playbook.yml" in current and parent directories
+		playbookPath = fsutil.FindAncestorPath(defaultPlaybookPath)
+	}
+
+	if playbookPath == "" {
+		log.Fatal("No playbook supplied and no playbook.yml found in current or parent directories")
+	}
+	return playbookPath
 }
