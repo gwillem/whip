@@ -111,19 +111,22 @@ func (v *ageVault) genkey() string {
 
 func readFromScript(path string) (string, error) {
 	fi, err := os.Stat(path)
-	if err == nil && !fi.IsDir() {
-		if fi.Mode()&os.ModePerm&0o100 == 0 {
-			fmt.Println("oops", fi.Mode())
-			return "", fmt.Errorf("script %s is not executable", path)
-		}
-
-		data, err := exec.Command(path).CombinedOutput()
-		data = bytes.TrimSpace(data)
-		// fmt.Printf("got '%s'\n", string(data))
-		if err != nil {
-			return "", err
-		}
-		return string(data), nil
+	if err != nil {
+		return "", fmt.Errorf("failed to stat script %s: %v", path, err)
 	}
-	return "", nil
+
+	if fi.IsDir() {
+		return "", fmt.Errorf("script %s is a directory", path)
+	}
+
+	if fi.Mode()&0o100 == 0 {
+		return "", fmt.Errorf("script %s is not executable", path)
+	}
+
+	data, err := exec.Command(path).CombinedOutput()
+	if err != nil {
+		return "", fmt.Errorf("failed to execute script %s: %v", path, err)
+	}
+
+	return string(bytes.TrimSpace(data)), nil
 }
