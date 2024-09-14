@@ -1,8 +1,6 @@
 package runners
 
 import (
-	"os/exec"
-
 	"github.com/google/shlex"
 	log "github.com/gwillem/go-simplelog"
 	"github.com/gwillem/whip/internal/model"
@@ -17,19 +15,9 @@ func Command(t *model.Task) (tr model.TaskResult) {
 		tr.Output = err.Error()
 		return tr
 	}
-	return runCommand(tokens, t.Args.String("unless"))
+	return system(tokens)
 }
 
 func init() {
 	registerRunner("command", runner{run: Command})
-}
-
-func runCommand(cmd []string, unlessCmd string) (tr model.TaskResult) {
-	if unlessCmd != "" {
-		if _, err := exec.Command("/bin/sh", "-c", unlessCmd).CombinedOutput(); err == nil {
-			return model.TaskResult{Status: Success}
-		}
-	}
-
-	return system(cmd)
 }

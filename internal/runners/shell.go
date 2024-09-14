@@ -7,7 +7,7 @@ import (
 
 func shell(t *model.Task) (tr model.TaskResult) {
 	cmd := []string{"/bin/sh", "-c", t.Args.String(parser.DefaultArg)}
-	return runCommand(cmd, t.Args.String("unless"))
+	return system(cmd)
 }
 
 func init() {

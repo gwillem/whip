@@ -134,11 +134,7 @@ func system(cmd []string) (tr model.TaskResult) {
 		return failure("no command")
 	}
 
-	args := []string{}
-	if len(cmd) > 1 {
-		args = cmd[1:]
-	}
-	data, err := exec.Command(cmd[0], args...).CombinedOutput()
+	data, err := execCommand(cmd)
 
 	if err == nil {
 		tr.Status = Success
@@ -148,6 +144,14 @@ func system(cmd []string) (tr model.TaskResult) {
 		tr.Output = strings.Join(cmd, " ") + "\n" + err.Error() + ":\n" + string(data)
 	}
 	return tr
+}
+
+func execCommand(cmd []string) ([]byte, error) {
+	args := []string{}
+	if len(cmd) > 1 {
+		args = cmd[1:]
+	}
+	return exec.Command(cmd[0], args...).CombinedOutput()
 }
 
 func isText(s []byte) bool {
