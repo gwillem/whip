@@ -4,20 +4,17 @@ import (
 	"fmt"
 
 	"github.com/gwillem/whip/internal/model"
-	m "github.com/gwillem/whip/internal/model"
 )
 
-// var allowedServiceStates = []string{"started", "stopped", "restarted", "reloaded"}
-
-var serviceStateMap = map[string]string{
+var ServiceStateMap = map[string]string{
 	"started":   "start",
 	"stopped":   "stop",
 	"restarted": "restart",
 	"reloaded":  "reload",
 }
 
-func Service(t *model.Task) (tr m.TaskResult) {
-	state := serviceStateMap[t.Args.String("state")]
+func Service(t *model.Task) (tr model.TaskResult) {
+	state := ServiceStateMap[t.Args.String("state")]
 	if state == "" {
 		return failure("unknown state, try started|stopped|restarted|reloaded")
 	}

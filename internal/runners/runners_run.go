@@ -16,7 +16,8 @@ import (
 )
 
 const (
-	Success int = iota
+	Unknown int = iota
+	Success
 	Failed
 	Skipped
 )

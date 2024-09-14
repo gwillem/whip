@@ -38,12 +38,6 @@ func Load(path string) (*model.Playbook, error) {
 		return nil, fmt.Errorf("yaml error: %w", err)
 	}
 
-	// for _, pb := range *pb {
-	// 	for _, t := range pb.Hosts {
-	// 		// log.Debug("Found playbook target:", t)
-	// 	}
-	// }
-
 	expandPlaybookLoops(pb)
 	return pb, nil
 }

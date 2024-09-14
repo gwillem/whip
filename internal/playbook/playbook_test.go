@@ -124,6 +124,6 @@ func Test_TaskArgs(t *testing.T) {
 	pb, err := Load(tu.FixturePath("playbook/task_args.yml"))
 	require.NoError(t, err)
 	play := (*pb)[0]
-	require.Equal(t, "/bin/true", play.Tasks[0].Args.String("unless"))
+	require.Equal(t, "/bin/true", play.Tasks[0].Unless)
 	require.Equal(t, "echo hi", play.Tasks[0].Args.String("_args"))
 }

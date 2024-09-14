@@ -1,5 +1,8 @@
 # Todo
 
+- [x] tree err with overwriting dir
+- [ ] show errors, even in non -v
+- [ ] auto handlers
 - [x] xz deputy on the line
 - [x] self update
 - [x] deputy can execute simple "command" task

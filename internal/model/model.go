@@ -60,6 +60,7 @@ type (
 		Loop   []any    `json:"loop,omitempty"`
 		Vars   TaskVars `json:"vars,omitempty"`
 		Tags   []string `json:"tags,omitempty"`
+		Unless string   `json:"unless,omitempty"`
 	}
 
 	TaskArgs map[string]any

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/exec"
 	"time"
 
 	log "github.com/gwillem/go-simplelog"
@@ -27,8 +28,23 @@ func runJob(job *model.Job) {
 	for _, play := range job.Playbook {
 		handlers := map[string]bool{}
 		for _, task := range play.Tasks {
-			tr := runners.Run(&task, play.Vars)
-			tr.Task = &task
+
+			var tr model.TaskResult
+			if task.Unless != "" {
+				if _, err := exec.Command("/bin/sh", "-c", task.Unless).CombinedOutput(); err == nil {
+					tr.Status = runners.Success
+					tr.Output = fmt.Sprintf("skipped, 'unless' clause succeeded (%v)", task.Unless)
+				}
+			}
+
+			// if no "unless" or "unless" cmd failed, run the task
+			if tr.Status == runners.Unknown {
+				tr = runners.Run(&task, play.Vars)
+			}
+
+			if tr.Task == nil {
+				tr.Task = &task // todo, this seems redundant
+			}
 
 			// don't echo back all the files..
 			delete(tr.Task.Args, "_assets")
@@ -37,6 +53,7 @@ func runJob(job *model.Job) {
 				panic(err)
 			}
 
+			// terminate play for this host if any task failed
 			if tr.Status == runners.Failed {
 				return
 			}
@@ -59,6 +76,7 @@ func runJob(job *model.Job) {
 			if handlers[handler.Name] {
 				// log.Debug("Running handler", handler)
 				tr = runners.Run(&handler, play.Vars)
+				delete(handlers, handler.Name)
 			}
 			tr.Task = &handler
 			if tr.Task.Runner != "" {
@@ -72,8 +90,39 @@ func runJob(job *model.Job) {
 				return
 			}
 		}
+
+		/*
+			// Run any auto-handlers TODO should fix play count on whip host
+			for handlerName := range handlers {
+				service, action := parseAutoHandler(handlerName)
+				if service == "" || action == "" {
+					panic("invalid auto handler: " + handlerName) // FIXME
+				}
+				task := model.Task{
+					Runner: "service",
+					Args: map[string]any{
+						"name":  service,
+						"state": action,
+					},
+				}
+				tr := runners.Run(&task, play.Vars)
+				if err := encoder.Encode(tr); err != nil {
+					panic(err)
+				}
+			}
+		*/
 	}
 }
+
+// func parseAutoHandler(handlerName string) (service, action string) {
+// 	service, action, _ = strings.Cut(handlerName, "-")
+
+// 	if !slices.Contains([]string{"restart", "reload"}, action) {
+// 		log.Errorf("Invalid auto handler action: %s", action)
+// 		return "", ""
+// 	}
+// 	return
+// }
 
 func getJobFromStdin() *model.Job {
 	stdinReader := assets.NewReadCounter(os.Stdin)
