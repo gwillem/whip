@@ -268,10 +268,9 @@ func ensureDir(f filesObj) (changed bool, err error) {
 
 	fi, err := os.Stat(f.path)
 
-	mode := f.mode
 	if err != nil && os.IsNotExist(err) {
 		// create dir
-		if err := fs.Mkdir(f.path, mode); err != nil {
+		if err := fs.Mkdir(f.path, f.mode); err != nil {
 			return false, fmt.Errorf("mkdir error on %s: %w", f.path, err)
 		}
 		changed = true
@@ -282,9 +281,10 @@ func ensureDir(f filesObj) (changed bool, err error) {
 	if fi != nil && !fi.IsDir() {
 		return false, fmt.Errorf("cannot overwrite non-dir %s with dir", f.path)
 	}
-	if fi != nil && fi.Mode()&os.ModePerm != mode {
-		log.Debug("changing mode", fi.Mode().String(), "to", mode.String())
-		if err := fs.Chmod(f.path, mode); err != nil {
+
+	if fi != nil && fi.Mode().Perm() != f.mode.Perm() {
+		log.Debug("changing mode", fi.Mode().Perm().String(), "to", f.mode.Perm().String())
+		if err := fs.Chmod(f.path, f.mode.Perm()); err != nil {
 			return false, err
 		}
 		changed = true

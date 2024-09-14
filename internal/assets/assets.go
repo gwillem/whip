@@ -17,6 +17,9 @@ func DirToAsset(root string) (*model.Asset, error) {
 			return err
 		}
 		relPath := path[len(root):]
+		if relPath == "" {
+			return nil
+		}
 		var data []byte
 
 		if !info.IsDir() {
@@ -37,20 +40,21 @@ func DirToAsset(root string) (*model.Asset, error) {
 func AssetToFS(asset *model.Asset) (afero.Fs, error) {
 	fs := afero.NewMemMapFs()
 	for _, f := range asset.Files {
-		fh, err := fs.OpenFile(f.Path, os.O_CREATE|os.O_WRONLY, f.Mode) // f.Mode
+		if f.Mode.IsDir() {
+			if err := fs.MkdirAll(f.Path, f.Mode); err != nil {
+				return nil, err
+			}
+			continue
+		}
+		fh, err := fs.OpenFile(f.Path, os.O_CREATE|os.O_WRONLY, f.Mode)
 		if err != nil {
 			return nil, err
 		}
 		defer fh.Close()
-		if _, err := fh.Write(f.Data); err != nil {
+		_, err = fh.Write(f.Data)
+		if err != nil {
 			return nil, err
 		}
-		fh.Close()
-
-		if _, err := fs.Stat(f.Path); err == nil {
-			// log.Debug("Wrote", f.Path, "to fs, mode", fi.Mode())
-		}
-
 	}
 	return fs, nil
 }
