@@ -63,6 +63,8 @@ Ansible has grown too complex, as illustrated by this Hacker News comment:
   - [Ploy](https://github.com/davesavic/ploy) Jan 2024, not Ansible compatible
   - [Bruce](https://github.com/brucedom/bruce) since Apr 2023, not Ansible compatible
   - [mgmt](https://github.com/purpleidea/mgmt/) since 2016, full featured, high complexity, not Ansible compatible
+  - [Tiron](https://github.com/lapce/tiron) some Ansible runners, written in Rust, uses HCL instead of Yaml
+  - [Sparky](https://github.com/melezhik/sparky) [see also](https://dev.to/melezhik/sparky-simple-and-efficient-alternative-to-ansible-1fod)
 
 # FAQ
 
@@ -72,7 +74,7 @@ The latter, however we stick to most of Ansible's verbiage to ease a transition.
 
 #### Isn't everybody using Docker, Kubernetes and Kamal etc these days?
 
-[Nope](https://trends.google.com/trends/explore?date=all&q=ansible).
+[Not really](https://trends.google.com/trends/explore?date=all&q=ansible).
 
 #### Why is there an embedded build?
 
