@@ -3,6 +3,7 @@ module github.com/gwillem/whip
 go 1.23.0
 
 require (
+	dario.cat/mergo v1.0.1
 	filippo.io/age v1.2.0
 	github.com/barkimedes/go-deepcopy v0.0.0-20220514131651-17c30cfc62df
 	github.com/charmbracelet/bubbles v0.19.0

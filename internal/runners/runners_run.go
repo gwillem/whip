@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"dario.cat/mergo"
 	log "github.com/gwillem/go-simplelog"
 	"github.com/gwillem/whip/internal/model"
 	"github.com/ieee0824/go-deepmerge"
@@ -152,12 +153,9 @@ func Run(task *model.Task, playVars model.TaskVars) (tr model.TaskResult) {
 		}
 	}
 
-	// merge global and task vars
-	mergedVars, err := deepmerge.Merge(map[string]any(playVars), map[string]any(task.Vars))
-	if err != nil {
-		return fail(err.Error())
+	if e := mergo.Merge(&task.Vars, playVars); e != nil {
+		return fail(e.Error())
 	}
-	task.Vars = mergedVars.(map[string]any)
 
 	// arg substitution, notably for loop {{item}}
 	for k, v := range task.Args {

@@ -8,7 +8,8 @@ Whip your servers into line. A _fast_ and _simple_ Ansible replacement optimized
 
 ```
 base=https://github.com/gwillem/whip/releases/latest/download/whip
-curl -L $base-$(uname -s)-$(uname -m) -o whip && chmod +x whip
+curl -L $base-$(uname -s)-$(uname -m).gz|gzip -d>whip&&chmod +x whip
+./whip version
 ```
 
 # Demo
