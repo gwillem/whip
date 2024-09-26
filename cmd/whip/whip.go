@@ -188,7 +188,7 @@ func runPreRunTasks(pb *model.Playbook) {
 			if tr.Status == runners.Skipped {
 				continue
 			}
-			log.Progress("Pre-run", task.Runner, "with status", tr.Status, tr.Output)
+			log.Debug("Pre-run", task.Runner, "with status", tr.Status, tr.Output)
 		}
 	}
 }
@@ -197,7 +197,7 @@ func runPreRunTasks(pb *model.Playbook) {
 func createJobBook(pb *model.Playbook) map[model.TargetName]model.Job {
 	jobBook := map[model.TargetName]model.Job{}
 	for i, play := range *pb {
-		log.Progress("Processing play", i, "with", len(play.Hosts), "hosts")
+		log.Debug("Processing play", i, "with", len(play.Hosts), "hosts")
 		for _, target := range play.Hosts {
 			if _, ok := jobBook[target]; !ok {
 				jobBook[target] = model.Job{}
