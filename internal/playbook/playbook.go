@@ -143,7 +143,6 @@ func parseStringToSlice() mapstructure.DecodeHookFunc {
 func expandPlaybookLoops(pb *model.Playbook) {
 	for playidx := range *pb {
 		play := &(*pb)[playidx]
-		// fmt.Println("len tasks BEFORE", len(play.Tasks))
 		for i := len(play.Tasks) - 1; i >= 0; i-- { // reverse range, because we are expanding the slice in place
 			if loops := play.Tasks[i].Loop; loops != nil {
 				newTasks := []model.Task{}
@@ -156,9 +155,7 @@ func expandPlaybookLoops(pb *model.Playbook) {
 				// remove this task from the playbook
 				// and insert len(Loop) new tasks in its place
 				play.Tasks = slices.Replace(play.Tasks, i, i+1, newTasks...)
-				// fmt.Println("expanded", len(newTasks), "tasks..")
 			}
 		}
-		// fmt.Println("len tasks AFTER", len(play.Tasks))
 	}
 }

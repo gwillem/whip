@@ -1,11 +1,12 @@
 ---
-- hosts: ubuntu@192.168.64.10
+- hosts:
+    - root@192.168.64.19
   tasks:
     - name: file sync
       tree:
-        src: fixture/files
+        src: fixture/tree
         dst: /tmp
-        /etc/nginx: handler=nginx
+        #        /etc/nginx: handler=nginx
         /: umask=022 handler=sync
   handlers:
     - name: nginx

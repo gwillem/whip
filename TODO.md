@@ -1,5 +1,6 @@
 # Todo
 
+- [x] BUG git doesn't store read/write permissions, so we need a way to set this across repo checkouts
 - [x] tree err with overwriting dir
 - [ ] show errors, even in non -v
 - [ ] auto handlers

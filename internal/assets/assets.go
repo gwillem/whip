@@ -10,6 +10,13 @@ import (
 	"github.com/spf13/afero"
 )
 
+const (
+	defaultPermission = os.FileMode(0o666)
+)
+
+// DirToAsset converts a directory to an Asset. Because
+// git only preserves +x attributes, we add broad permissions
+// which are then stripped by the umask.
 func DirToAsset(root string) (*model.Asset, error) {
 	asset := model.Asset{Name: root}
 	err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
@@ -28,7 +35,17 @@ func DirToAsset(root string) (*model.Asset, error) {
 				return err
 			}
 		}
-		asset.Files = append(asset.Files, model.File{Path: relPath, Data: data, Mode: info.Mode()})
+
+		// preserve dir and +x attributes
+		mode := info.Mode() | defaultPermission
+
+		// If owner has execute permission, apply it to group and others as well.
+		// TODO Git behaviour is to preserve +x attributes, but also for group and others?
+		if mode&0o100 != 0 {
+			mode |= 0o111
+		}
+
+		asset.Files = append(asset.Files, model.File{Path: relPath, Data: data, Mode: mode})
 		return nil
 	})
 	if err != nil {
@@ -37,6 +54,9 @@ func DirToAsset(root string) (*model.Asset, error) {
 	return &asset, nil
 }
 
+// AssetToFS converts a model.Asset to an in-memory filesystem (afero.Fs).
+// It creates directories and files based on the Asset's Files, preserving
+// file modes and content.
 func AssetToFS(asset *model.Asset) (afero.Fs, error) {
 	fs := afero.NewMemMapFs()
 	for _, f := range asset.Files {

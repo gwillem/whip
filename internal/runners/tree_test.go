@@ -6,6 +6,7 @@ import (
 	"os/user"
 	"testing"
 
+	log "github.com/gwillem/go-simplelog"
 	"github.com/gwillem/whip/internal/model"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/require"
@@ -154,8 +155,13 @@ func Test_prefixMetaMap_getMeta(t *testing.T) {
 }
 
 func Test_ensurePathUpdatesFileMode(t *testing.T) {
+	log.SetLevel(log.LevelError)
+	defer log.SetLevel(log.LevelDebug)
+
 	var changed bool
 	var err error
+
+	target := os.FileMode(0o631)
 
 	oldFs := fs
 	oldFsutil := fsutil
@@ -177,7 +183,7 @@ func Test_ensurePathUpdatesFileMode(t *testing.T) {
 	testFile := filesObj{
 		path: testPath,
 		data: []byte("hoi"),
-		mode: 0o631,
+		mode: target,
 		uid:  &dummyID,
 		gid:  &dummyID,
 	}
@@ -192,5 +198,5 @@ func Test_ensurePathUpdatesFileMode(t *testing.T) {
 
 	fi, err := fs.Stat(testPath)
 	require.NoError(t, err)
-	require.Equal(t, fi.Mode(), os.FileMode(0o631))
+	require.Equal(t, fi.Mode(), target)
 }

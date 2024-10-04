@@ -28,11 +28,15 @@ func init() {
 	})
 }
 
-const srcRoot = "/"
+const (
+	srcRoot      = "/"
+	defaultUmask = os.FileMode(0o022)
+)
 
 type fileMeta struct {
 	uid    *int
 	gid    *int
+	umask  os.FileMode
 	notify []string
 }
 type prefixMetaMap struct {
@@ -45,6 +49,7 @@ type filesObj struct {
 	data  []byte
 	isDir bool
 	mode  os.FileMode
+	umask os.FileMode
 	uid   *int
 	gid   *int
 }
@@ -59,6 +64,9 @@ func (pm *prefixMetaMap) getMeta(path string) fileMeta {
 			}
 			if meta.gid != nil {
 				finalMeta.gid = meta.gid
+			}
+			if meta.umask > 0 {
+				finalMeta.umask = meta.umask
 			}
 			if meta.notify != nil {
 				finalMeta.notify = append(finalMeta.notify, meta.notify...)
@@ -149,6 +157,13 @@ func tree(t *model.Task) (tr model.TaskResult) {
 		f.uid = meta.uid
 		f.gid = meta.gid
 
+		// apply umask to default 0o666 permissions
+		umask := defaultUmask
+		if meta.umask > 0 {
+			umask = meta.umask
+		}
+		f.mode = f.mode &^ umask
+
 		// output += pp.Sprintln(dstPath)
 		// from here on, ensure path
 		changed, err := ensurePath(f)
@@ -208,6 +223,13 @@ func parsePrefixMeta(args model.TaskArgs) (*prefixMetaMap, error) {
 		attrs := parser.ParseArgString(argStr)
 
 		fm := fileMeta{}
+		if attrs.String("umask") != "" {
+			ui, err := strconv.ParseInt(attrs.String("umask"), 8, 32)
+			if err != nil {
+				return nil, fmt.Errorf("cannot parse octal umask %s", attrs.String("umask"))
+			}
+			fm.umask = os.FileMode(ui)
+		}
 
 		var uid, gid int
 
@@ -283,7 +305,7 @@ func ensureDir(f filesObj) (changed bool, err error) {
 	}
 
 	if fi != nil && fi.Mode().Perm() != f.mode.Perm() {
-		log.Debug("changing mode", fi.Mode().Perm().String(), "to", f.mode.Perm().String())
+		log.Debug("chmod", fi.Mode().String(), "to", f.mode.String(), "for", f.path)
 		if err := fs.Chmod(f.path, f.mode.Perm()); err != nil {
 			return false, err
 		}
@@ -325,7 +347,7 @@ func ensureFile(f filesObj) (changed bool, err error) {
 
 	// register delta mode, because we lose old mode during write
 	if fi != nil && fi.Mode() != f.mode {
-		log.Debug("needs mode change from", fi.Mode().String(), "to", f.mode.String(), "for", f.path)
+		log.Debug("chmod", fi.Mode().String(), "to", f.mode.String(), "for", f.path)
 		changed = true
 	}
 
@@ -368,7 +390,7 @@ func ensureFile(f filesObj) (changed bool, err error) {
 
 	// need to change mode in case the file existed
 	if fi != nil && fi.Mode() != f.mode {
-		log.Debug("changing mode to", f.mode)
+		log.Debug("chmod", fi.Mode().String(), "to", f.mode.String(), "for", f.path)
 		if err := fs.Chmod(f.path, f.mode); err != nil {
 			return false, fmt.Errorf("chmod err on %s: %w", f.path, err)
 		}
