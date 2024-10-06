@@ -42,13 +42,13 @@ func TestDirToAsset(t *testing.T) {
 		switch file.Path {
 		case string(filepath.Separator) + "file1.txt":
 			assert.Equal(t, []byte("content of file1"), file.Data)
-			assert.Equal(t, os.FileMode(0o644), file.Mode)
+			assert.Equal(t, os.FileMode(0o666), file.Mode)
 		case string(filepath.Separator) + "subdir":
 			assert.Empty(t, file.Data)
 			assert.True(t, file.Mode.IsDir())
 		case filepath.Join(string(filepath.Separator)+"subdir", "file2.txt"):
 			assert.Equal(t, []byte("content of file2"), file.Data)
-			assert.Equal(t, os.FileMode(0o644), file.Mode)
+			assert.Equal(t, os.FileMode(0o666), file.Mode)
 
 		default:
 			t.Errorf("Unexpected file: %s", file.Path)
