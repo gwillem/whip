@@ -13,7 +13,6 @@ import (
 	"encoding/gob"
 	"fmt"
 	"io"
-	"log"
 	"net"
 	"os"
 	"strings"
@@ -22,6 +21,7 @@ import (
 	"github.com/karrick/gobls"
 
 	// "github.com/klauspost/compress/zstd"
+	log "github.com/gwillem/go-simplelog"
 	"github.com/pkg/sftp"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/crypto/ssh/agent"
@@ -199,28 +199,37 @@ func Connect(target string) (*Client, error) {
 
 	authMethods := []ssh.AuthMethod{}
 
+	var err error
+
 	// Try agent?
 	if os.Getenv(agentSock) != "" {
-		if agentConn, err := net.Dial("unix", os.Getenv(agentSock)); err == nil {
+		var agentConn net.Conn
+		if agentConn, err = net.Dial("unix", os.Getenv(agentSock)); err == nil {
 			// fmt.Println("Adding agent auth")
 			authMethod := ssh.PublicKeysCallback(agent.NewClient(agentConn).Signers)
 			authMethods = append(authMethods, authMethod)
 		} else {
-			return nil, fmt.Errorf("Failed to connect to SSH agent %v: %w", agentSock, err)
+			log.Debug("Failed to connect to SSH agent:", agentSock, err)
 		}
 	}
 
 	// Try default key file?
-	if key, err := os.ReadFile(defaultKeyFile); err == nil {
-		signer, err := ssh.ParsePrivateKey(key)
+	var key []byte
+	if key, err = os.ReadFile(defaultKeyFile); err == nil {
+		var signer ssh.Signer
+		signer, err = ssh.ParsePrivateKey(key)
 		if err != nil {
-			return nil, fmt.Errorf("Could not parse private key %v: %w", defaultKeyFile, err)
+			log.Debug("Could not parse private key:", defaultKeyFile, err)
+		} else {
+			authMethods = append(authMethods, ssh.PublicKeys(signer))
 		}
-		authMethods = append(authMethods, ssh.PublicKeys(signer))
 	}
 
 	if len(authMethods) == 0 {
-		return nil, fmt.Errorf("No SSH auth methods available. Is your agent running?")
+		if err == nil {
+			err = fmt.Errorf("No %s and no $%s found", defaultKeyFile, agentSock)
+		}
+		return nil, fmt.Errorf("No SSH auth methods available: %v", err)
 	}
 
 	config := &ssh.ClientConfig{
@@ -228,7 +237,7 @@ func Connect(target string) (*Client, error) {
 		Auth:            authMethods,
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 		Timeout:         sshTimeout,
-		// these ciphers were supposedly faster but I didn't measure any difference
+		// these ciphers were supposedly faster but I didn't measure any difference --WdG
 		// Config:          ssh.Config{
 		//			Ciphers: []string{"aes128-ctr", "aes192-ctr", "aes256-ctr", "aes128-gcm@openssh.com", "chacha20-poly1305@openssh.com"},
 		// },
