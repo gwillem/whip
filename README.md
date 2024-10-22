@@ -19,6 +19,8 @@ curl -L $base-$(uname -s)-$(uname -m).gz|gzip -d>whip&&chmod +x whip
 
 # Features
 
+![](https://buq.eu/screenshots/40234b57e57fda7399a2698a.png)
+
 | Finished   | Planned            | NOT planned\* |
 | ---------- | ------------------ | ------------- |
 | ssh auth   | external inventory | non-linux     |
@@ -86,3 +88,5 @@ To support different architectures between host and client
 - tree module with state per line
 - apt module with state per line
 - "unless" for command and shell
+
+  
