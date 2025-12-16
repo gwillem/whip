@@ -1,5 +1,4 @@
 build/*
-!build/github
 cmd/whip/deputies/*
 .vscode
 playbook.yml

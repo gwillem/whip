@@ -21,7 +21,7 @@ func getURL(t *model.Task) (tr model.TaskResult) {
 
 	hash, _ := getFileChecksum(fs, dest) // could not exist yet
 
-	if e := urlfilecache.ToCustomPath(url, dest); e != nil {
+	if _, e := urlfilecache.ToPath(url, urlfilecache.WithPath(dest)); e != nil {
 		return failure("failed to get_url:", e)
 	}
 

@@ -225,9 +225,6 @@ func setVerbosityLevel(cmd *cobra.Command) int {
 	if verbosity > 1 {
 		log.SetLevel(log.LevelDebug)
 	}
-	if verbosity > 2 {
-		log.SetPrefixer(&durationPrefixer{})
-	}
 	return verbosity
 }
 
