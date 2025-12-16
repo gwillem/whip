@@ -46,6 +46,7 @@ deputies:
 	$(SHA256) $(BUILD_DIR)/$(LINUX_AMD64)/deputy > cmd/whip/deputies/linux-amd64.sha256
 
 # Create GitHub release
+# Files are named to match uname -s and uname -m output for the install script
 release:
 	@git fetch --tags
 	@if [ -z "$(RELEASE_VERSION)" ]; then \
@@ -56,8 +57,12 @@ release:
 		$(MAKE) release RELEASE_VERSION=v$$next; \
 	else \
 		$(MAKE) build VERSION=$(RELEASE_VERSION); \
-		gzip -9fk $(BUILD_DIR)/*/whip; \
-		gh release create $(RELEASE_VERSION) --generate-notes $(BUILD_DIR)/*/whip.gz; \
+		mkdir -p $(BUILD_DIR)/github; \
+		gzip -9c $(BUILD_DIR)/$(LINUX_ARM64)/whip > $(BUILD_DIR)/github/whip-Linux-aarch64.gz; \
+		gzip -9c $(BUILD_DIR)/$(LINUX_AMD64)/whip > $(BUILD_DIR)/github/whip-Linux-x86_64.gz; \
+		gzip -9c $(BUILD_DIR)/$(DARWIN_ARM64)/whip > $(BUILD_DIR)/github/whip-Darwin-arm64.gz; \
+		gzip -9c $(BUILD_DIR)/$(DARWIN_AMD64)/whip > $(BUILD_DIR)/github/whip-Darwin-x86_64.gz; \
+		gh release create $(RELEASE_VERSION) --generate-notes $(BUILD_DIR)/github/*; \
 		git fetch --tags; \
 		echo ""; \
 		echo "Install command:"; \
