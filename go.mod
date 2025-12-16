@@ -1,6 +1,6 @@
 module github.com/gwillem/whip
 
-go 1.23.0
+go 1.24.0
 
 require (
 	dario.cat/mergo v1.0.1
@@ -10,8 +10,8 @@ require (
 	github.com/charmbracelet/bubbletea v1.1.0
 	github.com/charmbracelet/lipgloss v0.13.0
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510
-	github.com/gwillem/go-simplelog v0.3.2-0.20240425201514-40a6b7d1bcbb
-	github.com/gwillem/urlfilecache v0.0.0-20230402105623-8ef3b7b67c13
+	github.com/gwillem/go-simplelog v0.3.3
+	github.com/gwillem/urlfilecache v0.0.3
 	github.com/ieee0824/go-deepmerge v0.0.0-20170912170951-7ec7dbbd5a1f
 	github.com/karrick/gobls v1.3.5
 	github.com/klauspost/compress v1.17.9
@@ -21,14 +21,14 @@ require (
 	github.com/sosedoff/ansible-vault-go v0.2.0
 	github.com/spf13/afero v1.11.0
 	github.com/spf13/cobra v1.8.1
-	github.com/stretchr/testify v1.9.0
-	golang.org/x/crypto v0.35.0
-	golang.org/x/exp v0.0.0-20240904232852-e7e105dedf7e
+	github.com/stretchr/testify v1.10.0
+	golang.org/x/crypto v0.46.0
+	golang.org/x/exp v0.0.0-20251209150349-8475f28825e9
 	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
-	github.com/adrg/xdg v0.5.0 // indirect
+	github.com/adrg/xdg v0.5.3 // indirect
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
 	github.com/charmbracelet/harmonica v0.2.0 // indirect
 	github.com/charmbracelet/x/ansi v0.2.3 // indirect
@@ -58,9 +58,9 @@ require (
 	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/yargevad/filepathx v1.0.0 // indirect
-	golang.org/x/sync v0.11.0 // indirect
-	golang.org/x/sys v0.30.0 // indirect
-	golang.org/x/text v0.22.0 // indirect
+	golang.org/x/sync v0.19.0 // indirect
+	golang.org/x/sys v0.39.0 // indirect
+	golang.org/x/text v0.32.0 // indirect
 )
 
 //replace github.com/gwillem/go-simplelog => ../go-simplelog
