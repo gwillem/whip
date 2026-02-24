@@ -5,6 +5,7 @@ package main
 import (
 	"testing"
 
+	"github.com/gwillem/whip/internal/model"
 	"github.com/gwillem/whip/internal/playbook"
 	"github.com/gwillem/whip/internal/runners"
 	"github.com/gwillem/whip/internal/testutil"
@@ -18,7 +19,7 @@ func Test_DeputyIntegration(t *testing.T) {
 	for _, play := range *pb {
 		for _, task := range play.Tasks {
 			res := runners.Run(&task, nil)
-			require.Equal(t, runners.Failed, res.Status)
+			require.Equal(t, model.StatusFailed, res.Status)
 		}
 	}
 }

@@ -38,11 +38,15 @@ var defaultKeyFile = os.ExpandEnv("$HOME/.ssh/id_rsa")
 
 type (
 	Client struct {
-		cl *ssh.Client
+		cl        *ssh.Client
+		agentConn net.Conn
 	}
 )
 
 func (c *Client) Close() error {
+	if c.agentConn != nil {
+		c.agentConn.Close()
+	}
 	return c.cl.Close()
 }
 
@@ -86,10 +90,10 @@ func RunGobStreamer[T any](c *Client, cmd string, stdin io.Reader, callback func
 		var obj T
 		err := dec.Decode(&obj)
 		if err == io.EOF {
-			// End of the stream
 			break
 		} else if err != nil {
-			log.Fatalf("error decoding GOB data: %v", err)
+			_ = s.Close()
+			return fmt.Errorf("error decoding GOB data: %w", err)
 		}
 		callback(obj)
 	}
@@ -132,6 +136,7 @@ func (c *Client) UploadBytes(data []byte, remote string, perm os.FileMode) error
 	if err != nil {
 		return err
 	}
+	defer remoteFile.Close()
 
 	_, err = remoteFile.Write(data)
 	if err != nil {
@@ -170,6 +175,7 @@ func (c *Client) UploadFile(local, remote string) error {
 	if err != nil {
 		return err
 	}
+	defer remoteFile.Close()
 
 	_, err = io.Copy(remoteFile, localFile)
 	if err != nil {
@@ -200,16 +206,16 @@ func Connect(target string) (*Client, error) {
 	authMethods := []ssh.AuthMethod{}
 
 	var err error
+	var agentConn net.Conn
 
 	// Try agent?
 	if os.Getenv(agentSock) != "" {
-		var agentConn net.Conn
 		if agentConn, err = net.Dial("unix", os.Getenv(agentSock)); err == nil {
-			// fmt.Println("Adding agent auth")
 			authMethod := ssh.PublicKeysCallback(agent.NewClient(agentConn).Signers)
 			authMethods = append(authMethods, authMethod)
 		} else {
 			log.Debug("Failed to connect to SSH agent:", agentSock, err)
+			agentConn = nil
 		}
 	}
 
@@ -244,7 +250,13 @@ func Connect(target string) (*Client, error) {
 	}
 	addr := fmt.Sprintf("%s:%s", host, port)
 	cl, err := ssh.Dial(tcp, addr, config)
-	return &Client{cl: cl}, err
+	if err != nil {
+		if agentConn != nil {
+			agentConn.Close()
+		}
+		return nil, err
+	}
+	return &Client{cl: cl, agentConn: agentConn}, nil
 }
 
 func splitTarget(target string) (user, host, port string) {

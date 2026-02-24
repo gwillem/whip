@@ -32,13 +32,13 @@ func runJob(job *model.Job) {
 			var tr model.TaskResult
 			if task.Unless != "" {
 				if _, err := exec.Command("/bin/sh", "-c", task.Unless).CombinedOutput(); err == nil {
-					tr.Status = runners.Success
+					tr.Status = model.StatusSuccess
 					tr.Output = fmt.Sprintf("skipped, 'unless' clause succeeded (%v)", task.Unless)
 				}
 			}
 
 			// if no "unless" or "unless" cmd failed, run the task
-			if tr.Status == runners.Unknown {
+			if tr.Status == model.StatusUnknown {
 				tr = runners.Run(&task, play.Vars)
 			}
 
@@ -50,11 +50,11 @@ func runJob(job *model.Job) {
 			delete(tr.Task.Args, "_assets")
 
 			if err := encoder.Encode(tr); err != nil {
-				panic(err)
+				log.Fatal("gob encode:", err)
 			}
 
 			// terminate play for this host if any task failed
-			if tr.Status == runners.Failed {
+			if tr.Status == model.StatusFailed {
 				return
 			}
 
@@ -71,7 +71,7 @@ func runJob(job *model.Job) {
 		}
 		for _, handler := range play.Handlers {
 			// empty tr in case of unnotified handler
-			tr := model.TaskResult{Status: runners.Skipped}
+			tr := model.TaskResult{Status: model.StatusSkipped}
 
 			if handlers[handler.Name] {
 				// log.Debug("Running handler", handler)
@@ -84,9 +84,9 @@ func runJob(job *model.Job) {
 			}
 			delete(tr.Task.Args, "_assets")
 			if err := encoder.Encode(tr); err != nil {
-				panic(err)
+				log.Fatal("gob encode:", err)
 			}
-			if tr.Status == runners.Failed {
+			if tr.Status == model.StatusFailed {
 				return
 			}
 		}

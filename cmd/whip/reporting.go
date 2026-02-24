@@ -9,7 +9,6 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	log "github.com/gwillem/go-simplelog"
 	"github.com/gwillem/whip/internal/model"
-	"github.com/gwillem/whip/internal/runners"
 )
 
 type (
@@ -40,13 +39,13 @@ func (h verboseHandler) Send(m model.ReportMsg) {
 	tr := m.TaskResult
 
 	switch {
-	case tr.Changed && tr.Status == runners.Success:
+	case tr.Changed && tr.Status == model.StatusSuccess:
 		statusColor = yellow
 		status = "changed"
-	case tr.Status == runners.Failed:
+	case tr.Status == model.StatusFailed:
 		statusColor = red
 		status = "error"
-	case tr.Status == runners.Skipped:
+	case tr.Status == model.StatusSkipped:
 		statusColor = dark
 		status = "skipped"
 
@@ -94,11 +93,11 @@ func reportResults(results <-chan model.TaskResult, stats map[model.TargetName]m
 		stats[res.Host]["idx"]++
 
 		switch {
-		case res.Changed && res.Status == runners.Success:
+		case res.Changed && res.Status == model.StatusSuccess:
 			stats[res.Host]["changed"]++
-		case res.Status == runners.Failed:
+		case res.Status == model.StatusFailed:
 			stats[res.Host]["error"]++
-		case res.Status == runners.Skipped:
+		case res.Status == model.StatusSkipped:
 			stats[res.Host]["skipped"]++
 		default:
 			stats[res.Host]["ok"]++
@@ -109,7 +108,7 @@ func reportResults(results <-chan model.TaskResult, stats map[model.TargetName]m
 			TaskTotal:  stats[res.Host]["total"],
 			TaskResult: res,
 		})
-		if res.Status == runners.Failed {
+		if res.Status == model.StatusFailed {
 			failed = append(failed, res)
 		}
 	}

@@ -10,7 +10,6 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	log "github.com/gwillem/go-simplelog"
 	"github.com/gwillem/whip/internal/model"
-	"github.com/gwillem/whip/internal/runners"
 )
 
 const (
@@ -85,7 +84,7 @@ func (m tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		b.total = msg.TaskTotal
 		b.idx = msg.TaskIdx
 
-		if tr.Status == runners.Failed {
+		if tr.Status == model.StatusFailed {
 			b.status = ERROR
 		} else if perc >= 1 {
 			b.status = DONE

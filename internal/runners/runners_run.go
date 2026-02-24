@@ -9,18 +9,18 @@ import (
 	"strings"
 	"time"
 
-	"dario.cat/mergo"
 	log "github.com/gwillem/go-simplelog"
 	"github.com/gwillem/whip/internal/model"
 	"github.com/ieee0824/go-deepmerge"
 	"github.com/spf13/afero"
 )
 
+// Status constants — canonical definitions live in model package.
 const (
-	Unknown int = iota
-	Success
-	Failed
-	Skipped
+	Unknown = model.StatusUnknown
+	Success = model.StatusSuccess
+	Failed  = model.StatusFailed
+	Skipped = model.StatusSkipped
 )
 
 type (
@@ -103,8 +103,13 @@ func PreRun(task *model.Task, playVars model.TaskVars) (tr model.TaskResult) {
 		return tr
 	}
 
-	// todo: isolate this
-	// merge global and task vars
+	// merge play vars with task vars (play vars take precedence)
+	if playVars == nil {
+		playVars = model.TaskVars{}
+	}
+	if task.Vars == nil {
+		task.Vars = model.TaskVars{}
+	}
 	mergedVars, err := deepmerge.Merge(map[string]any(playVars), map[string]any(task.Vars))
 	if err != nil {
 		tr.Status = Failed
@@ -112,8 +117,6 @@ func PreRun(task *model.Task, playVars model.TaskVars) (tr model.TaskResult) {
 		return
 	}
 	task.Vars = mergedVars.(map[string]any)
-
-	// todo: merge vars
 	tr = runner.prerun(task)
 	tr.Task = task
 	return tr
@@ -153,9 +156,18 @@ func Run(task *model.Task, playVars model.TaskVars) (tr model.TaskResult) {
 		}
 	}
 
-	if e := mergo.Merge(&task.Vars, playVars); e != nil {
-		return fail(e.Error())
+	// merge play vars with task vars (task vars take precedence)
+	if playVars == nil {
+		playVars = model.TaskVars{}
 	}
+	if task.Vars == nil {
+		task.Vars = model.TaskVars{}
+	}
+	merged, err := deepmerge.Merge(map[string]any(task.Vars), map[string]any(playVars))
+	if err != nil {
+		return fail(err.Error())
+	}
+	task.Vars = merged.(map[string]any)
 
 	// arg substitution, notably for loop {{item}}
 	for k, v := range task.Args {

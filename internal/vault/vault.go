@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"path/filepath"
 
 	"github.com/spf13/afero"
 )
@@ -162,19 +163,29 @@ func LaunchEditor(path string) error {
 		return e
 	}
 
-	// encrypt to orig path
+	// encrypt to a temp file, then atomically rename to original path
 	in, err := os.Open(tmp.Name())
 	if err != nil {
 		return err
 	}
 	defer in.Close()
 
-	out, err := os.Create(path)
+	outTmp, err := os.CreateTemp(filepath.Dir(path), ".whip-vault-*.tmp")
 	if err != nil {
 		return err
 	}
-	defer out.Close()
-	return readyVaulters()[0].Encrypt(in, out) // take first valid
+	outTmpPath := outTmp.Name()
+
+	if err := readyVaulters()[0].Encrypt(in, outTmp); err != nil {
+		outTmp.Close()
+		os.Remove(outTmpPath)
+		return err
+	}
+	if err := outTmp.Close(); err != nil {
+		os.Remove(outTmpPath)
+		return err
+	}
+	return os.Rename(outTmpPath, path)
 }
 
 func getEditor() string {

@@ -179,7 +179,7 @@ func runPreRunTasks(pb *model.Playbook) {
 
 		for _, task := range play.Tasks {
 			tr := runners.PreRun(&task, play.Vars)
-			if tr.Status == runners.Skipped {
+			if tr.Status == model.StatusSkipped {
 				continue
 			}
 			log.Debug("Pre-run", task.Runner, "with status", tr.Status, tr.Output)
