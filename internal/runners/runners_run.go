@@ -104,6 +104,12 @@ func PreRun(task *model.Task, playVars model.TaskVars) (tr model.TaskResult) {
 	}
 
 	// merge play vars with task vars (play vars take precedence)
+	if playVars == nil {
+		playVars = model.TaskVars{}
+	}
+	if task.Vars == nil {
+		task.Vars = model.TaskVars{}
+	}
 	mergedVars, err := deepmerge.Merge(map[string]any(playVars), map[string]any(task.Vars))
 	if err != nil {
 		tr.Status = Failed
@@ -151,6 +157,12 @@ func Run(task *model.Task, playVars model.TaskVars) (tr model.TaskResult) {
 	}
 
 	// merge play vars with task vars (task vars take precedence)
+	if playVars == nil {
+		playVars = model.TaskVars{}
+	}
+	if task.Vars == nil {
+		task.Vars = model.TaskVars{}
+	}
 	merged, err := deepmerge.Merge(map[string]any(task.Vars), map[string]any(playVars))
 	if err != nil {
 		return fail(err.Error())
