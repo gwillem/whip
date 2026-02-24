@@ -15,11 +15,12 @@ import (
 	"github.com/spf13/afero"
 )
 
+// Status constants — canonical definitions live in model package.
 const (
-	Unknown int = iota
-	Success
-	Failed
-	Skipped
+	Unknown = model.StatusUnknown
+	Success = model.StatusSuccess
+	Failed  = model.StatusFailed
+	Skipped = model.StatusSkipped
 )
 
 type (

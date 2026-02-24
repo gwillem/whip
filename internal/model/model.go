@@ -11,6 +11,13 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
+const (
+	StatusUnknown int = iota
+	StatusSuccess
+	StatusFailed
+	StatusSkipped
+)
+
 func init() {
 	gob.Register(Asset{})
 }
