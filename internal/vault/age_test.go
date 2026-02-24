@@ -5,7 +5,6 @@ import (
 	"os"
 	"testing"
 
-	"github.com/gwillem/whip/internal/testutil"
 	"github.com/stretchr/testify/require"
 )
 
@@ -18,7 +17,7 @@ func init() {
 }
 
 func Test_OpenRegular(t *testing.T) {
-	fh, err := Open(testutil.FixturePath("vault/plaintext"))
+	fh, err := Open("testdata/plaintext")
 	require.NoError(t, err)
 	data, err := io.ReadAll(fh)
 	require.NoError(t, err)
@@ -33,7 +32,7 @@ func Test_OpenAge(t *testing.T) {
 		allVaulters = oldAll
 	}()
 	allVaulters = []Vaulter{ageTestVault}
-	fh, err := Open(testutil.FixturePath("vault/sample.age"))
+	fh, err := Open("testdata/sample.age")
 	require.NoError(t, err)
 	data, err := io.ReadAll(fh)
 	require.NoError(t, err)
@@ -69,4 +68,23 @@ func Test_readFromScript(t *testing.T) {
 	require.Empty(t, got)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "bogus script")
+}
+
+func Test_readFromScript_nonZeroExit(t *testing.T) {
+	// Create a temporary script that fails with an error message
+	script, err := os.CreateTemp("", "test-secret-*.sh")
+	require.NoError(t, err)
+	defer os.Remove(script.Name())
+
+	_, err = script.WriteString("#!/bin/sh\necho 'custom error message' >&2\nexit 1\n")
+	require.NoError(t, err)
+	script.Close()
+
+	require.NoError(t, os.Chmod(script.Name(), 0o755))
+
+	got, err := readFromScript(script.Name())
+	require.Empty(t, got)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "exit status 1")
+	require.Contains(t, err.Error(), "custom error message")
 }

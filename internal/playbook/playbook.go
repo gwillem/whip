@@ -2,6 +2,7 @@ package playbook
 
 import (
 	"fmt"
+	"maps"
 	"os"
 	"reflect"
 	"regexp"
@@ -28,7 +29,7 @@ func Load(path string) (*model.Playbook, error) {
 		return nil, err
 	}
 
-	var anyMap interface{}
+	var anyMap any
 	if e := yaml.Unmarshal(rawData, &anyMap); e != nil {
 		return nil, e
 	}
@@ -73,11 +74,11 @@ func yamlToPlaybook(y any) (*model.Playbook, error) {
 }
 
 func parseTasksFunc() mapstructure.DecodeHookFunc {
-	return func(f, t reflect.Type, data interface{}) (interface{}, error) {
-		if t != reflect.TypeOf(model.Task{}) {
+	return func(f, t reflect.Type, data any) (any, error) {
+		if t != reflect.TypeFor[model.Task]() {
 			return data, nil
 		}
-		if f != reflect.TypeOf(map[string]any{}) {
+		if f != reflect.TypeFor[map[string]any]() {
 			return nil, fmt.Errorf("expected map[string]any{}, got %v", f)
 		}
 
@@ -117,9 +118,7 @@ func parseTasksFunc() mapstructure.DecodeHookFunc {
 			specificArgs["oldArgs"] = v
 			task["args"] = specificArgs
 		case map[string]any:
-			for k, v2 := range specificArgs {
-				v[k] = v2
-			}
+			maps.Copy(v, specificArgs)
 		case nil:
 			task["args"] = specificArgs
 		default:
@@ -130,7 +129,7 @@ func parseTasksFunc() mapstructure.DecodeHookFunc {
 }
 
 func parseStringToSlice() mapstructure.DecodeHookFunc {
-	return func(f, t reflect.Kind, data interface{}) (interface{}, error) {
+	return func(f, t reflect.Kind, data any) (any, error) {
 		if f != reflect.String || t != reflect.Slice {
 			return data, nil
 		}

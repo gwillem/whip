@@ -2,7 +2,8 @@ package main
 
 import (
 	"fmt"
-	"sort"
+	"slices"
+	"strings"
 
 	"github.com/charmbracelet/bubbles/progress"
 	tea "github.com/charmbracelet/bubbletea"
@@ -100,25 +101,23 @@ func (m tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m tuiModel) View() string {
-	var s string
+	var s strings.Builder
 
 	targets := []model.TargetName{}
 	for t := range m.bars {
 		targets = append(targets, t)
 	}
 
-	sort.Slice(targets, func(i, j int) bool {
-		return targets[i] < targets[j]
-	})
+	slices.Sort(targets)
 
 	for _, t := range targets {
 		bar := m.bars[t]
 		counter := fmt.Sprintf("%d/%d", bar.idx, bar.total)
 
-		s += fmt.Sprintf("%-5s %20.20s %s %s\n",
-			counter, t, bar.m.ViewAs(bar.perc), bar.status)
+		s.WriteString(fmt.Sprintf("%-5s %20.20s %s %s\n",
+			counter, t, bar.m.ViewAs(bar.perc), bar.status))
 	}
-	return s
+	return s.String()
 }
 
 func createTui() *tea.Program {

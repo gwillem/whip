@@ -18,12 +18,10 @@ import (
 	"github.com/gwillem/whip/internal/playbook"
 	"github.com/gwillem/whip/internal/runners"
 	"github.com/gwillem/whip/internal/ssh"
-	"github.com/spf13/cobra"
 )
 
 const (
 	deputyPath          = ".cache/whip/deputy"
-	defaultAssetPath    = "files"
 	defaultPlaybookPath = ".whip/playbook.yml"
 )
 
@@ -32,11 +30,10 @@ var deputies embed.FS
 
 var buildVersion = "unknown"
 
-func runWhip(cmd *cobra.Command, args []string) {
+func runWhip(playbookArg string, verbosity int) {
 	whipStartTime := time.Now()
-	verbosity := setVerbosityLevel(cmd)
 	log.Task("Starting whip", buildVersion)
-	playbookPath := getPlaybookPath(args)
+	playbookPath := getPlaybookPath(playbookArg)
 
 	// change working dir to playbook parent
 	// this is where we will look for assets
@@ -47,8 +44,7 @@ func runWhip(cmd *cobra.Command, args []string) {
 	playbookPath = filepath.Base(playbookPath)
 	pb, err := playbook.Load(playbookPath)
 	if err != nil {
-		log.Error(err)
-		return
+		log.Fatal(err)
 	}
 
 	log.Progress("Loaded playbook with", len(*pb), "plays")
@@ -105,14 +101,12 @@ func runPlaybookAtHost(job model.Job, t model.TargetName, results chan<- model.T
 
 	conn, err := ssh.Connect(string(t))
 	if err != nil {
-		log.Error(err)
-		return
+		log.Fatal("SSH connection failed:", t, err)
 	}
 	defer conn.Close()
 
 	if err := ensureDeputy(conn); err != nil {
-		log.Error(err)
-		return
+		log.Fatal("Failed to install deputy on", t, err)
 	}
 	results <- model.TaskResult{
 		Host:     t,
@@ -211,29 +205,9 @@ func createJobBook(pb *model.Playbook) map[model.TargetName]model.Job {
 	return jobBook
 }
 
-func setVerbosityLevel(cmd *cobra.Command) int {
-	verbosity, err := cmd.Flags().GetCount("verbose")
-	if err != nil {
-		log.Error(err)
-	}
-
-	log.SetLevel(log.LevelError)
-	if verbosity > 0 {
-		log.SetLevel(log.LevelTask)
-	}
-
-	if verbosity > 1 {
-		log.SetLevel(log.LevelDebug)
-	}
-	return verbosity
-}
-
-func getPlaybookPath(args []string) string {
-	var playbookPath string
-	if len(args) > 0 {
-		playbookPath = args[0]
-	} else {
-		// Look for ".whip/playbook.yml" in current and parent directories
+func getPlaybookPath(arg string) string {
+	playbookPath := arg
+	if playbookPath == "" {
 		playbookPath = fsutil.FindAncestorPath(defaultPlaybookPath)
 	}
 

@@ -4,68 +4,89 @@ import (
 	"fmt"
 	"os"
 
+	flags "github.com/jessevdk/go-flags"
 	log "github.com/gwillem/go-simplelog"
 
 	"github.com/gwillem/whip/internal/update"
 	"github.com/gwillem/whip/internal/vault"
-	"github.com/spf13/cobra"
 )
 
-var (
-	rootCmd = &cobra.Command{
-		Use:               "whip [playbook]",
-		Short:             "A fast and simple configuration manager",
-		Long:              `A fast and simple configuration manager. Like a bloat-free Ansible.`,
-		CompletionOptions: cobra.CompletionOptions{HiddenDefaultCmd: true},
-		Args:              cobra.MaximumNArgs(1),
-		Run:               runWhip,
-	}
-	vaultEditCmd = &cobra.Command{
-		Use:   "edit",
-		Short: "Encrypt and decrypt secrets",
-		Args:  cobra.ExactArgs(1),
-		Run: func(_ *cobra.Command, args []string) {
-			if err := vault.LaunchEditor(args[0]); err != nil {
-				log.Fatal(err)
-			}
-		},
-	}
-	vaultConvertCmd = &cobra.Command{
-		Use:   "convert",
-		Short: "Convert secrets from Ansible Vault to Whip (Age)",
-		Args:  cobra.ExactArgs(1),
-		Run: func(_ *cobra.Command, args []string) {
-			if err := vault.ConvertAnsibleToWhip(args[0]); err != nil {
-				log.Fatal(err)
-			}
-		},
-	}
-	versionCmd = &cobra.Command{
-		Use:   "version",
-		Short: "Print the version number of Whip",
-		Run: func(_ *cobra.Command, _ []string) {
-			fmt.Println("whip", buildVersion)
-		},
-	}
-	updateCmd = &cobra.Command{
-		Use:   "update",
-		Short: "Update Whip to the latest version",
-		Run: func(_ *cobra.Command, _ []string) {
-			if err := update.Run(buildVersion); err != nil {
-				log.Fatal(err)
-			}
-		},
-	}
-)
+type opts struct {
+	Verbose []bool `short:"v" long:"verbose" description:"verbose output"`
+	Version bool   `long:"version" description:"print version and exit"`
 
-func init() {
-	rootCmd.AddCommand(vaultEditCmd, vaultConvertCmd, versionCmd, updateCmd)
-	rootCmd.CompletionOptions.HiddenDefaultCmd = true
-	rootCmd.PersistentFlags().CountP("verbose", "v", "verbose output")
+	Edit    editCmd    `command:"edit" description:"encrypt and decrypt secrets"`
+	Convert convertCmd `command:"convert" description:"convert secrets from Ansible Vault to Whip (Age)"`
+	Update  updateCmd  `command:"update" description:"update Whip to the latest version"`
+}
+
+type editCmd struct {
+	Args struct {
+		File string `positional-arg-name:"file" required:"true"`
+	} `positional-args:"true"`
+}
+
+type convertCmd struct {
+	Args struct {
+		File string `positional-arg-name:"file" required:"true"`
+	} `positional-args:"true"`
+}
+
+type updateCmd struct{}
+
+func (c *editCmd) Execute(args []string) error {
+	return vault.LaunchEditor(c.Args.File)
+}
+
+func (c *convertCmd) Execute(args []string) error {
+	return vault.ConvertAnsibleToWhip(c.Args.File)
+}
+
+func (c *updateCmd) Execute(args []string) error {
+	return update.Run(buildVersion)
 }
 
 func main() {
-	if e := rootCmd.Execute(); e != nil {
+	var o opts
+	parser := flags.NewParser(&o, flags.Default)
+	parser.Name = "whip"
+	parser.SubcommandsOptional = true
+
+	args, err := parser.Parse()
+	if err != nil {
+		if flags.WroteHelp(err) {
+			os.Exit(0)
+		}
 		os.Exit(1)
 	}
+
+	if o.Version {
+		fmt.Println("whip", buildVersion)
+		return
+	}
+
+	// If a subcommand was executed, we're done
+	if parser.Active != nil {
+		return
+	}
+
+	// Default action: run whip with optional playbook argument
+	var playbookArg string
+	if len(args) > 0 {
+		playbookArg = args[0]
+	}
+
+	verbosity := setVerbosityLevel(len(o.Verbose))
+	runWhip(playbookArg, verbosity)
+}
+
+func setVerbosityLevel(verbosity int) int {
+	log.SetLevel(log.LevelError)
+	if verbosity > 0 {
+		log.SetLevel(log.LevelTask)
+	}
+	if verbosity > 1 {
+		log.SetLevel(log.LevelDebug)
+	}
+	return verbosity
 }

@@ -129,7 +129,7 @@ func getJobFromStdin() *model.Job {
 	pr, pw := io.Pipe()
 	go func() {
 		if e := assets.Decompress(stdinReader, pw); e != nil { // was: os.Stdin
-			log.Errorf("error decompressing: %w", e)
+			log.Fatal("error decompressing:", e)
 		}
 		pw.Close()
 	}()
@@ -139,7 +139,7 @@ func getJobFromStdin() *model.Job {
 	decoder := gob.NewDecoder(decompressedReader) // was: pr
 	job := &model.Job{}
 	if err := decoder.Decode(job); err != nil {
-		log.Errorf("gob decode: %w", err)
+		log.Fatal("gob decode:", err)
 	}
 
 	ratio := fmt.Sprintf("%.0f%%", 100*float64(stdinReader.Count())/float64(decompressedReader.Count()))
