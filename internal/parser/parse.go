@@ -18,7 +18,7 @@ func ParseArgString(arg string) model.TaskArgs {
 	kv := map[string]any{}
 
 	baseArgs := []string{}
-	for _, t := range strings.Split(arg, " ") {
+	for t := range strings.SplitSeq(arg, " ") {
 		if strings.Contains(t, "=") {
 			opt := strings.SplitN(t, "=", 2)
 

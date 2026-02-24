@@ -83,8 +83,8 @@ type (
 )
 
 func init() {
-	gob.Register(map[string]interface{}{})
-	gob.Register([]interface{}{})
+	gob.Register(map[string]any{})
+	gob.Register([]any{})
 }
 
 func (j *Job) Tasks() []Task {

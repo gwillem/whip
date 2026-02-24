@@ -9,10 +9,10 @@ Whip is a fast, simple Ansible replacement for server configuration management, 
 ## Build Commands
 
 ```bash
-make devbuild          # Dev build (deputy linux + whip darwin-arm64)
-make build             # Full build (all platforms: linux/darwin, amd64/arm64)
-make test              # Run all tests (go test ./...)
-make release           # GitHub release (auto-increments version)
+just devbuild          # Dev build (deputy linux + whip darwin-arm64)
+just build             # Full build (all platforms: linux/darwin, amd64/arm64)
+just test              # Run all tests (go test ./...)
+just release           # GitHub release (auto-increments version)
 
 # Run a specific test
 go test ./internal/runners -run TestTree

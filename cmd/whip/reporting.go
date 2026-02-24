@@ -64,7 +64,7 @@ func (h verboseHandler) Send(m model.ReportMsg) {
 	log.Progress(fmt.Sprintf("%s %s (%.1fs %s)", tr.Host, taskSummary, tr.Duration.Seconds(), status))
 	// fmt.Printf("<%s>\n", r.Output)
 	if len(tr.Output) > 0 {
-		for _, line := range strings.Split(strings.TrimSpace(tr.Output), "\n") {
+		for line := range strings.SplitSeq(strings.TrimSpace(tr.Output), "\n") {
 			log.Debug(dark(line))
 		}
 	}
@@ -118,7 +118,7 @@ func reportResults(results <-chan model.TaskResult, stats map[model.TargetName]m
 	if len(failed) > 0 {
 		log.Task("Failed tasks")
 		for _, f := range failed {
-			for _, line := range strings.Split(strings.TrimSpace(f.Output), "\n") {
+			for line := range strings.SplitSeq(strings.TrimSpace(f.Output), "\n") {
 				log.Progress(fmt.Sprintf("%s %s", f.Host, red(line)))
 			}
 		}
