@@ -40,15 +40,21 @@ func ConvertAnsibleToWhip(root string) error {
 			return fmt.Errorf("oops reading %s: %w", path, err)
 		}
 
-		w, err := fs.Create(path)
+		tmpPath := path + ".tmp"
+		w, err := fs.Create(tmpPath)
 		if err != nil {
 			return err
 		}
-		defer w.Close()
 		if err := age.Encrypt(bytes.NewReader(source), w); err != nil {
+			w.Close()
+			fs.Remove(tmpPath)
 			return err
 		}
-		return nil
+		if err := w.Close(); err != nil {
+			fs.Remove(tmpPath)
+			return err
+		}
+		return fs.Rename(tmpPath, path)
 	})
 	if err != nil {
 		return err
