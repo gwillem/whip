@@ -371,12 +371,12 @@ func ensureFile(f filesObj) (changed bool, err error) {
 			return false, fmt.Errorf("write error to temp file %s for %s: %w", tempPath, f.path, err)
 		}
 
-		if tempFile.Close() != nil {
-			return false, fmt.Errorf("error closing temp file for %s: %w", f.path, err)
+		if e := tempFile.Close(); e != nil {
+			return false, fmt.Errorf("error closing temp file for %s: %w", f.path, e)
 		}
 
-		if fs.Chmod(tempPath, f.mode) != nil {
-			return false, fmt.Errorf("chmod error on temp file %s for %s: %w", tempPath, f.path, err)
+		if e := fs.Chmod(tempPath, f.mode); e != nil {
+			return false, fmt.Errorf("chmod error on temp file %s for %s: %w", tempPath, f.path, e)
 		}
 
 		// Perform the atomic rename
