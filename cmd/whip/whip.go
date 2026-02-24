@@ -47,8 +47,7 @@ func runWhip(cmd *cobra.Command, args []string) {
 	playbookPath = filepath.Base(playbookPath)
 	pb, err := playbook.Load(playbookPath)
 	if err != nil {
-		log.Error(err)
-		return
+		log.Fatal(err)
 	}
 
 	log.Progress("Loaded playbook with", len(*pb), "plays")
@@ -105,14 +104,12 @@ func runPlaybookAtHost(job model.Job, t model.TargetName, results chan<- model.T
 
 	conn, err := ssh.Connect(string(t))
 	if err != nil {
-		log.Error(err)
-		return
+		log.Fatal("SSH connection failed:", t, err)
 	}
 	defer conn.Close()
 
 	if err := ensureDeputy(conn); err != nil {
-		log.Error(err)
-		return
+		log.Fatal("Failed to install deputy on", t, err)
 	}
 	results <- model.TaskResult{
 		Host:     t,

@@ -9,19 +9,10 @@ Whip is a fast, simple Ansible replacement for server configuration management, 
 ## Build Commands
 
 ```bash
-# Development build (builds deputy and whip for local platform)
-make devbuild
-
-# Full build (all platforms: linux/darwin, amd64/arm64)
-make build
-
-# Create a GitHub release (auto-increments version)
-make release
-# Or with specific version:
-make release RELEASE_VERSION=v0.2.0
-
-# Run all tests
-make test
+make devbuild          # Dev build (deputy linux + whip darwin-arm64)
+make build             # Full build (all platforms: linux/darwin, amd64/arm64)
+make test              # Run all tests (go test ./...)
+make release           # GitHub release (auto-increments version)
 
 # Run a specific test
 go test ./internal/runners -run TestTree
@@ -31,29 +22,38 @@ go test ./internal/runners -run TestTree
 
 ### Two-Binary Model
 
-- **whip** (`cmd/whip/`): Controller that runs on your local machine. Loads playbook, connects to targets via SSH, and streams results.
-- **deputy** (`cmd/deputy/`): Agent that runs on target servers. Receives gob-encoded jobs via stdin, executes tasks, and streams results back via stdout.
+- **whip** (`cmd/whip/`): Controller on local machine. Loads playbook, connects to targets via SSH, streams results. Embeds xz-compressed deputy binaries via `//go:embed`.
+- **deputy** (`cmd/deputy/`): Agent on target servers. Receives gob-encoded jobs via stdin, executes tasks, streams `TaskResult` back via stdout.
 
 ### Data Flow
 
-1. Whip loads playbook YAML and parses into `model.Playbook`
-2. Creates `model.Job` per target host containing plays, vars, and embedded file assets
-3. Job is gob-encoded, zstd-compressed, and streamed to deputy over SSH
-4. Deputy decodes job, runs each task through runners, streams `model.TaskResult` back
-5. Whip displays progress with bubbletea TUI
+1. Whip loads playbook YAML → parses into `model.Playbook` via mapstructure decode hooks
+2. Runs PreRun phase on controller (e.g., tree runner loads file assets via `assets.DirToAsset`)
+3. Creates `model.Job` per target host containing plays, vars, and embedded assets
+4. Job is gob-encoded, zstd-compressed, streamed to deputy over SSH
+5. Deputy decodes job, runs each task through runners, streams `model.TaskResult` back
+6. Whip displays progress with bubbletea TUI
 
 ### Key Packages
 
-- `internal/model/` - Core types: Job, Playbook, Play, Task, TaskResult
-- `internal/playbook/` - YAML parsing with mapstructure decode hooks
-- `internal/runners/` - Task executors (apt, shell, command, tree, service, etc.)
-- `internal/ssh/` - SSH connection, SFTP uploads, gob streaming
-- `internal/vault/` - Secrets encryption (Age preferred, Ansible Vault supported)
-- `internal/assets/` - File embedding and zstd compression
+- `internal/model/` — Core types: Job, Playbook, Play, Task, TaskResult. Wire types must be registered with `gob.Register()`.
+- `internal/playbook/` — YAML parsing with mapstructure decode hooks. Task maps are matched against registered runner names.
+- `internal/runners/` — Task executors (apt, shell, command, tree, service, etc.)
+- `internal/ssh/` — SSH connection, SFTP uploads, generic gob streaming via `RunGobStreamer[T]()`
+- `internal/vault/` — Secrets encryption (Age preferred, Ansible Vault supported)
+- `internal/assets/` — File embedding with `afero` in-memory FS and zstd compression
 
 ### Runners
 
-Each runner registers itself in `init()` via `registerRunner()`. Runners implement `runnerFunc` signature and return `model.TaskResult`. The `tree` runner is notable - it handles file/copy/template operations with per-file state tracking.
+Each runner registers itself in `init()` via `registerRunner()`. Runners implement `runnerFunc` signature (`func(*model.Task) model.TaskResult`) and return status codes (`Success`, `Failed`, `Skipped`).
+
+To add a new runner: create a file in `internal/runners/`, register in `init()` with a `runner` struct containing `run` (required), and optionally `prerun` (runs on controller), `validate`, and `meta` (required/optional args). See `shell.go` for a minimal example or `tree.go` for a complex one with prerun.
+
+Runners use `afero.Fs` (package-level `fs` and `fsutil` vars) for filesystem operations. Tests swap in `afero.MemMapFs` for isolation.
+
+### Template Engine
+
+Task arguments support Jinja2-style templates via Gonja (`{{ variable }}`). Configured with `StrictUndefined = true` — undefined variables cause errors. Variables are merged: job vars → play vars → task vars (each level overrides previous).
 
 ### Playbook Location
 
@@ -61,7 +61,7 @@ Default playbook path: `.whip/playbook.yml` (searched in current and parent dire
 
 ## Vault/Secrets
 
-- Set `WHIP_KEY` env var for Age encryption (preferred)
-- Set `ANSIBLE_VAULT_PASSWORD` for legacy Ansible vault support
+- `WHIP_KEY` env var for Age encryption (preferred)
+- `ANSIBLE_VAULT_PASSWORD` for legacy Ansible vault support
 - `whip edit <file>` to edit encrypted files
 - `whip convert <file>` to migrate from Ansible Vault to Age

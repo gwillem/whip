@@ -82,8 +82,7 @@ func (v *ageVault) getID() (id *age.X25519Identity, err error) {
 			log.Debug("Getting vault key from", sp)
 			keyStr, err = readFromScript(sp)
 			if err != nil {
-				log.Error(err)
-				return nil, err
+				log.Fatal(err)
 			}
 		}
 	}
@@ -125,7 +124,7 @@ func readFromScript(path string) (string, error) {
 
 	data, err := exec.Command(path).CombinedOutput()
 	if err != nil {
-		return "", fmt.Errorf("failed to execute script %s: %v", path, err)
+		return "", fmt.Errorf("failed to execute script %s: %v\n%s", path, err, string(data))
 	}
 
 	return string(bytes.TrimSpace(data)), nil
