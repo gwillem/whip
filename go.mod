@@ -13,6 +13,7 @@ require (
 	github.com/gwillem/go-simplelog v0.3.3
 	github.com/gwillem/urlfilecache v0.0.3
 	github.com/ieee0824/go-deepmerge v0.0.0-20170912170951-7ec7dbbd5a1f
+	github.com/jessevdk/go-flags v1.6.1
 	github.com/karrick/gobls v1.3.5
 	github.com/klauspost/compress v1.17.9
 	github.com/mitchellh/mapstructure v1.5.0
@@ -20,7 +21,6 @@ require (
 	github.com/pkg/sftp v1.13.6
 	github.com/sosedoff/ansible-vault-go v0.2.0
 	github.com/spf13/afero v1.11.0
-	github.com/spf13/cobra v1.8.1
 	github.com/stretchr/testify v1.10.0
 	golang.org/x/crypto v0.46.0
 	golang.org/x/exp v0.0.0-20251209150349-8475f28825e9
@@ -38,7 +38,6 @@ require (
 	github.com/erikgeiser/coninput v0.0.0-20211004153227-1c3628e74d0f // indirect
 	github.com/fatih/color v1.17.0 // indirect
 	github.com/goph/emperror v0.17.2 // indirect
-	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/kr/fs v0.1.0 // indirect
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
@@ -56,7 +55,6 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
-	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/yargevad/filepathx v1.0.0 // indirect
 	golang.org/x/sync v0.19.0 // indirect
 	golang.org/x/sys v0.39.0 // indirect
