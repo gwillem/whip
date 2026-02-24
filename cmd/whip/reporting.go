@@ -116,10 +116,10 @@ func reportResults(results <-chan model.TaskResult, stats map[model.TargetName]m
 	handler.Quit()
 
 	if len(failed) > 0 {
-		log.Task("Failed tasks")
+		fmt.Fprintln(os.Stderr, red("Failed tasks:"))
 		for _, f := range failed {
 			for line := range strings.SplitSeq(strings.TrimSpace(f.Output), "\n") {
-				log.Progress(fmt.Sprintf("%s %s", f.Host, red(line)))
+				fmt.Fprintf(os.Stderr, "  %s %s\n", f.Host, red(line))
 			}
 		}
 	}
