@@ -23,7 +23,7 @@ devbuild: deputies
     GOOS=darwin GOARCH=arm64 go build -ldflags="-s -w -X main.buildVersion={{ dev_version }}" -o {{ build_dir }}/{{ darwin_arm64 }}/whip ./cmd/whip
 
 # Full build for all platforms
-build v=version: clean deputies
+build v=version: clean (deputies v)
     @echo "Building whip for all platforms..."
     @mkdir -p {{ build_dir }}/{{ linux_arm64 }} {{ build_dir }}/{{ linux_amd64 }} {{ build_dir }}/{{ darwin_arm64 }} {{ build_dir }}/{{ darwin_amd64 }}
     GOOS=linux GOARCH=arm64 go build -ldflags="-s -w -X main.buildVersion={{ v }}" -o {{ build_dir }}/{{ linux_arm64 }}/whip ./cmd/whip
