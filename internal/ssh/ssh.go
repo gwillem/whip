@@ -90,10 +90,10 @@ func RunGobStreamer[T any](c *Client, cmd string, stdin io.Reader, callback func
 		var obj T
 		err := dec.Decode(&obj)
 		if err == io.EOF {
-			// End of the stream
 			break
 		} else if err != nil {
-			log.Fatalf("error decoding GOB data: %v", err)
+			_ = s.Close()
+			return fmt.Errorf("error decoding GOB data: %w", err)
 		}
 		callback(obj)
 	}
