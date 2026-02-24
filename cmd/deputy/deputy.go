@@ -50,7 +50,7 @@ func runJob(job *model.Job) {
 			delete(tr.Task.Args, "_assets")
 
 			if err := encoder.Encode(tr); err != nil {
-				panic(err)
+				log.Fatal("gob encode:", err)
 			}
 
 			// terminate play for this host if any task failed
@@ -84,7 +84,7 @@ func runJob(job *model.Job) {
 			}
 			delete(tr.Task.Args, "_assets")
 			if err := encoder.Encode(tr); err != nil {
-				panic(err)
+				log.Fatal("gob encode:", err)
 			}
 			if tr.Status == runners.Failed {
 				return
