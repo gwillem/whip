@@ -112,7 +112,10 @@ func (tr TaskResult) String() string {
 
 func (ta TaskArgs) String(s string) string {
 	if arg := ta[s]; arg != nil {
-		return arg.(string)
+		if str, ok := arg.(string); ok {
+			return str
+		}
+		return fmt.Sprintf("%v", arg)
 	}
 	return ""
 }
