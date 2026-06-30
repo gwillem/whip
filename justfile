@@ -49,7 +49,10 @@ release release_version="":
     git fetch --tags
     rv="{{ release_version }}"
     if [ -z "$rv" ]; then
-        latest=$(git describe --tags --abbrev=0)
+        latest=$(git tag -l 'v[0-9]*' --sort=-v:refname | head -n1)
+        if [ -z "$latest" ]; then
+            latest="v0.0.0"
+        fi
         current=${latest#v}
         next=$(echo $current | awk -F. '{$NF = $NF + 1;} 1' | sed 's/ /./g')
         echo "No version provided. Using next version: v$next"
