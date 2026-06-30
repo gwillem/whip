@@ -24,7 +24,7 @@ func getFileChecksum(fs afero.Fs, filePath string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer file.Close()
+	defer file.Close() //nolint:errcheck
 
 	hash := sha256.New()
 	if _, err := io.Copy(hash, file); err != nil {
@@ -59,7 +59,7 @@ func ensureLineInFile(path, line string) (bool, error) {
 		if err != nil {
 			return false, err
 		}
-		defer fh.Close()
+		defer fh.Close() //nolint:errcheck
 
 		ls := gobls.NewScanner(fh)
 		for ls.Scan() {
@@ -105,11 +105,6 @@ func appendLineToFile(path, line string) error {
 		return err
 	}
 	return nil
-}
-
-func createTestFS() {
-	fs = afero.NewMemMapFs()
-	fsutil = &afero.Afero{Fs: fs}
 }
 
 func tplParseString(tpl string, data map[string]any) (string, error) {

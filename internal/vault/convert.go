@@ -44,7 +44,7 @@ func ConvertAnsibleToWhip(root string) error {
 		if err != nil {
 			return err
 		}
-		defer w.Close()
+		defer w.Close() //nolint:errcheck
 		if err := age.Encrypt(bytes.NewReader(source), w); err != nil {
 			return err
 		}

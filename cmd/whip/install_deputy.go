@@ -50,7 +50,7 @@ func ensureDeputy(c *ssh.Client) error {
 
 	// log.Debug("uploading deputy for ", osarg)
 	if err := c.UploadBytesXZ(myDep, deputyPath, 0o755); err != nil {
-		return fmt.Errorf("Could not upload deputy: %s", err)
+		return fmt.Errorf("could not upload deputy: %s", err)
 	}
 
 	return nil

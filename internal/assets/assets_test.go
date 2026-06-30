@@ -12,7 +12,7 @@ func TestDirToAsset(t *testing.T) {
 	// Create a temporary directory for testing
 	tempDir, err := os.MkdirTemp("", "dirasset_test")
 	assert.NoError(t, err)
-	defer os.RemoveAll(tempDir)
+	defer os.RemoveAll(tempDir) //nolint:errcheck
 
 	// Create some test files and directories
 	testFiles := map[string]string{

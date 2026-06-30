@@ -44,8 +44,38 @@ func ReadFile(path string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer fh.Close()
+	defer fh.Close() //nolint:errcheck
 	return io.ReadAll(fh)
+}
+
+func EncryptStream(in io.Reader, out io.Writer) error {
+	ready := readyVaulters()
+	if len(ready) == 0 {
+		key := (&ageVault{}).genkey()
+		return fmt.Errorf("no valid encryption method found, "+
+			"set WHIP_KEY or ANSIBLE_VAULT_PASSWORD\n"+
+			"for example, export WHIP_KEY=\"%s\"", key)
+	}
+	return ready[0].Encrypt(in, out)
+}
+
+func DecryptStream(in io.Reader, out io.Writer) error {
+	data, err := io.ReadAll(in)
+	if err != nil {
+		return err
+	}
+
+	vault, err := findVaulter(data)
+	if err != nil {
+		return err
+	}
+
+	decrypted, err := vault.Decrypt(bytes.NewReader(data))
+	if err != nil {
+		return err
+	}
+	_, err = io.Copy(out, decrypted)
+	return err
 }
 
 // Open opens a file and decrypts it if it is encrypted. If it is not encrypted,
@@ -86,7 +116,7 @@ func isEncrypted(path string, v Vaulter) (bool, error) {
 	if err != nil {
 		return false, nil
 	}
-	defer fh.Close()
+	defer fh.Close() //nolint:errcheck
 
 	buffer := make([]byte, len(v.Magic()))
 	if _, e := io.ReadFull(fh, buffer); e != nil {
@@ -137,8 +167,8 @@ func LaunchEditor(path string) error {
 	if err != nil {
 		return err
 	}
-	defer os.Remove(tmp.Name())
-	defer tmp.Close()
+	defer os.Remove(tmp.Name()) //nolint:errcheck
+	defer tmp.Close()           //nolint:errcheck
 
 	_, err = io.Copy(tmp, src)
 	if err != nil {
@@ -167,13 +197,13 @@ func LaunchEditor(path string) error {
 	if err != nil {
 		return err
 	}
-	defer in.Close()
+	defer in.Close() //nolint:errcheck
 
 	out, err := os.Create(path)
 	if err != nil {
 		return err
 	}
-	defer out.Close()
+	defer out.Close()                          //nolint:errcheck
 	return readyVaulters()[0].Encrypt(in, out) // take first valid
 }
 

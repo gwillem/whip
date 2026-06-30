@@ -47,7 +47,7 @@ go test ./internal/runners -run TestTree
 
 Each runner registers itself in `init()` via `registerRunner()`. Runners implement `runnerFunc` signature (`func(*model.Task) model.TaskResult`) and return status codes (`Success`, `Failed`, `Skipped`).
 
-To add a new runner: create a file in `internal/runners/`, register in `init()` with a `runner` struct containing `run` (required), and optionally `prerun` (runs on controller), `validate`, and `meta` (required/optional args). See `shell.go` for a minimal example or `tree.go` for a complex one with prerun.
+To add a new runner: create a file in `internal/runners/`, register in `init()` with a `runner` struct containing `run` (required), and optionally `prerun` (runs on controller) and `meta` (required/optional args). See `shell.go` for a minimal example or `tree.go` for a complex one with prerun.
 
 Runners use `afero.Fs` (package-level `fs` and `fsutil` vars) for filesystem operations. Tests swap in `afero.MemMapFs` for isolation.
 
@@ -64,4 +64,5 @@ Default playbook path: `.whip/playbook.yml` (searched in current and parent dire
 - `WHIP_KEY` env var for Age encryption (preferred)
 - `ANSIBLE_VAULT_PASSWORD` for legacy Ansible vault support
 - `whip edit <file>` to edit encrypted files
+- `whip encrypt` / `whip decrypt` stream stdin to stdout
 - `whip convert <file>` to migrate from Ansible Vault to Age

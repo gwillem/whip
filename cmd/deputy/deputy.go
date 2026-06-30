@@ -131,7 +131,7 @@ func getJobFromStdin() *model.Job {
 		if e := assets.Decompress(stdinReader, pw); e != nil { // was: os.Stdin
 			log.Fatal("error decompressing:", e)
 		}
-		pw.Close()
+		_ = pw.Close()
 	}()
 
 	decompressedReader := assets.NewReadCounter(pr)

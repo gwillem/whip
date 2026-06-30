@@ -13,7 +13,7 @@ func Compress(in io.Reader, out io.Writer) error {
 	}
 	_, err = io.Copy(enc, in)
 	if err != nil {
-		enc.Close()
+		_ = enc.Close()
 		return err
 	}
 	return enc.Close()

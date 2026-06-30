@@ -103,7 +103,7 @@ func runPlaybookAtHost(job model.Job, t model.TargetName, results chan<- model.T
 	if err != nil {
 		log.Fatal("SSH connection failed:", t, err)
 	}
-	defer conn.Close()
+	defer conn.Close() //nolint:errcheck
 
 	if err := ensureDeputy(conn); err != nil {
 		log.Fatal("Failed to install deputy on", t, err)
@@ -121,7 +121,7 @@ func runPlaybookAtHost(job model.Job, t model.TargetName, results chan<- model.T
 		if err := gob.NewEncoder(gobWr).Encode(job); err != nil {
 			log.Fatal("gob encode err", err)
 		}
-		gobWr.Close()
+		_ = gobWr.Close()
 	}()
 
 	zstdRd, zstdWr := io.Pipe()
@@ -149,19 +149,6 @@ func runPlaybookAtHost(job model.Job, t model.TargetName, results chan<- model.T
 	if e := gobRd.Close(); e != nil {
 		log.Error(e)
 	}
-}
-
-type durationPrefixer struct {
-	last time.Time
-}
-
-func (p *durationPrefixer) Prefix() string {
-	var delta time.Duration
-	if !p.last.IsZero() {
-		delta = time.Since(p.last)
-	}
-	p.last = time.Now()
-	return dark(fmt.Sprintf("%.3f", delta.Seconds()))
 }
 
 func runPreRunTasks(pb *model.Playbook) {

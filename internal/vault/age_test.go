@@ -22,7 +22,7 @@ func Test_OpenRegular(t *testing.T) {
 	data, err := io.ReadAll(fh)
 	require.NoError(t, err)
 	require.Equal(t, "boe\n", string(data))
-	fh.Close()
+	_ = fh.Close()
 }
 
 func Test_OpenAge(t *testing.T) {
@@ -37,7 +37,7 @@ func Test_OpenAge(t *testing.T) {
 	data, err := io.ReadAll(fh)
 	require.NoError(t, err)
 	require.Equal(t, "hoi\n", string(data))
-	fh.Close()
+	_ = fh.Close()
 }
 
 func Test_OpenNonExistingFile(t *testing.T) {
@@ -45,22 +45,22 @@ func Test_OpenNonExistingFile(t *testing.T) {
 	require.Error(t, err)
 	require.True(t, os.IsNotExist(err))
 	if fh != nil {
-		fh.Close()
+		_ = fh.Close()
 	}
 }
 
 func Test_OpenEmptyFile(t *testing.T) {
 	tmp, err := os.CreateTemp("", "dlsfsd")
 	require.NoError(t, err)
-	tmp.Close()
-	defer os.Remove(tmp.Name())
+	_ = tmp.Close()
+	defer os.Remove(tmp.Name()) //nolint:errcheck
 
 	fh, err := Open(tmp.Name())
 	require.NoError(t, err)
 	data, err := io.ReadAll(fh)
 	require.NoError(t, err)
 	require.Empty(t, data)
-	fh.Close()
+	_ = fh.Close()
 }
 
 func Test_readFromScript(t *testing.T) {
@@ -74,11 +74,11 @@ func Test_readFromScript_nonZeroExit(t *testing.T) {
 	// Create a temporary script that fails with an error message
 	script, err := os.CreateTemp("", "test-secret-*.sh")
 	require.NoError(t, err)
-	defer os.Remove(script.Name())
+	defer os.Remove(script.Name()) //nolint:errcheck
 
 	_, err = script.WriteString("#!/bin/sh\necho 'custom error message' >&2\nexit 1\n")
 	require.NoError(t, err)
-	script.Close()
+	_ = script.Close()
 
 	require.NoError(t, os.Chmod(script.Name(), 0o755))
 
