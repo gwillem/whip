@@ -56,7 +56,7 @@ func (c *Client) RunWriteRead(cmd string, toWrite []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer sess.Close()
+	defer sess.Close() //nolint:errcheck
 	if len(toWrite) > 0 {
 		sess.Stdin = bytes.NewReader(toWrite)
 	}
@@ -126,7 +126,7 @@ func (c *Client) UploadBytes(data []byte, remote string, perm os.FileMode) error
 	if err != nil {
 		return err
 	}
-	defer client.Close()
+	defer client.Close() //nolint:errcheck
 
 	remoteFile, err := client.Create(remote)
 	if err != nil {
@@ -146,7 +146,7 @@ func (c *Client) UploadBytesXZ(data []byte, remote string, perm os.FileMode) err
 	if err != nil {
 		return err
 	}
-	defer session.Close()
+	defer session.Close() //nolint:errcheck
 	session.Stdin = bytes.NewReader(data)
 	tempFile := fmt.Sprintf("%s.tmp", remote)
 	cmd := fmt.Sprintf("xz -d > %s && chmod %o %s && mv -f %s %s", tempFile, perm, tempFile, tempFile, remote)
@@ -158,13 +158,13 @@ func (c *Client) UploadFile(local, remote string) error {
 	if err != nil {
 		return err
 	}
-	defer client.Close()
+	defer client.Close() //nolint:errcheck
 
 	localFile, err := os.Open(local)
 	if err != nil {
 		return err
 	}
-	defer localFile.Close()
+	defer localFile.Close() //nolint:errcheck
 
 	remoteFile, err := client.Create(remote)
 	if err != nil {
@@ -227,9 +227,9 @@ func Connect(target string) (*Client, error) {
 
 	if len(authMethods) == 0 {
 		if err == nil {
-			err = fmt.Errorf("No %s and no $%s found", defaultKeyFile, agentSock)
+			err = fmt.Errorf("no %s and no $%s found", defaultKeyFile, agentSock)
 		}
-		return nil, fmt.Errorf("No SSH auth methods available: %v", err)
+		return nil, fmt.Errorf("no SSH auth methods available: %v", err)
 	}
 
 	config := &ssh.ClientConfig{

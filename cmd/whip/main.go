@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	flags "github.com/jessevdk/go-flags"
 	log "github.com/gwillem/go-simplelog"
+	flags "github.com/jessevdk/go-flags"
 
 	"github.com/gwillem/whip/internal/update"
 	"github.com/gwillem/whip/internal/vault"
@@ -16,6 +16,8 @@ type opts struct {
 	Version bool   `long:"version" description:"print version and exit"`
 
 	Edit    editCmd    `command:"edit" description:"encrypt and decrypt secrets"`
+	Encrypt encryptCmd `command:"encrypt" description:"encrypt stdin to stdout"`
+	Decrypt decryptCmd `command:"decrypt" description:"decrypt stdin to stdout"`
 	Convert convertCmd `command:"convert" description:"convert secrets from Ansible Vault to Whip (Age)"`
 	Update  updateCmd  `command:"update" description:"update Whip to the latest version"`
 }
@@ -25,6 +27,10 @@ type editCmd struct {
 		File string `positional-arg-name:"file" required:"true"`
 	} `positional-args:"true"`
 }
+
+type encryptCmd struct{}
+
+type decryptCmd struct{}
 
 type convertCmd struct {
 	Args struct {
@@ -36,6 +42,14 @@ type updateCmd struct{}
 
 func (c *editCmd) Execute(args []string) error {
 	return vault.LaunchEditor(c.Args.File)
+}
+
+func (c *encryptCmd) Execute(args []string) error {
+	return vault.EncryptStream(os.Stdin, os.Stdout)
+}
+
+func (c *decryptCmd) Execute(args []string) error {
+	return vault.DecryptStream(os.Stdin, os.Stdout)
 }
 
 func (c *convertCmd) Execute(args []string) error {

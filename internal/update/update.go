@@ -74,7 +74,7 @@ func Run(oldver string) error {
 	if err != nil {
 		return fmt.Errorf("failed to download new version: %w", err)
 	}
-	defer resp.Body.Close()
+	defer resp.Body.Close() //nolint:errcheck
 
 	if err := storeETag(resp.Header.Get("ETag")); err != nil {
 		return fmt.Errorf("failed to store ETag: %w", err)
@@ -94,20 +94,22 @@ func Run(oldver string) error {
 	if err != nil {
 		return fmt.Errorf("failed to create temporary file in executable directory: %w", err)
 	}
-	defer os.Remove(tempFile.Name())
+	defer os.Remove(tempFile.Name()) //nolint:errcheck
 
 	// Decompress and write the downloaded content to the temporary file
 	gzipReader, err := gzip.NewReader(resp.Body)
 	if err != nil {
 		return fmt.Errorf("failed to create gzip reader: %w", err)
 	}
-	defer gzipReader.Close()
+	defer gzipReader.Close() //nolint:errcheck
 
 	_, err = io.Copy(tempFile, gzipReader)
 	if err != nil {
 		return fmt.Errorf("failed to write decompressed content: %w", err)
 	}
-	tempFile.Close()
+	if err := tempFile.Close(); err != nil {
+		return fmt.Errorf("failed to close temporary file: %w", err)
+	}
 
 	// Get the permissions of the current executable
 	currentInfo, err := os.Stat(currentExe)
@@ -153,13 +155,13 @@ func filesAreIdentical(file1, file2 string) bool {
 	if err != nil {
 		return false
 	}
-	defer f1.Close()
+	defer f1.Close() //nolint:errcheck
 
 	f2, err := os.Open(file2)
 	if err != nil {
 		return false
 	}
-	defer f2.Close()
+	defer f2.Close() //nolint:errcheck
 
 	// Create hash objects
 	h1 := sha256.New()

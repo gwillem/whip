@@ -176,7 +176,7 @@ func Test_ensurePathUpdatesFileMode(t *testing.T) {
 	testPath := fh.Name()
 	require.NoError(t, err)
 	require.NoError(t, fh.Close())
-	defer os.Remove(fh.Name())
+	defer os.Remove(fh.Name()) //nolint:errcheck
 
 	dummyID := 0
 

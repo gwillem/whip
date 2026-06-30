@@ -24,9 +24,7 @@ const (
 )
 
 type (
-	runnerFunc    func(*model.Task) model.TaskResult
-	validatorFunc func(model.TaskArgs) error
-	preRunnerFunc func(*model.Task) model.TaskResult
+	runnerFunc func(*model.Task) model.TaskResult
 
 	runnerMeta struct {
 		requiredArgs []string
@@ -34,10 +32,9 @@ type (
 	}
 
 	runner struct {
-		run      runnerFunc
-		meta     runnerMeta
-		prerun   runnerFunc
-		validate validatorFunc
+		run    runnerFunc
+		meta   runnerMeta
+		prerun runnerFunc
 	}
 )
 
@@ -45,7 +42,6 @@ var (
 	fs      afero.Fs
 	fsutil  *afero.Afero
 	runners = map[string]runner{}
-	facts   = gatherFacts()
 )
 
 func init() {
@@ -109,7 +105,7 @@ func PreRun(task *model.Task, playVars model.TaskVars) (tr model.TaskResult) {
 	if err != nil {
 		tr.Status = Failed
 		tr.Output = err.Error()
-		return
+		return tr
 	}
 	task.Vars = mergedVars.(map[string]any)
 

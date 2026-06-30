@@ -70,7 +70,7 @@ func AssetToFS(asset *model.Asset) (afero.Fs, error) {
 		if err != nil {
 			return nil, err
 		}
-		defer fh.Close()
+		defer fh.Close() //nolint:errcheck
 		_, err = fh.Write(f.Data)
 		if err != nil {
 			return nil, err
@@ -91,7 +91,7 @@ func NewReadCounter(r io.Reader) *ReadCounter {
 func (rc *ReadCounter) Read(p []byte) (n int, err error) {
 	n, err = rc.r.Read(p)
 	rc.n += int64(n)
-	return
+	return n, err
 }
 
 func (rc *ReadCounter) Count() int64 {

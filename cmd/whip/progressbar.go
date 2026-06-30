@@ -114,8 +114,8 @@ func (m tuiModel) View() string {
 		bar := m.bars[t]
 		counter := fmt.Sprintf("%d/%d", bar.idx, bar.total)
 
-		s.WriteString(fmt.Sprintf("%-5s %20.20s %s %s\n",
-			counter, t, bar.m.ViewAs(bar.perc), bar.status))
+		fmt.Fprintf(&s, "%-5s %20.20s %s %s\n",
+			counter, t, bar.m.ViewAs(bar.perc), bar.status)
 	}
 	return s.String()
 }

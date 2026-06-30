@@ -38,7 +38,7 @@ func (v *ageVault) Encrypt(in io.Reader, out io.Writer) error {
 	if err != nil {
 		return fmt.Errorf("encryptor err %w", err)
 	}
-	defer encryptor.Close()
+	defer encryptor.Close() //nolint:errcheck
 	_, err = io.Copy(encryptor, in)
 	if err != nil {
 		return fmt.Errorf("cannot copy to encryptor: %w", err)

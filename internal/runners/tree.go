@@ -49,7 +49,6 @@ type filesObj struct {
 	data  []byte
 	isDir bool
 	mode  os.FileMode
-	umask os.FileMode
 	uid   *int
 	gid   *int
 }
