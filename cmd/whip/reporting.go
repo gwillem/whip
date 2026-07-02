@@ -10,7 +10,20 @@ import (
 	log "github.com/gwillem/go-simplelog"
 	"github.com/gwillem/whip/internal/model"
 	"github.com/gwillem/whip/internal/runners"
+	"golang.org/x/term"
 )
+
+// useTUI reports whether the interactive bubbletea progress bar should be used.
+// The TUI needs a controlling terminal; without one (CI, cron, piped output)
+// bubbletea fails to open /dev/tty, so we fall back to the plain verbose handler.
+func useTUI(verbosity int, isTTY bool) bool {
+	return verbosity == 0 && isTTY
+}
+
+// isInteractive reports whether stdout is attached to a terminal.
+func isInteractive() bool {
+	return term.IsTerminal(int(os.Stdout.Fd()))
+}
 
 type (
 	resultHandler interface {
@@ -81,7 +94,7 @@ func trimDotDot(s string, lim int) string {
 
 func reportResults(results <-chan model.TaskResult, stats map[model.TargetName]map[string]int, verbosity int) {
 	var handler resultHandler = verboseHandler{}
-	if verbosity == 0 {
+	if useTUI(verbosity, isInteractive()) {
 		handler = tuiHandler{createTui()}
 	}
 
