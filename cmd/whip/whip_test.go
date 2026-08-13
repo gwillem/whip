@@ -174,3 +174,53 @@ func TestPrefixWriter(t *testing.T) {
 		})
 	}
 }
+
+// A playbook can be parameterised in every respect except the one that
+// decides which machine it runs against, unless hosts is templated too. An
+// edit-between-runs playbook eventually runs against the wrong host.
+func TestRenderHostsUsesPlayVars(t *testing.T) {
+	pb := model.Playbook{
+		{
+			Name:  "guest",
+			Hosts: []model.TargetName{"root@{{ guest_ip }}"},
+			Vars:  map[string]any{"guest_ip": "10.66.0.12"},
+		},
+	}
+	if err := renderHosts(&pb); err != nil {
+		t.Fatal(err)
+	}
+	if got := string(pb[0].Hosts[0]); got != "root@10.66.0.12" {
+		t.Errorf("hosts[0] = %q, want root@10.66.0.12", got)
+	}
+}
+
+func TestRenderHostsRefusesAnEmptyResult(t *testing.T) {
+	pb := model.Playbook{
+		{
+			Name:  "guest",
+			Hosts: []model.TargetName{"{{ missing_on_purpose }}"},
+			Vars:  map[string]any{},
+		},
+	}
+	if err := renderHosts(&pb); err == nil {
+		t.Fatal("an unresolvable host must be an error, not an empty target")
+	}
+}
+
+// Extra variables reach hosts, which is the whole point: one playbook, any
+// instance, chosen on the command line.
+func TestExtraVarsReachHosts(t *testing.T) {
+	pb := model.Playbook{
+		{
+			Hosts: []model.TargetName{"root@{{ guest_ip }}"},
+			Vars:  map[string]any{"guest_ip": "10.66.0.11"},
+		},
+	}
+	applyExtraVars(&pb, model.Vars{"guest_ip": "10.66.0.13"})
+	if err := renderHosts(&pb); err != nil {
+		t.Fatal(err)
+	}
+	if got := string(pb[0].Hosts[0]); got != "root@10.66.0.13" {
+		t.Errorf("hosts[0] = %q, want the -e value", got)
+	}
+}

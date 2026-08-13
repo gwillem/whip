@@ -320,3 +320,10 @@ func isText(s []byte) bool {
 	}
 	return true
 }
+
+// RenderString applies the template engine to one string, for callers outside
+// this package. The controller needs it to render a play's `hosts` before the
+// job book is built, which is what lets one playbook serve several targets.
+func RenderString(tpl string, vars map[string]any) (string, error) {
+	return tplParseString(tpl, vars)
+}

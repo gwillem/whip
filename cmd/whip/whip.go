@@ -53,6 +53,16 @@ func runWhip(playbookArg string, verbosity int, extraVars model.Vars) {
 	// before anything reads them (prerun tasks included).
 	applyExtraVars(pb, extraVars)
 
+	// Render `hosts` with the play's variables, now that vars_files and -e
+	// have been merged. Without this a playbook can be parameterised in every
+	// respect except the one that decides which machine it runs against, so
+	// pointing it at a different target means editing the file -- and a
+	// playbook edited between runs is a playbook that eventually runs against
+	// the wrong host.
+	if err := renderHosts(pb); err != nil {
+		log.Fatal(err)
+	}
+
 	log.Progress("Loaded playbook with", len(*pb), "plays")
 
 	// validation... should happen at deputy, because controller doesn't have access
@@ -284,4 +294,22 @@ func getPlaybookPath(arg string) string {
 		log.Fatal("No playbook supplied and no playbook.yml found in current or parent directories")
 	}
 	return playbookPath
+}
+
+// renderHosts templates each play's target list against that play's variables.
+func renderHosts(pb *model.Playbook) error {
+	for i := range *pb {
+		play := &(*pb)[i]
+		for j, h := range play.Hosts {
+			rendered, err := runners.RenderString(string(h), play.Vars)
+			if err != nil {
+				return fmt.Errorf("play %q: hosts: %w", play.Name, err)
+			}
+			if rendered == "" {
+				return fmt.Errorf("play %q: hosts entry %q rendered empty", play.Name, h)
+			}
+			play.Hosts[j] = model.TargetName(rendered)
+		}
+	}
+	return nil
 }
