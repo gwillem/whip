@@ -39,9 +39,14 @@ func ensureDeputy(c *ssh.Client) error {
 	if err != nil {
 		return fmt.Errorf("could not read deputy SHA256 for %s: %s", osarch, err)
 	}
-	localSha := strings.TrimSpace(string(localShaBytes))
-
-	// log.Debugf("local/remote sha:\n\t%s\n\t%s", localSha, remoteSha)
+	// The build writes `sha256sum` / `shasum -a 256` output: the digest followed
+	// by the file it was computed from. The target reports the digest alone, so
+	// comparing whole lines never matches and every connection re-uploads a
+	// deputy that is already in place.
+	localSha := ""
+	if f := strings.Fields(string(localShaBytes)); len(f) > 0 {
+		localSha = f[0]
+	}
 
 	if localSha == remoteSha {
 		// log.Debug("remote deputy seems to be fine")

@@ -134,3 +134,60 @@ func TestLoopItemIsRenderedBeforeSubstitution(t *testing.T) {
 		t.Errorf("output = %q, want %q", got, "pool = 250M")
 	}
 }
+
+// A guard naming a variable is the one place where getting templating wrong is
+// invisible: an unrendered "{{ dir }}/lock" cannot exist, so the guard never
+// fires and the task runs on every converge while reporting success.
+func TestPathGuardsAreTemplated(t *testing.T) {
+	dir := t.TempDir()
+	lock := filepath.Join(dir, "lock")
+	if err := os.WriteFile(lock, []byte("x"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	vars := model.TaskVars{"dir": dir}
+
+	creates := &model.Task{
+		Runner:  "shell",
+		Args:    model.TaskArgs{"_args": "true"},
+		Vars:    vars,
+		Creates: "{{ dir }}/lock",
+	}
+	skip, why, err := shouldSkip(creates)
+	if err != nil {
+		t.Fatalf("creates guard errored: %v", err)
+	}
+	if !skip {
+		t.Errorf("creates: %q exists, want skip, got run", lock)
+	}
+	if strings.Contains(why, "{{") {
+		t.Errorf("creates: reason still holds a template: %q", why)
+	}
+
+	removes := &model.Task{
+		Runner:  "shell",
+		Args:    model.TaskArgs{"_args": "true"},
+		Vars:    vars,
+		Removes: "{{ dir }}/absent",
+	}
+	if skip, _, err = shouldSkip(removes); err != nil {
+		t.Fatalf("removes guard errored: %v", err)
+	}
+	if !skip {
+		t.Error("removes: path is already absent, want skip, got run")
+	}
+
+	// And the rendered path must be the one that decides, not any path.
+	present := &model.Task{
+		Runner:  "shell",
+		Args:    model.TaskArgs{"_args": "true"},
+		Vars:    vars,
+		Creates: "{{ dir }}/not-there",
+	}
+	if skip, _, err = shouldSkip(present); err != nil {
+		t.Fatalf("creates guard errored: %v", err)
+	}
+	if skip {
+		t.Error("creates: path does not exist, want run, got skip")
+	}
+}

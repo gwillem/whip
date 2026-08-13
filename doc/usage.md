@@ -35,6 +35,8 @@ whip                         # find .whip/playbook.yml upward and run it
 whip .whip/playbook.yml      # run explicit playbook
 whip -v                      # task-level logging
 whip -vv                     # debug logging
+whip -e key=value            # set a variable, repeatable, beats the playbook
+whip --insecure              # do not verify SSH host keys
 whip --version
 whip update                  # update to latest release
 ```
@@ -50,12 +52,41 @@ whip convert files/old-vault.yml     # convert Ansible Vault file to Whip/Age
 
 ## SSH and target requirements
 
-Hosts are direct SSH targets in `user@host` or `user@host:port` form. If `user` is omitted, local `$USER` is used. There is no external inventory file.
+Hosts are SSH targets in `user@host` or `user@host:port` form, or a `~/.ssh/config`
+alias. If `user` is omitted, local `$USER` is used. There is no external inventory file.
 
-Authentication uses:
+`hosts` is templated, so a target may be built from variables:
 
-1. SSH agent via `$SSH_AUTH_SOCK`, and/or
-2. `$HOME/.ssh/id_rsa`.
+```yaml
+- hosts: ["root@{{ guest_ip }}"]   # quoted: [root@{{ x }}] is not valid YAML
+```
+
+Whip reads `~/.ssh/config` for `HostName`, `User`, `Port`, `IdentityFile`,
+`IdentitiesOnly` and `ProxyJump`. Anything spelled out in the target string wins over
+the config, as with `ssh(1)`. `ProxyJump` chains are followed recursively, and a jump
+host is itself resolved through its own stanza, so a fleet behind a bastion needs no
+tunnel and no forwarded ports:
+
+```
+Host guest-*
+    User root
+    ProxyJump bastion.example
+```
+
+Set `WHIP_SSH_CONFIG=/path/to/config` to read a different file. That is how a
+repository ships the stanzas its own playbooks need, instead of asking every operator
+to edit their dotfiles.
+
+Authentication is tried in this order, skipping what is absent:
+
+1. SSH agent via `$SSH_AUTH_SOCK`
+2. every `IdentityFile` named for that host in the config
+3. `~/.ssh/id_ed25519`, `~/.ssh/id_ecdsa`, `~/.ssh/id_rsa`
+
+Host keys are checked against `~/.ssh/known_hosts`. An unknown host is accepted and
+recorded on first contact (`StrictHostKeyChecking=accept-new`); a key that later
+changes is refused, naming the host, both fingerprints and the `known_hosts` line.
+`--insecure` skips the check entirely.
 
 The remote job is invoked with `sudo $HOME/.cache/whip/deputy`; targets must allow that non-interactively, or you should connect as a user for which it works.
 
@@ -88,8 +119,8 @@ A playbook is a YAML list of plays:
       notify: restart nginx
 
     - name: guarded shell command
-      shell: systemctl is-active nginx || systemctl start nginx
-      unless: systemctl is-active nginx
+      shell: tar xzf /tmp/app.tgz -C /srv/app
+      creates: /srv/app/index.php
 
   handlers:
     - name: reload nginx
@@ -102,11 +133,44 @@ A playbook is a YAML list of plays:
         state: restarted
 ```
 
-Recognized play fields: `name`, `hosts`, `vars`, `prerun`, `tasks`, `handlers`.
+Recognized play fields: `name`, `hosts`, `vars`, `vars_files`, `prerun`, `tasks`,
+`handlers`, `assets`.
 
-Recognized task fields: `name`, runner key (`apt`, `shell`, etc.), `vars`, `loop`, `notify`, `unless`, `tags`.
+Recognized task fields: `name`, runner key (`apt`, `shell`, etc.), `vars`, `loop`,
+`notify`, `unless`, `creates`, `removes`, `changed_when`, `tags`.
 
-Unknown fields are ignored with a warning; do not rely on Ansible-only fields such as `remote_user`, `become`, `gather_facts`, roles, or includes.
+### Composing playbooks
+
+`vars_files` merges YAML files into the play's variables, in order, with the play's
+own `vars` winning. Paths are relative to the playbook, not to the working directory,
+so a playbook means the same thing wherever it is run from.
+
+`include` splices another playbook's plays in place. It must be the only key in its
+list entry, and an included file may itself include, resolved relative to its own
+directory:
+
+```yaml
+- include: common/bootstrap.yml
+- name: web servers
+  hosts: [root@web1.example.com]
+  vars_files: [vars/common.yml, vars/production.yml]
+  tasks:
+    - shell: hostname
+```
+
+### Validation
+
+A playbook whip cannot make sense of is an error, not a warning. It refuses to run on:
+
+- a field it does not recognise (`unles:`, `notifiy:`)
+- an argument the runner does not read (`service: {name: x, stat: started}`)
+- a `notify` naming a handler that does not exist in that play
+- an Ansible keyword that would change behaviour if honoured: `become`, `become_user`,
+  `become_method`, `sudo`, `sudo_user`, `when`, `vars_prompt`
+
+Ansible keywords that are merely irrelevant here are accepted and ignored, so an
+Ansible playbook still loads: `gather_facts`, `remote_user`, `connection`,
+`any_errors_fatal`, `serial`, `strategy`.
 
 ## Task syntax
 
@@ -120,9 +184,34 @@ A task selects exactly one runner by using the runner name as a key:
     state: restarted
 ```
 
-String runner values are parsed into the default argument `_args`; simple `key=value` tokens become named args. Map values are passed as args directly. Prefer map syntax for anything non-trivial.
+A string value goes to the runner's default argument. For `shell` and `command` it is
+taken verbatim, so a command survives intact:
 
-`unless` is a top-level task guard. It is executed on the target with `/bin/sh -c`; if it exits 0, the task is skipped.
+```yaml
+- shell: mysql -e "SET @a=1"      # arrives whole, '=' and all
+```
+
+Other runners keep the `key=value` dialect, where each `=`-bearing token becomes a
+named argument and the rest is joined into `_args`. That is what `apt` package names
+and `tree` prefix lines are written in. Map values are passed as args directly; prefer
+the map form for anything non-trivial.
+
+Three guards skip a task, evaluated in this order:
+
+| Guard | Skips when | Notes |
+| --- | --- | --- |
+| `creates` | the path exists | a path, checked without a shell |
+| `removes` | the path does not exist | a path, checked without a shell |
+| `unless` | the command exits 0 | run on the target with `/bin/sh -c`, templated |
+
+`changed_when` decides whether a task counts as a change: a shell expression evaluated
+after the task, with the task's own output in `$WHIP_OUTPUT`, or a bool. Without it
+`shell` and `command` always report changed.
+
+```yaml
+- shell: systemctl daemon-reload
+  changed_when: false
+```
 
 `notify` may be a YAML list or comma-separated string. Handlers run once after the play if notified by a changed task.
 
@@ -133,9 +222,32 @@ String runner values are parsed into the default argument `_args`; simple `key=v
   loop: [one, two]
 ```
 
+A loop item is itself rendered before substitution, so a variable inside an item
+works:
+
+```yaml
+- lineinfile: {path: /etc/my.cnf, line: "{{ item }}"}
+  loop: ["innodb_buffer_pool_size = {{ pool }}M"]
+```
+
 ## Variables and templates
 
-Variables are maps. Play vars and task vars are available to task argument templates and text files copied by `tree`.
+Variables are maps, available to task arguments, to `hosts`, to guards, and to text
+files copied by `tree`. They come from four places, in increasing precedence:
+
+| Source | Beaten by | Use for |
+| --- | --- | --- |
+| `vars_files` | everything below | a set shared by several playbooks |
+| play `vars` | task vars, `-e` | the playbook's own defaults |
+| task `vars` | `-e` | a value local to one task |
+| `-e key=value` | nothing | per-run and per-target values |
+
+`-e` is repeatable and always wins, so one playbook can serve several targets from a
+script without being edited:
+
+```sh
+whip site.yml -e guest_ip=10.0.0.9 -e docroot=/srv/other
+```
 
 ```yaml
 - hosts: root@example.com
@@ -149,7 +261,11 @@ Variables are maps. Play vars and task vars are available to task argument templ
 
 Templates use Jinja-style `{{ name }}` via Gonja with strict undefined variables; referencing a missing variable fails the task.
 
-`tree` also templates text files from its source directory before writing them to the target. Binary files are copied as-is.
+`tree` also templates text files from its source directory before writing them to the
+target. Binary files are copied as-is, and a prefix marked `template=false` is shipped
+byte-for-byte, which is what a shell script full of `${VAR}` needs.
+
+Templating is recursive: a variable inside a list or a map argument is rendered too.
 
 ## Runners
 

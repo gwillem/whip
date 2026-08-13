@@ -267,8 +267,16 @@ func renderValue(v any, vars model.TaskVars) (any, error) {
 // creates and removes are paths, checked with a stat and no shell: they say
 // "this has already happened" directly, which is what the overwhelming
 // majority of `unless` commands were written to say.
+//
+// All three are templated. A guard is the one place where getting a variable
+// wrong is invisible: an unrendered `{{ x }}/lock` names a path that cannot
+// exist, so the guard never fires and the task silently runs every time.
 func shouldSkip(task *model.Task) (bool, string, error) {
-	if p := task.Creates; p != "" {
+	if task.Creates != "" {
+		p, err := tplParseString(task.Creates, task.Vars)
+		if err != nil {
+			return false, "", err
+		}
 		exists, err := fsutil.Exists(p)
 		if err != nil {
 			return false, "", err
@@ -277,7 +285,11 @@ func shouldSkip(task *model.Task) (bool, string, error) {
 			return true, fmt.Sprintf("skipped, %s already exists", p), nil
 		}
 	}
-	if p := task.Removes; p != "" {
+	if task.Removes != "" {
+		p, err := tplParseString(task.Removes, task.Vars)
+		if err != nil {
+			return false, "", err
+		}
 		exists, err := fsutil.Exists(p)
 		if err != nil {
 			return false, "", err
@@ -287,9 +299,6 @@ func shouldSkip(task *model.Task) (bool, string, error) {
 		}
 	}
 	if task.Unless != "" {
-		// Templated: the guard was evaluated straight from the playbook, so a
-		// `{{ var }}` in it reached /bin/sh as literal braces and the guard
-		// silently tested the wrong thing.
 		guard, err := tplParseString(task.Unless, task.Vars)
 		if err != nil {
 			return false, "", err
