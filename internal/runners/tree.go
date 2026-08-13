@@ -23,7 +23,11 @@ func init() {
 		prerun: treePrerun,
 		meta: runnerMeta{
 			requiredArgs: []string{"src"},
-			optionalArgs: []string{"_assets"},
+			// dst was read by the runner and undeclared, so argument
+			// validation rejected every real tree task. Prefix metadata keys
+			// start with "/" and are skipped by the validator: they are data,
+			// not argument names.
+			optionalArgs: []string{"dst", "_assets"},
 		},
 	})
 }
@@ -38,10 +42,31 @@ type fileMeta struct {
 	gid    *int
 	umask  os.FileMode
 	notify []string
+
+	// template is nil unless a prefix names it, so that a longer prefix can
+	// switch rendering back on inside an otherwise verbatim tree. Rendering
+	// remains the default, hence nil means yes.
+	template *bool
+
+	// absent means the prefix is removed from the target rather than shipped.
+	absent bool
 }
 type prefixMetaMap struct {
 	orderedPrefixes []string
 	metamap         map[string]fileMeta
+}
+
+// templating reports whether files under this prefix are rendered.
+func (fm fileMeta) templating() bool {
+	return fm.template == nil || *fm.template
+}
+
+// umaskOr returns the prefix umask, falling back to the tree default.
+func (fm fileMeta) umaskOr() os.FileMode {
+	if fm.umask > 0 {
+		return fm.umask
+	}
+	return defaultUmask
 }
 
 type filesObj struct {
@@ -67,6 +92,14 @@ func (pm *prefixMetaMap) getMeta(path string) fileMeta {
 			if meta.umask > 0 {
 				finalMeta.umask = meta.umask
 			}
+			if meta.template != nil {
+				finalMeta.template = meta.template
+			}
+			// Absent is sticky: parsePrefixMeta rejects a declaration inside
+			// an absent prefix, so nothing longer can ever override it.
+			if meta.absent {
+				finalMeta.absent = true
+			}
 			if meta.notify != nil {
 				finalMeta.notify = append(finalMeta.notify, meta.notify...)
 			}
@@ -91,18 +124,38 @@ func tree(t *model.Task) (tr model.TaskResult) {
 	// dstRoot is eiter the abs dst or $HOME + dst  or / + dst
 	dstRoot := getDstRoot(t.Args["dst"])
 
-	// dst root should exist already (so we won't change perms on / or $HOME)
-	if ok, err := fsutil.Exists(dstRoot); !ok || err != nil {
-		return failure("cannot read dst path", dstRoot, err)
-	}
-
 	pm, err := parsePrefixMeta(t.Args)
 	if err != nil {
 		return failure(err)
 	}
 	// log.Debug("prefix meta", pm)
 
+	tr.Notify = make(map[string]bool)
 	output := ""
+
+	// A missing dst root used to be a hard failure, which is why deployments
+	// open with an `install -d` shell block. Create it instead, with the root
+	// prefix's umask and owner. An EXISTING dst is still left alone, so we
+	// never change perms on / or $HOME.
+	rootMeta := pm.getMeta(srcRoot)
+	if ok, err := fsutil.Exists(dstRoot); err != nil {
+		return failure("cannot read dst path", dstRoot, err)
+	} else if !ok {
+		mode := os.FileMode(0o777) &^ rootMeta.umaskOr()
+		if err := fs.MkdirAll(dstRoot, mode); err != nil {
+			return failure("cannot create dst path", dstRoot, err)
+		}
+		// MkdirAll reduces the mode by the process umask, so say it again.
+		if err := fs.Chmod(dstRoot, mode); err != nil {
+			return failure("cannot chmod dst path", dstRoot, err)
+		}
+		if _, err := chown(dstRoot, rootMeta.uid, rootMeta.gid); err != nil {
+			return failure("cannot chown dst path", dstRoot, err)
+		}
+		tr.Changed = true
+		output += fmt.Sprintf("%-7s %s\n", "created", dstRoot)
+	}
+
 	if t.Args["_assets"] == nil {
 		return failure("no assets found")
 	}
@@ -117,7 +170,32 @@ func tree(t *model.Task) (tr model.TaskResult) {
 		return failure("cannot convert assets to fs", err)
 	}
 
-	tr.Notify = make(map[string]bool)
+	// Removals happen before the walk: a decommissioned file used to need a
+	// shell block, because the walk only ever ensures that source paths
+	// exist. Changed is reported only when something was really there.
+	for _, prefix := range pm.orderedPrefixes {
+		meta := pm.getMeta(prefix)
+		if !meta.absent {
+			continue
+		}
+		path := filepath.Join(dstRoot, prefix)
+		ok, err := fsutil.Exists(path)
+		if err != nil {
+			return failure("cannot read", path, err)
+		}
+		if !ok {
+			output += fmt.Sprintf("%-7s %s\n", "skip", path)
+			continue
+		}
+		if err := fs.RemoveAll(path); err != nil {
+			return failure("cannot remove", path, err)
+		}
+		tr.Changed = true
+		for _, n := range meta.notify {
+			tr.Notify[n] = true
+		}
+		output += fmt.Sprintf("%-7s %s\n", "removed", path)
+	}
 
 	err = afero.Walk(srcFs, srcRoot, func(srcPath string, srcFi os.FileInfo, err error) error {
 		if err != nil {
@@ -128,10 +206,24 @@ func tree(t *model.Task) (tr model.TaskResult) {
 		}
 		dstPath := filepath.Join(dstRoot, srcPath)
 
+		// prefix meta, if any, decides owner, mode, rendering and existence
+		meta := pm.getMeta(srcPath)
+
+		// Removed above; shipping it back would delete and recreate the same
+		// path on every run.
+		if meta.absent {
+			if srcFi.IsDir() {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+
 		f := filesObj{
 			path:  dstPath,
 			isDir: srcFi.IsDir(),
 			mode:  srcFi.Mode(),
+			uid:   meta.uid,
+			gid:   meta.gid,
 		}
 
 		if !f.isDir {
@@ -140,8 +232,10 @@ func tree(t *model.Task) (tr model.TaskResult) {
 				return fmt.Errorf("afero read rr on %s: %w", srcPath, err)
 			}
 
-			// template?
-			if isText(f.data) {
+			// template=false ships the subtree byte-for-byte. Rendering every
+			// text file means a stray brace in third-party config, or a shell
+			// ${VAR} beside a Gonja one, is a deploy-time failure for no gain.
+			if meta.templating() && isText(f.data) {
 				// log.Debug("parsing template", srcPath, "with vars", vars)
 				f.data, err = tplParseBytes(f.data, t.Vars)
 				if err != nil {
@@ -151,17 +245,8 @@ func tree(t *model.Task) (tr model.TaskResult) {
 
 		}
 
-		// update srcFs[srcPath] and srcFi with prefix meta, if any
-		meta := pm.getMeta(srcPath)
-		f.uid = meta.uid
-		f.gid = meta.gid
-
-		// apply umask to default 0o666 permissions
-		umask := defaultUmask
-		if meta.umask > 0 {
-			umask = meta.umask
-		}
-		f.mode = f.mode &^ umask
+		// apply umask to the source's own permissions
+		f.mode = f.mode &^ meta.umaskOr()
 
 		// output += pp.Sprintln(dstPath)
 		// from here on, ensure path
@@ -230,39 +315,48 @@ func parsePrefixMeta(args model.TaskArgs) (*prefixMetaMap, error) {
 			fm.umask = os.FileMode(ui)
 		}
 
-		var uid, gid int
-
-		username := attrs.String("owner")
-
-		if username != "" {
-			owner, err := osUser.Lookup(username)
+		// A prefix changes only what it names: uid and gid stay nil when
+		// owner or group are absent, so a line like
+		// `/etc/nginx: template=false` no longer chowns that subtree to
+		// root:root as a side effect of being mentioned. Every prefix line
+		// that wants root ownership already spells out `owner=root
+		// group=root`, which is how the old behaviour is reached.
+		if username := attrs.String("owner"); username != "" {
+			uid, err := lookupUID(username)
 			if err != nil {
-				return nil, fmt.Errorf("cannot find user %s", username)
+				return nil, err
 			}
-			uid, err = strconv.Atoi(owner.Uid)
-			if err != nil {
-				return nil, fmt.Errorf("cannot parse uid %s", owner.Uid)
-			}
+			fm.uid = &uid
 		}
 
-		if attrs.String("group") != "" {
-			group, err := osUser.LookupGroup(attrs.String("group"))
+		if groupname := attrs.String("group"); groupname != "" {
+			gid, err := lookupGID(groupname)
 			if err != nil {
-				return nil, fmt.Errorf("cannot find group %s", attrs.String("group"))
+				return nil, err
 			}
-
-			gid, err = strconv.Atoi(group.Gid)
-			if err != nil {
-				return nil, fmt.Errorf("cannot parse gid %s", group.Gid)
-			}
+			fm.gid = &gid
 		}
 
 		if attrs.String("notify") != "" {
 			fm.notify = parser.StringToSlice(attrs.String("notify"))
 		}
 
-		fm.uid = &uid
-		fm.gid = &gid
+		if s := attrs.String("template"); s != "" {
+			b, err := strconv.ParseBool(s)
+			if err != nil {
+				return nil, fmt.Errorf("cannot parse template=%s as boolean for prefix %s", s, prefix)
+			}
+			fm.template = &b
+		}
+
+		switch state := attrs.String("state"); state {
+		case "", "present":
+			// present is the default: the prefix is shipped from the source
+		case "absent":
+			fm.absent = true
+		default:
+			return nil, fmt.Errorf("unknown state %s for prefix %s", state, prefix)
+		}
 
 		pm.metamap[prefix] = fm
 	}
@@ -271,6 +365,20 @@ func parsePrefixMeta(args model.TaskArgs) (*prefixMetaMap, error) {
 		pm.orderedPrefixes = append(pm.orderedPrefixes, prefix)
 	}
 	slices.Sort(pm.orderedPrefixes) // sort prefixes to ensure shorted prefix is first
+
+	// A prefix declared inside an absent one cannot mean anything: the removal
+	// deletes that subtree, so an owner or a handler there would describe a
+	// path which is not on the target. Say so rather than pick a winner.
+	for _, outer := range pm.orderedPrefixes {
+		if !pm.metamap[outer].absent {
+			continue
+		}
+		for _, inner := range pm.orderedPrefixes {
+			if inner != outer && strings.HasPrefix(inner, outer) {
+				return nil, fmt.Errorf("prefix %s is inside absent prefix %s", inner, outer)
+			}
+		}
+	}
 
 	return &pm, nil
 }

@@ -46,6 +46,18 @@ func Test_LoadPlaybookSimple1(t *testing.T) {
 					},
 					Loop: nil,
 				},
+				// The fixture notified both nginx and systemd but declared
+				// only nginx, so the second notify silently did nothing.
+				// Playbook validation now refuses that, which is how this
+				// was found.
+				{
+					Runner: "command",
+					Name:   "systemd",
+					Args: model.TaskArgs{
+						"_args": "echo reloading systemd",
+					},
+					Loop: nil,
+				},
 			},
 		},
 	}
@@ -126,4 +138,9 @@ func Test_TaskArgs(t *testing.T) {
 	play := (*pb)[0]
 	require.Equal(t, "/bin/true", play.Tasks[0].Unless)
 	require.Equal(t, "echo hi", play.Tasks[0].Args.String("_args"))
+
+	// The fixture used to carry `kwakaloe: njippie` to show that an unknown
+	// field was ignored. That was the bug, not the feature: a misspelled key
+	// silently did nothing on a production host. It is refused now, and
+	// TestUnknownFieldIsRefused in validate_test.go pins the new contract.
 }

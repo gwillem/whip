@@ -15,7 +15,7 @@ func ensureDeputy(c *ssh.Client) error {
 			sha256sum ~/.cache/whip/deputy 2>/dev/null | awk '{print $1}';
 			`)
 	if err != nil {
-		return err
+		return fmt.Errorf("could not probe target: %w", err)
 	}
 
 	lines := strings.Split(strings.TrimSpace(uname), "\n")
@@ -50,8 +50,20 @@ func ensureDeputy(c *ssh.Client) error {
 
 	// log.Debug("uploading deputy for ", osarg)
 	if err := c.UploadBytesXZ(myDep, deputyPath, 0o755); err != nil {
-		return fmt.Errorf("could not upload deputy: %s", err)
+		return fmt.Errorf("could not upload deputy for %s%s: %w", osarch, uploadHint(err), err)
 	}
 
 	return nil
+}
+
+// uploadHint names the package to install when the deputy upload failed because
+// the target has no xz. The remote error quotes the command and its stderr, but
+// "xz: command not found" does not tell you which package supplies it, and this
+// is the first thing that runs against a fresh minimal image.
+func uploadHint(err error) string {
+	msg := err.Error()
+	if strings.Contains(msg, "status 127") || strings.Contains(msg, "not found") {
+		return " (the target needs xz, from the xz-utils or xz package)"
+	}
+	return ""
 }

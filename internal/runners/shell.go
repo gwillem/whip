@@ -7,11 +7,18 @@ import (
 
 func shell(t *model.Task) (tr model.TaskResult) {
 	cmd := []string{"/bin/sh", "-c", t.Args.String(parser.DefaultArg)}
-	return system(cmd)
+	// systemTask, not system: it applies the task's changed_when, without
+	// which every shell task reports "changed" on every deploy and the run
+	// summary says nothing.
+	return systemTask(t, cmd)
 }
 
 func init() {
-	registerRunner("shell", runner{run: shell})
+	// stringArg: a shell command is a command, not a bag of key=value pairs.
+	registerRunner("shell", runner{
+		run:  shell,
+		meta: runnerMeta{stringArg: parser.DefaultArg},
+	})
 }
 
 func runShell(cmd string) (tr model.TaskResult) {

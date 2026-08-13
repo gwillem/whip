@@ -42,6 +42,15 @@ type (
 		Tasks     []Task         `json:"tasks,omitempty"`
 		Handlers  []Task         `json:"handlers,omitempty"`
 		PreRun    []string       `json:"prerun,omitempty"`
+
+		// VarsFiles are YAML files merged into Vars, in order, with the
+		// play's own Vars winning. Whip has no inventory, no group_vars and
+		// no -e, so a set of near-identical targets had nowhere to put a
+		// shared variable set except a copy inside every playbook.
+		// The mapstructure tag is load-bearing: the playbook decoder matches
+		// field names case-insensitively but not across underscores, so
+		// `vars_files:` would otherwise be silently ignored.
+		VarsFiles []string `json:"vars_files,omitempty" mapstructure:"vars_files"`
 	}
 	TargetName string
 	Target     struct {
@@ -61,6 +70,18 @@ type (
 		Vars   TaskVars `json:"vars,omitempty"`
 		Tags   []string `json:"tags,omitempty"`
 		Unless string   `json:"unless,omitempty"`
+
+		// Creates and Removes are declarative guards: the task is skipped
+		// when Creates already exists, or when Removes already does not.
+		//
+		// `unless` was the only vocabulary available, and the overwhelmingly
+		// common thing to say with it is "has this already happened", so
+		// every such task carried a shell command whose whole job was to run
+		// `test -e`. These are paths rather than commands, so they are
+		// checked without a shell, cannot fail for an unrelated reason, and
+		// are templated like any other argument.
+		Creates string `json:"creates,omitempty"`
+		Removes string `json:"removes,omitempty"`
 	}
 
 	TaskArgs map[string]any

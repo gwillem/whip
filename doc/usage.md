@@ -193,15 +193,55 @@ Synchronizes a local directory tree to a remote destination.
     dst: /
     /: owner=root group=root umask=022 notify=reload nginx
     /nginx: owner=root group=www-data umask=027
+    /nginx/vendor: template=false
+    /nginx/sites-enabled/old-shop: state=absent
 ```
+
+Prefix metadata keys must start with `/` and apply to matching paths inside the
+source tree. Longer, more specific prefixes override shorter ones; `notify`
+accumulates.
+
+| Key        | Values                | Default   | Meaning                                                          |
+| ---------- | --------------------- | --------- | ---------------------------------------------------------------- |
+| `owner`    | user name             | unchanged | Chown the subtree to this user                                    |
+| `group`    | group name            | unchanged | Chgrp the subtree to this group                                   |
+| `umask`    | octal, e.g. `027`     | `022`     | Reduce source permissions by this mask                            |
+| `notify`   | handler names, comma  | none      | Handlers to run when something under the prefix changed           |
+| `template` | `true`, `false`       | `true`    | Render text files as templates; `false` ships them byte-for-byte  |
+| `state`    | `present`, `absent`   | `present` | `absent` removes the prefix from the target instead of shipping it |
 
 Notes:
 
 - `dst` may be absolute. Relative `dst` is under remote `$HOME`.
+- A missing `dst` is created, with the root prefix's `umask` and owner.
 - Source file executable bits are preserved; broad file permissions are reduced by `umask`.
-- Prefix metadata keys must start with `/` and apply to matching paths inside the source tree.
-- Prefix metadata supports `owner`, `group`, `umask`, `notify`.
-- Changed files can notify handlers through prefix metadata.
+- A prefix sets only what it names: without `owner` or `group` the subtree keeps its ownership.
+- `state=absent` reports a change only when something was really removed, and
+  refuses to be combined with another prefix inside it.
+
+### `dir`
+
+Ensures a directory exists with a given mode and owner, or is gone.
+
+```yaml
+- dir: /srv/honeypot/capture
+
+- dir:
+    path: /srv/honeypot/capture/bodies
+    mode: "0750"
+    owner: www-data
+    group: root
+
+- dir:
+    path: /srv/honeypot/old
+    state: absent
+```
+
+Notes:
+
+- Parent directories are created as needed, as `install -d` does.
+- `mode` is octal and must be quoted, otherwise YAML reads it as a decimal number.
+- Mode and owner drift on an existing directory is corrected and reported as a change.
 
 ### `lineinfile`
 

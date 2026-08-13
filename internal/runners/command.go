@@ -15,9 +15,14 @@ func Command(t *model.Task) (tr model.TaskResult) {
 		tr.Output = err.Error()
 		return tr
 	}
-	return system(tokens)
+	return systemTask(t, tokens)
 }
 
 func init() {
-	registerRunner("command", runner{run: Command})
+	// stringArg: the value is an argv, parsed by shlex, not by the key=value
+	// splitter. `command: touch /tmp/a=b` used to lose most of itself.
+	registerRunner("command", runner{
+		run:  Command,
+		meta: runnerMeta{stringArg: parser.DefaultArg},
+	})
 }
