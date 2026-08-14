@@ -361,3 +361,51 @@ func Test_parsePrefixMetaTemplateAndState(t *testing.T) {
 		})
 	}
 }
+
+// A tree's source is as much a candidate for a variable as anything else, and
+// it is read on the controller, so PreRun has to render the arguments before
+// the pre-run sees them. Without this the glob matched the literal string,
+// found nothing, and the run failed later on the target with "no assets
+// found" - a complaint about the destination, for a mistake made here.
+func Test_preRunRendersTheTreeSource(t *testing.T) {
+	root := writeTreeSrc(t, map[string]string{
+		"apiarist/etc/store.conf": "name = apiarist\n",
+		"nuclear/etc/store.conf":  "name = nuclear\n",
+	})
+	dst := t.TempDir()
+
+	task := model.Task{
+		Runner: "tree",
+		Args:   model.TaskArgs{"src": filepath.Join(root, "{{ instance }}"), "dst": dst},
+	}
+	tr := PreRun(&task, model.TaskVars{"instance": "apiarist"})
+	require.Equal(t, Success, tr.Status, tr.Output)
+
+	// The rendered path is written back into the shared Args map, which is
+	// also how the assets reach the job that is sent to the target.
+	require.Equal(t, filepath.Join(root, "apiarist"), task.Args["src"])
+
+	asset, ok := task.Args["_assets"].(*model.Asset)
+	require.True(t, ok, "the pre-run attached no assets")
+	var got string
+	for _, f := range asset.Files {
+		if f.Path == "/etc/store.conf" {
+			got = string(f.Data)
+		}
+	}
+	require.Equal(t, "name = apiarist\n", got,
+		"the wrong instance's tree was loaded, or none was")
+}
+
+// A source naming a variable nobody defined must fail here, loudly, rather
+// than reach the target with nothing attached. cmd/whip turns this status into
+// a fatal; it used to be logged at debug and the run carried on.
+func Test_preRunFailsOnAnUndefinedVariableInTheSource(t *testing.T) {
+	task := model.Task{
+		Runner: "tree",
+		Args:   model.TaskArgs{"src": "/srv/seed/{{ nope }}", "dst": t.TempDir()},
+	}
+	tr := PreRun(&task, model.TaskVars{"instance": "apiarist"})
+	require.Equal(t, Failed, tr.Status)
+	require.Contains(t, tr.Output, "src")
+}

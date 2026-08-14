@@ -1,6 +1,7 @@
 package ssh
 
 import (
+	"bytes"
 	"crypto/ed25519"
 	"crypto/rand"
 	"encoding/pem"
@@ -17,6 +18,7 @@ import (
 	"github.com/kevinburke/ssh_config"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/crypto/ssh"
+	"golang.org/x/crypto/ssh/agent"
 )
 
 // the shape of the honeypot fleet: containers on a private bridge, reachable
@@ -532,4 +534,149 @@ func Test_UploadBytesXZ_reportsRemoteStderr(t *testing.T) {
 
 	var exit *ssh.ExitError
 	require.True(t, errors.As(err, &exit), "the ExitError must stay reachable")
+}
+
+// A named IdentityFile must be offered even when an agent is running.
+//
+// The Go client spends "publickey" on the first method that uses it, so the
+// agent's callback followed by a separate ssh.PublicKeys for the configured
+// key meant the configured key was never sent. On a laptop with three
+// unrelated keys in its agent, a host with IdentityFile in ssh_config was
+// unreachable and sshd logged three failures for keys nobody had named.
+func Test_authMethodsOffersConfiguredKeysAndAgentInOneMethod(t *testing.T) {
+	emptyHome(t)
+	t.Setenv(agentSock, "")
+	writeTestKey(t, "id_named")
+	keyPath := filepath.Join(sshDir(), "id_named")
+
+	methods, err := authMethods(hostConfig{identities: []string{keyPath}})
+	require.NoError(t, err)
+	require.Len(t, methods, 1,
+		"every key must travel in one publickey method, or the ones after the first are never offered")
+}
+
+// IdentitiesOnly means what it means in ssh(1): the agent is not consulted.
+func Test_authMethodsHonoursIdentitiesOnly(t *testing.T) {
+	emptyHome(t)
+	writeTestKey(t, "id_named")
+	keyPath := filepath.Join(sshDir(), "id_named")
+
+	t.Setenv(agentSock, "/nonexistent/agent.sock")
+	hc := hostConfig{identities: []string{keyPath}, identitiesOnly: true}
+	methods, err := authMethods(hc)
+	require.NoError(t, err)
+	require.Len(t, methods, 1)
+}
+
+// A host with no key and no agent still fails, and says what it looked for.
+func Test_authMethodsWithNothingToOfferSaysSo(t *testing.T) {
+	t.Setenv(agentSock, "")
+	_, err := authMethods(hostConfig{})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "no usable key")
+}
+
+// The end to end version of the bug: an agent holding a key the server will
+// not accept, and an IdentityFile it will. The named key has to win.
+//
+// This is how it presented in the field: a laptop with three unrelated keys in
+// its agent, an ssh_config naming a per fleet key, and a target that refused
+// every connection. sshd logged three failures for the agent's keys and no
+// attempt at the named one.
+func Test_ConnectWith_namedIdentityBeatsACrowdedAgent(t *testing.T) {
+	emptyHome(t)
+
+	// the key the server accepts, named in ssh_config
+	_, wanted, err := ed25519.GenerateKey(rand.Reader)
+	require.NoError(t, err)
+	wantedSigner, err := ssh.NewSignerFromKey(wanted)
+	require.NoError(t, err)
+	blk, err := ssh.MarshalPrivateKey(wanted, "")
+	require.NoError(t, err)
+	keyPath := filepath.Join(sshDir(), "id_fleet")
+	require.NoError(t, os.WriteFile(keyPath, pem.EncodeToMemory(blk), 0o600))
+
+	// and a different one, in the agent, which the server refuses
+	_, spare, err := ed25519.GenerateKey(rand.Reader)
+	require.NoError(t, err)
+	startTestAgent(t, spare)
+
+	srv := newTestServerAccepting(t, "fleet", wantedSigner.PublicKey())
+
+	conf := fmt.Sprintf("Host store-1\n\tHostName 127.0.0.1\n\tPort %s\n\tUser root\n\tIdentityFile %s\n",
+		srv.port(), keyPath)
+	require.NoError(t, os.WriteFile(filepath.Join(sshDir(), "config"), []byte(conf), 0o600))
+
+	c, err := ConnectWith("store-1", Options{})
+	require.NoError(t, err, "the named key must be offered even though the agent answered first")
+	defer c.Close() //nolint:errcheck
+
+	out, err := c.Run("echo hoi")
+	require.NoError(t, err)
+	require.Equal(t, "fleet\n", out)
+}
+
+// newTestServerAccepting is newTestServer with a guest list of one.
+func newTestServerAccepting(t *testing.T, banner string, allowed ssh.PublicKey) *testServer {
+	t.Helper()
+	_, priv, err := ed25519.GenerateKey(rand.Reader)
+	require.NoError(t, err)
+	signer, err := ssh.NewSignerFromKey(priv)
+	require.NoError(t, err)
+
+	want := allowed.Marshal()
+	conf := &ssh.ServerConfig{
+		PublicKeyCallback: func(_ ssh.ConnMetadata, k ssh.PublicKey) (*ssh.Permissions, error) {
+			if !bytes.Equal(k.Marshal(), want) {
+				return nil, fmt.Errorf("key refused")
+			}
+			return &ssh.Permissions{}, nil
+		},
+	}
+	conf.AddHostKey(signer)
+
+	ln, err := net.Listen(tcp, "127.0.0.1:0")
+	require.NoError(t, err)
+	t.Cleanup(func() { ln.Close() }) //nolint:errcheck
+
+	s := &testServer{ln: ln, addr: ln.Addr().String(), banner: banner}
+	go func() {
+		for {
+			nc, err := ln.Accept()
+			if err != nil {
+				return
+			}
+			go s.handle(nc, conf)
+		}
+	}()
+	return s
+}
+
+// startTestAgent runs an in process ssh-agent holding one key and points
+// $SSH_AUTH_SOCK at it.
+func startTestAgent(t *testing.T, key ed25519.PrivateKey) {
+	t.Helper()
+	keyring := agent.NewKeyring()
+	require.NoError(t, keyring.Add(agent.AddedKey{PrivateKey: &key}))
+
+	// macOS caps unix socket paths near 104 bytes; t.TempDir() is longer
+	dir, err := os.MkdirTemp("", "wa")
+	require.NoError(t, err)
+	t.Cleanup(func() { os.RemoveAll(dir) }) //nolint:errcheck
+
+	sock := filepath.Join(dir, "s")
+	ln, err := net.Listen(unix, sock)
+	require.NoError(t, err)
+	t.Cleanup(func() { ln.Close() }) //nolint:errcheck
+
+	go func() {
+		for {
+			conn, err := ln.Accept()
+			if err != nil {
+				return
+			}
+			go agent.ServeAgent(keyring, conn) //nolint:errcheck
+		}
+	}()
+	t.Setenv(agentSock, sock)
 }

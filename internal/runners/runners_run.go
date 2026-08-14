@@ -114,6 +114,27 @@ func registerRunner(name string, r runner) {
 	runners[name] = r
 }
 
+// PreRun runs the controller-side half of a task, for the runners that have
+// one. Today that is `tree`, which reads the source directory here so the
+// files travel with the job rather than being fetched by the target.
+//
+// Arguments are rendered before the pre-run sees them, for the same reason Run
+// renders them: a source path is as much a candidate for a variable as
+// anything else.
+//
+//   - name: restore this instance's stored catalogue
+//     tree:
+//     src: ../../seed/{{ instance }}
+//     dst: /var/tmp/seed
+//
+// used to glob the literal string, find nothing, and fail on the target with
+// "no assets found" - a message about the destination, for a mistake made on
+// the controller. The workaround was a prerun shell that copied the right
+// directory to a fixed path first.
+//
+// Rendering twice is harmless: Run renders the same arguments again on the
+// deputy, and a value with no {{ }} left in it is returned unchanged. The
+// assets the pre-run attaches are not strings and pass through untouched.
 func PreRun(task *model.Task, playVars model.TaskVars) (tr model.TaskResult) {
 	runner, ok := runners[task.Runner]
 	if !ok {
@@ -135,7 +156,31 @@ func PreRun(task *model.Task, playVars model.TaskVars) (tr model.TaskResult) {
 	}
 	task.Vars = mergedVars.(map[string]any)
 
-	// todo: merge vars
+	// A loop item first, so that a {{ }} written inside one is substituted
+	// before the argument that carries it. Same two passes as Run.
+	if item, ok := task.Vars["item"]; ok {
+		rendered, err := renderValue(item, task.Vars)
+		if err != nil {
+			tr.Status = Failed
+			tr.Output = err.Error()
+			return tr
+		}
+		task.Vars["item"] = rendered
+	}
+
+	// In place: task is a copy of the playbook's entry, but Args is a map and
+	// therefore shared with it, which is also how the pre-run's assets reach
+	// the job that is sent to the target.
+	for k, v := range task.Args {
+		rendered, err := renderValue(v, task.Vars)
+		if err != nil {
+			tr.Status = Failed
+			tr.Output = fmt.Sprintf("%s: %v", k, err)
+			return tr
+		}
+		task.Args[k] = rendered
+	}
+
 	tr = runner.prerun(task)
 	tr.Task = task
 	return tr

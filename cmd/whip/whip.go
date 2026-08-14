@@ -193,6 +193,25 @@ func runPreRunTasks(pb *model.Playbook) {
 			if tr.Status == runners.Skipped {
 				continue
 			}
+			// A failed pre-run is fatal.
+			//
+			// It used to be logged at debug and the run continued, which meant
+			// the failure was invisible at the default verbosity and the run
+			// died later somewhere else: a tree whose source could not be read
+			// on the controller reached the target with no assets attached and
+			// failed there with "no assets found", pointing at the destination
+			// for a mistake made here.
+			//
+			// Nothing that runs afterwards can succeed anyway. The pre-run is
+			// where a task's inputs are gathered, so a task that has not
+			// gathered them is a task that will do the wrong thing quietly.
+			if tr.Status == runners.Failed {
+				name := task.Name
+				if name == "" {
+					name = task.Runner
+				}
+				log.Fatalf("pre-run failed for %q (%s): %s", name, task.Runner, tr.Output)
+			}
 			log.Debug("Pre-run", task.Runner, "with status", tr.Status, tr.Output)
 		}
 	}

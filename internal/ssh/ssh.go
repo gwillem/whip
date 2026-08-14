@@ -78,6 +78,9 @@ type (
 		user, host, port string
 		identities       []string
 		jumps            []string
+		// identitiesOnly mirrors ssh_config's IdentitiesOnly: offer the keys
+		// named for this host and nothing else, the agent included.
+		identitiesOnly bool
 	}
 )
 
@@ -398,6 +401,7 @@ func resolveHost(cfg *ssh_config.Config, target string) hostConfig {
 		hc.user = os.Getenv("USER")
 	}
 	hc.identities = identityFiles(identities, only)
+	hc.identitiesOnly = only
 	return hc
 }
 
@@ -500,17 +504,25 @@ func sshDir() string {
 	return filepath.Join(home(), ".ssh")
 }
 
+// authMethods builds the authentication for one target.
+//
+// Everything is returned as a SINGLE publickey method, and that is the whole
+// point. The Go client treats each ssh.AuthMethod as one attempt at a method
+// type: when the agent's callback has offered its keys and the server has
+// refused them all, publickey is spent, and a second ssh.PublicKeys method
+// further down the slice is never reached.
+//
+// So a host with `IdentityFile ~/.ssh/hp-guest` in ssh_config could not be
+// reached from a machine with an unrelated agent running. The named key was
+// found, parsed and never offered; sshd logged three failures for the agent's
+// keys and no attempt at the one that would have worked. It looked like the
+// key was wrong.
+//
+// Order is deliberate: keys named for this host go first, because naming one
+// is a statement about which key belongs here, and an agent carrying several
+// unrelated keys can otherwise exhaust MaxAuthTries before reaching it.
 func authMethods(hc hostConfig) ([]ssh.AuthMethod, error) {
-	methods := []ssh.AuthMethod{}
-
-	// the agent goes first: it is the only way to use an encrypted key
-	if sock := os.Getenv(agentSock); sock != "" {
-		if conn, err := net.Dial(unix, sock); err == nil {
-			methods = append(methods, ssh.PublicKeysCallback(agent.NewClient(conn).Signers))
-		} else {
-			log.Debug("Failed to connect to SSH agent:", sock, err)
-		}
-	}
+	var signers []ssh.Signer
 
 	for _, f := range hc.identities {
 		key, err := os.ReadFile(f)
@@ -524,14 +536,40 @@ func authMethods(hc hostConfig) ([]ssh.AuthMethod, error) {
 			log.Debug("Could not parse private key:", f, err)
 			continue
 		}
-		methods = append(methods, ssh.PublicKeys(signer))
+		signers = append(signers, signer)
 	}
 
-	if len(methods) == 0 {
+	// The agent second, and not at all when the host said IdentitiesOnly:
+	// that is what the option means in ssh(1), and it is the only way to stop
+	// a crowded agent from spending the server's attempts.
+	var agentSigners func() ([]ssh.Signer, error)
+	if sock := os.Getenv(agentSock); sock != "" && !hc.identitiesOnly {
+		if conn, err := net.Dial(unix, sock); err == nil {
+			agentSigners = agent.NewClient(conn).Signers
+		} else {
+			log.Debug("Failed to connect to SSH agent:", sock, err)
+		}
+	}
+
+	if len(signers) == 0 && agentSigners == nil {
 		return nil, fmt.Errorf("no SSH auth methods available: no $%s and no usable key in %s (tried %s)",
 			agentSock, sshDir(), strings.Join(defaultKeyNames, ", "))
 	}
-	return methods, nil
+
+	// Resolved lazily: the agent is asked once, at handshake time, and only
+	// for the hosts that get that far.
+	return []ssh.AuthMethod{ssh.PublicKeysCallback(func() ([]ssh.Signer, error) {
+		out := signers
+		if agentSigners != nil {
+			fromAgent, err := agentSigners()
+			if err != nil {
+				log.Debug("SSH agent returned no signers:", err)
+				return out, nil
+			}
+			out = append(append([]ssh.Signer{}, out...), fromAgent...)
+		}
+		return out, nil
+	})}, nil
 }
 
 func hostKeyCallback(o Options) ssh.HostKeyCallback {
