@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"os/exec"
 	"time"
 
 	log "github.com/gwillem/go-simplelog"
@@ -29,18 +28,11 @@ func runJob(job *model.Job) {
 		handlers := map[string]bool{}
 		for _, task := range play.Tasks {
 
-			var tr model.TaskResult
-			if task.Unless != "" {
-				if _, err := exec.Command("/bin/sh", "-c", task.Unless).CombinedOutput(); err == nil {
-					tr.Status = runners.Success
-					tr.Output = fmt.Sprintf("skipped, 'unless' clause succeeded (%v)", task.Unless)
-				}
-			}
-
-			// if no "unless" or "unless" cmd failed, run the task
-			if tr.Status == runners.Unknown {
-				tr = runners.Run(&task, play.Vars)
-			}
+			// unless, creates and removes are all evaluated inside
+			// runners.Run, where the task's variables have been merged: a
+			// guard evaluated here could not be templated, so a `{{ var }}`
+			// in it reached /bin/sh as literal braces.
+			tr := runners.Run(&task, play.Vars)
 
 			if tr.Task == nil {
 				tr.Task = &task // todo, this seems redundant

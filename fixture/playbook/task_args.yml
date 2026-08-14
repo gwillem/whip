@@ -2,6 +2,5 @@
   tasks:
     - shell: echo hi
       unless: /bin/true
-      kwakaloe: njippie
     - command: hostname
       unless: /bin/false

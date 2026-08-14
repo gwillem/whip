@@ -18,6 +18,17 @@ just release           # GitHub release (auto-increments version)
 go test ./internal/runners -run TestTree
 ```
 
+> [!IMPORTANT]
+> `go build ./cmd/whip` does **not** rebuild the deputy. The deputies are
+> xz-compressed binaries under `cmd/whip/deputies/`, embedded with `//go:embed`
+> and produced only by `just deputies` (or `just devbuild` / `just build`).
+>
+> Everything that executes on the target — every runner, the task guards,
+> `changed_when` — lives in the deputy. Change any of it, skip the rebuild, and
+> whip happily uploads the *old* deputy: new runners report `No runner found`,
+> and new task fields are silently dropped by gob, so guards never fire and the
+> run still exits 0. Rebuild the deputies before testing anything remote.
+
 ## Architecture
 
 ### Two-Binary Model

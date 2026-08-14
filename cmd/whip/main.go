@@ -7,6 +7,7 @@ import (
 	log "github.com/gwillem/go-simplelog"
 	flags "github.com/jessevdk/go-flags"
 
+	"github.com/gwillem/whip/internal/ssh"
 	"github.com/gwillem/whip/internal/update"
 	"github.com/gwillem/whip/internal/vault"
 )
@@ -14,6 +15,18 @@ import (
 type opts struct {
 	Verbose []bool `short:"v" long:"verbose" description:"verbose output"`
 	Version bool   `long:"version" description:"print version and exit"`
+
+	// ExtraVars is repeatable: -e docroot=/srv/web -e db_name=magento. It
+	// overrides vars_files and the play's own vars, so one playbook can serve
+	// several targets from a script.
+	ExtraVars []string `short:"e" long:"extra-vars" description:"set a variable, overriding the playbook (key=value, repeatable)" value-name:"key=value"`
+
+	// Insecure turns off host key verification. The default is
+	// accept-new: an unknown host is recorded on first contact, and a key
+	// that later changes is refused. That is right almost always, and wrong
+	// for a target legitimately rebuilt under the same address, which is
+	// exactly what a honeypot fleet does on every rotation.
+	Insecure bool `long:"insecure" description:"do not verify SSH host keys"`
 
 	Edit    editCmd    `command:"edit" description:"encrypt and decrypt secrets"`
 	Encrypt encryptCmd `command:"encrypt" description:"encrypt stdin to stdout"`
@@ -91,7 +104,14 @@ func main() {
 	}
 
 	verbosity := setVerbosityLevel(len(o.Verbose))
-	runWhip(playbookArg, verbosity)
+
+	ssh.Insecure = o.Insecure
+
+	extraVars, err := parseExtraVars(o.ExtraVars)
+	if err != nil {
+		log.Fatal(err)
+	}
+	runWhip(playbookArg, verbosity, extraVars)
 }
 
 func setVerbosityLevel(verbosity int) int {

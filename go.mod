@@ -15,6 +15,7 @@ require (
 	github.com/ieee0824/go-deepmerge v0.0.0-20170912170951-7ec7dbbd5a1f
 	github.com/jessevdk/go-flags v1.6.1
 	github.com/karrick/gobls v1.3.5
+	github.com/kevinburke/ssh_config v1.6.0
 	github.com/klauspost/compress v1.17.9
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/nikolalohinski/gonja v1.5.3

@@ -10,3 +10,5 @@
   handlers:
     - name: nginx
       command: echo restarting nginx
+    - name: systemd
+      command: echo reloading systemd
