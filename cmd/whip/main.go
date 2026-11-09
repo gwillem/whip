@@ -24,7 +24,7 @@ type opts struct {
 
 type editCmd struct {
 	Args struct {
-		File string `positional-arg-name:"file" required:"true"`
+		File string `positional-arg-name:"file" description:"encrypted file; defaults to the only encrypted file under .whip/files"`
 	} `positional-args:"true"`
 }
 
@@ -41,7 +41,11 @@ type convertCmd struct {
 type updateCmd struct{}
 
 func (c *editCmd) Execute(args []string) error {
-	return vault.LaunchEditor(c.Args.File)
+	path, err := editTarget(c.Args.File)
+	if err != nil {
+		return err
+	}
+	return vault.LaunchEditor(path)
 }
 
 func (c *encryptCmd) Execute(args []string) error {

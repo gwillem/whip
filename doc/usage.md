@@ -43,6 +43,7 @@ Secrets commands:
 
 ```sh
 whip edit files/secret.conf          # edit encrypted/plain file, save encrypted
+whip edit                            # edit the only encrypted file under .whip/files
 whip encrypt < plain > encrypted     # encrypt stdin to stdout
 whip decrypt < encrypted > plain     # decrypt stdin to stdout
 whip convert files/old-vault.yml     # convert Ansible Vault file to Whip/Age

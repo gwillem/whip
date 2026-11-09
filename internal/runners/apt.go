@@ -60,7 +60,7 @@ func buildCurrent() (aptPkgState, error) {
 		if len(line) == 0 {
 			continue
 		}
-		pkg := strings.Split(line, "/")[0]
+		pkg, _, _ := strings.Cut(line, "/")
 		pkglist.add(pkg, installed)
 	}
 	return pkglist, nil
