@@ -63,6 +63,6 @@ Default playbook path: `.whip/playbook.yml` (searched in current and parent dire
 
 - `WHIP_KEY` env var for Age encryption (preferred)
 - `ANSIBLE_VAULT_PASSWORD` for legacy Ansible vault support
-- `whip edit <file>` to edit encrypted files
+- `whip edit [file]` to edit encrypted files; without a file it edits the only encrypted file under `.whip/files` (errors and lists them when there are several)
 - `whip encrypt` / `whip decrypt` stream stdin to stdout
 - `whip convert <file>` to migrate from Ansible Vault to Age
