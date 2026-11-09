@@ -6,6 +6,7 @@ import (
 	"os"
 	"reflect"
 	"regexp"
+	"slices"
 
 	log "github.com/gwillem/go-simplelog"
 	"github.com/gwillem/whip/internal/model"
@@ -13,7 +14,6 @@ import (
 	"github.com/gwillem/whip/internal/runners"
 	"github.com/mitchellh/mapstructure"
 
-	"golang.org/x/exp/slices"
 	"gopkg.in/yaml.v3"
 )
 
@@ -142,11 +142,11 @@ func parseStringToSlice() mapstructure.DecodeHookFunc {
 func expandPlaybookLoops(pb *model.Playbook) {
 	for playidx := range *pb {
 		play := &(*pb)[playidx]
-		for i := len(play.Tasks) - 1; i >= 0; i-- { // reverse range, because we are expanding the slice in place
-			if loops := play.Tasks[i].Loop; loops != nil {
+		for i, v := range slices.Backward(play.Tasks) { // reverse range, because we are expanding the slice in place
+			if loops := v.Loop; loops != nil {
 				newTasks := []model.Task{}
 				for _, l := range loops {
-					newTask := play.Tasks[i].Clone()
+					newTask := v.Clone()
 					newTask.Vars["item"] = l
 					newTask.Loop = nil
 					newTasks = append(newTasks, newTask)
